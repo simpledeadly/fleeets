@@ -1,37 +1,37 @@
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { invoke } from "@tauri-apps/api/core";
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import type { Event } from "@tauri-apps/api/event";
+import { ref, onMounted } from 'vue'
+import { invoke } from '@tauri-apps/api/core'
+import { getCurrentWindow } from '@tauri-apps/api/window'
+import type { Event } from '@tauri-apps/api/event'
 
-const appWindow = getCurrentWindow();
+const appWindow = getCurrentWindow()
 
-const noteContent = ref("");
+const noteContent = ref('')
 
 const saveNote = async () => {
-  await invoke("save_note", { content: noteContent.value });
-};
+  await invoke('save_note', { content: noteContent.value })
+}
 
 const loadNote = async () => {
-  noteContent.value = await invoke<string>("load_note");
-};
+  noteContent.value = await invoke<string>('load_note')
+}
 
 onMounted(() => {
-  loadNote();
+  loadNote()
 
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") {
-      appWindow.hide();
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      appWindow.hide()
     }
-  });
+  })
 
   appWindow.onFocusChanged((event: Event<boolean>) => {
-    const focused = event.payload;
+    const focused = event.payload
     if (!focused) {
-      appWindow.hide();
+      appWindow.hide()
     }
-  });
-});
+  })
+})
 </script>
 
 <template>
@@ -54,8 +54,7 @@ onMounted(() => {
   --bg-color: #ffffff;
   --text-color: #1e1e1e;
   --footer-bg-color: #f5f5f7;
-  --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-    Helvetica, Arial, sans-serif;
+  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
