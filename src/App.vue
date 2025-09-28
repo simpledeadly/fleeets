@@ -1,10 +1,9 @@
+<!-- File: src/App.vue -->
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { invoke } from '@tauri-apps/api/core'
-import { getCurrentWindow } from '@tauri-apps/api/window'
+import { invoke } from '@tauri-apps/api'
+import { appWindow } from '@tauri-apps/api/window'
 import type { Event } from '@tauri-apps/api/event'
-
-const appWindow = getCurrentWindow()
 
 const noteContent = ref('')
 
