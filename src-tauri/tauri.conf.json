@@ -43,7 +43,7 @@
         "title": "Fleets",
         "width": 720,
         "height": 480,
-        "resizable": false,
+        "resizable": true,
         "fullscreen": false,
         "visible": false,
         "decorations": false,

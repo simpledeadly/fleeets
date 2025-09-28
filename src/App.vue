@@ -20,7 +20,6 @@ const loadNote = async () => {
   noteContent.value = await invoke<string>('load_note')
 }
 
-// --- ЕДИНЫЙ ОБРАБОТЧИК КЛАВИАТУРЫ (с CSS-зумом) ---
 function handleKeyDown(event: KeyboardEvent) {
   if (event.key === 'Escape') {
     appWindow.hide()
@@ -47,7 +46,11 @@ function handleKeyDown(event: KeyboardEvent) {
 
     if (newZoom !== zoomLevel.value) {
       zoomLevel.value = newZoom
-      document.documentElement.style.zoom = zoomLevel.value.toString()
+      // ИСПРАВЛЕНО: Используем transform: scale() для качественного масштабирования
+      const container = document.querySelector('.main-container')
+      if (container) {
+        ;(container as HTMLElement).style.transform = `scale(${zoomLevel.value})`
+      }
     }
   }
 }
@@ -83,20 +86,31 @@ onUnmounted(() => {
 <template>
   <div
     @mousedown="appWindow.startDragging()"
-    class="h-screen cursor-grab flex items-center justify-center p-8"
+    class="h-screen cursor-grab flex items-center justify-center p-4"
   >
-    <div class="w-full max-w-xl bg-neutral-950 rounded-xl p-4 cursor-auto flex flex-col gap-3">
+    <div
+      @mousedown="appWindow.startDragging()"
+      class="main-container relative overflow-hidden w-full max-w-xl bg-neutral-950 rounded-xl p-4 cursor-grab flex flex-col gap-3"
+    >
       <Textarea
+        @mousedown.stop
         v-model="noteContent"
         @input="saveNote"
         placeholder="Начните печатать вашу заметку..."
         spellcheck="false"
         autofocus
-        class="h-64 flex-grow bg-transparent text-lg text-neutral-100 placeholder:text-neutral-500 border-none ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-2 resize-none leading-relaxed"
+        class="h-64 flex-grow bg-transparent text-lg text-neutral-100 placeholder:text-neutral-500 border-none ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-2 resize-none leading-relaxed cursor-text"
       />
-      <p class="text-xs text-neutral-400 text-center border-t border-neutral-800 pt-2">
-        Нажмите ESC или кликните вне окна, чтобы скрыть
+      <p
+        @mousedown.stop
+        class="text-xs text-neutral-400 text-center border-t border-neutral-800 pt-2 cursor-default"
+      >
+        Нажмите Esc или кликните вне окна, чтобы скрыть
       </p>
+      <div
+        @mousedown.stop="appWindow.startDragging()"
+        class="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize"
+      />
     </div>
   </div>
 </template>
