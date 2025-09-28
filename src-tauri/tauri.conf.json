@@ -13,7 +13,7 @@
     "macOSPrivateApi": true,
 
     "allowlist": {
-      "all": false,
+      "all": true,
       "fs": {
         "all": true,
         "scope": ["$APPCONFIG/*"]
@@ -24,8 +24,19 @@
       "path": {
         "all": true
       },
+      "shell": {
+        "all": false,
+        "open": true
+      },
       "window": {
         "all": true
+      },
+      "notification": {
+        "all": true
+      },
+      "protocol": {
+        "all": false,
+        "asset": false
       }
     },
     "bundle": {
