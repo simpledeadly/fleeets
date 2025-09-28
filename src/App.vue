@@ -1,164 +1,121 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue' // Добавили жизненные циклы
 import { getCurrent } from '@tauri-apps/api/window'
 import { listen } from '@tauri-apps/api/event'
+import { fetch as tauriFetch, Body } from '@tauri-apps/api/http'
+import { sendNotification } from '@tauri-apps/api/notification' // Убрали лишние импорты
 import { Textarea } from './components/ui/textarea'
 import { Button } from './components/ui/button'
-import {
-  isPermissionGranted,
-  requestPermission,
-  sendNotification,
-} from '@tauri-apps/api/notification'
-import { invoke } from '@tauri-apps/api'
-import { fetch as tauriFetch, Body } from '@tauri-apps/api/http'
 
-async function checkNotificationPermission() {
-  let permissionGranted = await isPermissionGranted()
-  if (!permissionGranted) {
-    const permission = await requestPermission()
-    permissionGranted = permission === 'granted'
-  }
-}
-
-async function showNotification(title: string, body: string) {
-  await invoke('show_notification', { title, body })
-}
-
+// --- ИНТЕРФЕЙС И СОСТОЯНИЕ ---
 interface Note {
   id: number
   content: string
-  status: 'idle' | 'sending' // 'idle' - обычное состояние, 'sending' - отправляется
+  status: 'idle' | 'sending'
 }
-
-// --- СОСТОЯНИЕ ---
-const zoomLevel = ref(1.0)
-const ZOOM_STEP = 0.1
+const notes = ref<Note[]>([]) // Восстанавливаем список заметок
 const noteContent = ref('')
-const notes = ref<Note[]>([])
 const appWindow = getCurrent()
 
-function handleNoteSubmit() {
-  const content = noteContent.value.trim()
-  if (content) {
-    const newNote: Note = {
-      id: Date.now(),
-      content: content,
-      status: 'idle', // Новые заметки всегда в состоянии 'idle'
+// --- URL ДЛЯ N8N (возьмите их из своего n8n) ---
+const N8N_ANALYZE_URL = 'http://localhost:5678/webhook-test/analyze-intent'
+const N8N_ACTION_URL = 'http://localhost:5678/webhook/process-note'
+
+// --- СОСТОЯНИЕ ДЛЯ AI ---
+const detectedIntent = ref<'Task' | 'Event' | 'Note'>('Note')
+// ИСПРАВЛЕНО: Правильный тип для таймера в среде Node.js
+let debounceTimer: NodeJS.Timeout
+
+// --- АНАЛИЗ НАМЕРЕНИЯ ---
+async function analyzeIntent(text: string): Promise<'Task' | 'Event' | 'Note'> {
+  if (!N8N_ANALYZE_URL.startsWith('http')) return 'Note'
+  try {
+    const response = await tauriFetch(N8N_ANALYZE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: Body.json({ text }),
+    })
+    if (!response.ok) return 'Note'
+    const result = (await response.data) as { data: string }
+    const intent = result.data.trim()
+    if (['Task', 'Event', 'Note'].includes(intent)) {
+      return intent as any
     }
-    notes.value.unshift(newNote)
-    noteContent.value = ''
+    return 'Note'
+  } catch (error) {
+    console.error('n8n analysis failed:', error)
+    return 'Note'
   }
 }
 
-function handleKeyDown(event: KeyboardEvent) {
-  if (event.key === 'Escape') {
-    appWindow.hide()
-    return
-  }
-
-  if (event.metaKey || event.ctrlKey) {
-    let newZoom = zoomLevel.value
-    switch (event.key) {
-      case '+':
-      case '=':
-        event.preventDefault()
-        newZoom = Math.min(2.0, zoomLevel.value + ZOOM_STEP)
-        break
-      case '-':
-        event.preventDefault()
-        newZoom = Math.max(0.5, zoomLevel.value - ZOOM_STEP)
-        break
-      case '0':
-        event.preventDefault()
-        newZoom = 1.0
-        break
-    }
-
-    if (newZoom !== zoomLevel.value) {
-      zoomLevel.value = newZoom
-      // ИСПРАВЛЕНО: Используем transform: scale() для качественного масштабирования
-      const container = document.querySelector('.main-container')
-      if (container) {
-        ;(container as HTMLElement).style.transform = `scale(${zoomLevel.value})`
-      }
-    }
-  }
-}
-
-// --- ЛОГИКА УПРАВЛЕНИЯ ОКНОМ ---
-async function toggleWindow() {
-  const isVisible = await appWindow.isVisible()
-  if (isVisible) {
-    appWindow.hide()
+// --- СЛЕЖЕНИЕ ЗА ВВОДОМ ---
+watch(noteContent, (newText) => {
+  clearTimeout(debounceTimer)
+  const trimmedText = newText.trim()
+  if (trimmedText.length > 5) {
+    debounceTimer = setTimeout(async () => {
+      detectedIntent.value = await analyzeIntent(trimmedText)
+    }, 700)
   } else {
-    await appWindow.center()
-    await appWindow.show()
-    await appWindow.setFocus()
+    detectedIntent.value = 'Note'
+  }
+})
+
+// --- ОТПРАВКА ДЕЙСТВИЯ ---
+async function submitAction() {
+  const content = noteContent.value.trim()
+  if (!content || !N8N_ACTION_URL.startsWith('http')) return
+
+  try {
+    const response = await tauriFetch(N8N_ACTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: Body.json({ intent: detectedIntent.value, text: content }),
+    })
+    if (!response.ok) throw new Error('n8n action webhook failed')
+
+    // Вместо того чтобы просто очищать поле, давайте добавим заметку в наш локальный список
+    notes.value.unshift({ id: Date.now(), content, status: 'idle' })
+    noteContent.value = ''
+    detectedIntent.value = 'Note'
+    await sendNotification({
+      title: 'Отправлено!',
+      body: `Заметка отправлена в n8n как "${detectedIntent.value}"`,
+    })
+  } catch (error) {
+    console.error('n8n action failed:', error)
+    await sendNotification({ title: 'Ошибка', body: 'Не удалось выполнить действие.' })
   }
 }
 
-onMounted(async () => {
-  await checkNotificationPermission()
-  window.addEventListener('keydown', handleKeyDown)
+// --- УПРАВЛЕНИЕ ОКНОМ И ЖИЗНЕННЫЙ ЦИКЛ (восстановлено) ---
+const hideWindow = () => appWindow.hide()
+const showWindow = async () => {
+  await appWindow.show()
+  await appWindow.center()
+  await appWindow.setFocus()
+}
+async function toggleWindow() {
+  ;(await appWindow.isVisible()) ? hideWindow() : showWindow()
+}
+
+const handleKeyDown = (event: KeyboardEvent) => {
+  if (event.key === 'Escape') {
+    hideWindow()
+  }
+}
+
+onMounted(() => {
   listen('toggle-window', toggleWindow)
+  window.addEventListener('keydown', handleKeyDown)
   appWindow.onFocusChanged(({ payload: focused }) => {
-    if (!focused) {
-      appWindow.hide()
-    }
+    if (!focused) hideWindow()
   })
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
 })
-
-async function testNotification() {
-  console.log('Попытка отправить тестовое уведомление...')
-  try {
-    await sendNotification({
-      title: 'ЭТО ТЕСТ',
-      body: 'Если вы видите это, значит API работает.',
-    })
-    console.log('Команда на отправку уведомления выполнена без ошибок.')
-  } catch (error) {
-    console.error('ОШИБКА при вызове sendNotification:', error)
-  }
-}
-
-const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook-test/fleets'
-
-async function sendToN8n(noteToSend: Note) {
-  const noteInList = notes.value.find((n) => n.id === noteToSend.id)
-  if (!noteInList || noteInList.status === 'sending') return
-
-  try {
-    noteInList.status = 'sending'
-
-    // ИСПРАВЛЕНО: Используем наш переименованный tauriFetch
-    const response = await tauriFetch(N8N_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: Body.json({
-        text: noteToSend.content,
-        source: 'Fleets App',
-        timestamp: new Date().toISOString(),
-      }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`HTTP error: ${response.status}`)
-    }
-
-    notes.value = notes.value.filter((note) => note.id !== noteToSend.id)
-    await sendNotification({ title: 'Успешно!', body: 'Заметка отправлена в n8n.' })
-  } catch (error) {
-    console.error('Ошибка при отправке в n8n:', error)
-    await sendNotification({ title: 'Ошибка', body: 'Не удалось отправить заметку.' })
-    if (noteInList) {
-      noteInList.status = 'idle'
-    }
-  }
-}
 </script>
 
 <template>
@@ -181,28 +138,39 @@ async function sendToN8n(noteToSend: Note) {
           :class="{ 'opacity-50': note.status === 'sending' }"
         >
           {{ note.content }}
-          <Button
-            v-if="note.status === 'idle'"
-            @click="sendToN8n(note)"
-            class="absolute top-2 right-2 p-1 rounded-md bg-neutral-700/50 text-neutral-300 opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-600 hover:text-white"
-            title="Отправить в n8n"
+          <!-- Простая SVG иконка "стрелка вверх" -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
           >
-            <!-- Простая SVG иконка "стрелка вверх" -->
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-            >
-              <path d="M12 5v14" />
-              <path d="m18 11-6-6-6 6" />
-            </svg>
-          </Button>
+            <path d="M12 5v14" />
+            <path d="m18 11-6-6-6 6" />
+          </svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 6h18" />
+            <path
+              d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+            />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+          </svg>
 
           <div
             v-if="note.status === 'sending'"
@@ -242,7 +210,7 @@ async function sendToN8n(noteToSend: Note) {
         <Textarea
           v-model="noteContent"
           @mousedown.stop
-          @keydown.enter.prevent="handleNoteSubmit"
+          @keydown.enter.prevent="submitAction"
           placeholder="Начните печатать вашу заметку..."
           spellcheck="false"
           autofocus
@@ -250,6 +218,25 @@ async function sendToN8n(noteToSend: Note) {
           class="bg-neutral-950 text-lg text-neutral-100 placeholder:text-neutral-500 rounded-lg resize-none overflow-hidden border border-neutral-800 ring-offset-neutral-950 focus-visible:ring-0 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         />
       </div>
+
+      <div
+        class="flex items-center justify-center p-2"
+        v-if="noteContent.trim()"
+      >
+        <!-- 
+          Теперь у нас одна "умная" кнопка, которая меняет свой вид и текст,
+          но всегда вызывает одну и ту же функцию submitAction().
+        -->
+        <Button
+          @click="submitAction"
+          class="...[динамические стили]..."
+        >
+          <span v-if="detectedIntent === 'Event'">🗓️ Создать событие</span>
+          <span v-if="detectedIntent === 'Task'">✅ Создать задачу</span>
+          <span v-if="detectedIntent === 'Note'">📝 Сохранить заметку</span>
+        </Button>
+      </div>
+
       <p
         @mousedown.stop
         class="text-xs text-neutral-400 text-center border-t border-neutral-800 pt-2 cursor-default"

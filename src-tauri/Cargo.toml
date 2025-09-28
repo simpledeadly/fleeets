@@ -15,3 +15,4 @@ tauri-build = { version = "1.5", features = [] }
 tauri = { version = "1.6", features = [ "http-all", "notification-all", "macos-private-api", "global-shortcut-all", "global-shortcut", "fs-all", "path-all", "window-all"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+tauri-plugin-store = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1", version = "0.0.0" }
