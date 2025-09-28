@@ -6,3 +6,23 @@ body,
 #app {
   background: transparent;
 }
+
+/* Стили для "растущего" поля ввода */
+.growing-textarea-grid {
+  display: grid;
+  font-family: theme('fontFamily.sans');
+}
+.growing-textarea-grid::after,
+.growing-textarea-grid textarea {
+  grid-area: 1 / 1 / 2 / 2;
+  font: inherit;
+  padding: theme('padding.2');
+  line-height: theme('lineHeight.relaxed');
+  border-width: 1px;
+}
+.growing-textarea-grid::after {
+  content: attr(data-replicated-value) ' ';
+  white-space: pre-wrap;
+  visibility: hidden;
+  border-color: transparent;
+}

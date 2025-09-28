@@ -86,21 +86,27 @@ onUnmounted(() => {
 <template>
   <div
     @mousedown="appWindow.startDragging()"
-    class="h-screen cursor-grab flex items-center justify-center p-4"
+    class="h-screen cursor-grab flex items-center justify-center p-8"
   >
     <div
       @mousedown="appWindow.startDragging()"
       class="main-container relative overflow-hidden w-full max-w-xl bg-neutral-950 rounded-xl p-4 cursor-grab flex flex-col gap-3"
     >
-      <Textarea
+      <div
         @mousedown.stop
-        v-model="noteContent"
-        @input="saveNote"
-        placeholder="Начните печатать вашу заметку..."
-        spellcheck="false"
-        autofocus
-        class="h-64 flex-grow bg-transparent text-lg text-neutral-100 placeholder:text-neutral-500 border-none ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-2 resize-none leading-relaxed cursor-text"
-      />
+        class="growing-textarea-grid cursor-text"
+        :data-replicated-value="noteContent"
+      >
+        <Textarea
+          @mousedown.stop
+          v-model="noteContent"
+          @input="saveNote"
+          placeholder="Начните печатать вашу заметку..."
+          spellcheck="false"
+          autofocus
+          class="bg-neutral-950 text-lg text-neutral-100 placeholder:text-neutral-500 rounded-lg resize-none overflow-hidden border border-neutral-700 ring-offset-neutral-950 focus-visible:ring-0 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+        />
+      </div>
       <p
         @mousedown.stop
         class="text-xs text-neutral-400 text-center border-t border-neutral-800 pt-2 cursor-default"
