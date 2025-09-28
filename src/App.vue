@@ -34,18 +34,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="container">
-    <textarea
-      v-model="noteContent"
-      @input="saveNote"
-      placeholder="Начните печатать вашу заметку..."
-      spellcheck="false"
-      autofocus
-    ></textarea>
-    <footer class="status-bar">
-      <p>Нажмите Esc или кликните вне окна, чтобы скрыть</p>
-    </footer>
-  </div>
+  <UApp>
+    <div class="container">
+      <textarea
+        v-model="noteContent"
+        @input="saveNote"
+        placeholder="Начните печатать вашу заметку..."
+        spellcheck="false"
+        autofocus
+      ></textarea>
+      <footer class="status-bar">
+        <p>Нажмите Esc или кликните вне окна, чтобы скрыть</p>
+      </footer>
+    </div>
+  </UApp>
 </template>
 
 <style>
