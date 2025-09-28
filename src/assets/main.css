@@ -1,1 +1,8 @@
+/* src/assets/main.css */
 @tailwind utilities;
+
+html,
+body,
+#app {
+  background: transparent;
+}

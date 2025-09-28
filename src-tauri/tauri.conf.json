@@ -10,6 +10,8 @@
     "version": "0.1.0"
   },
   "tauri": {
+    "macOSPrivateApi": true,
+
     "allowlist": {
       "all": false,
       "fs": {
@@ -37,14 +39,17 @@
     },
     "windows": [
       {
-        "fullscreen": false,
-        "height": 450,
-        "resizable": true,
+        "label": "main",
         "title": "Fleets",
-        "width": 700,
+        "width": 720,
+        "height": 480,
+        "resizable": false,
+        "fullscreen": false,
+        "visible": false,
         "decorations": false,
+        "transparent": true,
         "alwaysOnTop": true,
-        "visible": false
+        "skipTaskbar": true
       }
     ]
   }

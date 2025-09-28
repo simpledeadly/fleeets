@@ -1,12 +1,17 @@
-<!-- File: src/App.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { invoke } from '@tauri-apps/api'
-import { appWindow } from '@tauri-apps/api/window'
-import type { Event } from '@tauri-apps/api/event'
+import { getCurrent } from '@tauri-apps/api/window'
+import { listen } from '@tauri-apps/api/event'
+import { Textarea } from './components/ui/textarea'
 
+// --- СОСТОЯНИЕ ---
 const noteContent = ref('')
+const zoomLevel = ref(1.0)
+const ZOOM_STEP = 0.1
+const appWindow = getCurrent()
 
+// --- ЛОГИКА ВЗАИМОДЕЙСТВИЯ С RUST ---
 const saveNote = async () => {
   await invoke('save_note', { content: noteContent.value })
 }
@@ -15,102 +20,88 @@ const loadNote = async () => {
   noteContent.value = await invoke<string>('load_note')
 }
 
+// --- ЕДИНЫЙ ОБРАБОТЧИК КЛАВИАТУРЫ (с CSS-зумом) ---
+function handleKeyDown(event: KeyboardEvent) {
+  if (event.key === 'Escape') {
+    appWindow.hide()
+    return
+  }
+
+  if (event.metaKey || event.ctrlKey) {
+    let newZoom = zoomLevel.value
+    switch (event.key) {
+      case '+':
+      case '=':
+        event.preventDefault()
+        newZoom = Math.min(2.0, zoomLevel.value + ZOOM_STEP)
+        break
+      case '-':
+        event.preventDefault()
+        newZoom = Math.max(0.5, zoomLevel.value - ZOOM_STEP)
+        break
+      case '0':
+        event.preventDefault()
+        newZoom = 1.0
+        break
+    }
+
+    if (newZoom !== zoomLevel.value) {
+      zoomLevel.value = newZoom
+      document.documentElement.style.zoom = zoomLevel.value.toString()
+    }
+  }
+}
+
+// --- ЛОГИКА УПРАВЛЕНИЯ ОКНОМ ---
+async function toggleWindow() {
+  const isVisible = await appWindow.isVisible()
+  if (isVisible) {
+    appWindow.hide()
+  } else {
+    await appWindow.center()
+    await appWindow.show()
+    await appWindow.setFocus()
+  }
+}
+
 onMounted(() => {
   loadNote()
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      appWindow.hide()
-    }
-  })
-
-  appWindow.onFocusChanged((event: Event<boolean>) => {
-    const focused = event.payload
+  window.addEventListener('keydown', handleKeyDown)
+  listen('toggle-window', toggleWindow)
+  appWindow.onFocusChanged(({ payload: focused }) => {
     if (!focused) {
       appWindow.hide()
     }
   })
 })
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeyDown)
+})
 </script>
 
 <template>
-  <UApp>
-    <div class="container">
-      <textarea
+  <div
+    @mousedown="appWindow.startDragging()"
+    class="h-screen cursor-grab flex items-center justify-center p-8"
+  >
+    <div class="w-full max-w-xl bg-neutral-950 rounded-xl p-4 cursor-auto flex flex-col gap-3">
+      <Textarea
         v-model="noteContent"
         @input="saveNote"
         placeholder="Начните печатать вашу заметку..."
         spellcheck="false"
         autofocus
-      ></textarea>
-      <footer class="status-bar">
-        <p>Нажмите Esc или кликните вне окна, чтобы скрыть</p>
-      </footer>
+        class="h-64 flex-grow bg-transparent text-lg text-neutral-100 placeholder:text-neutral-500 border-none ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-2 resize-none leading-relaxed"
+      />
+      <p class="text-xs text-neutral-400 text-center border-t border-neutral-800 pt-2">
+        Нажмите ESC или кликните вне окна, чтобы скрыть
+      </p>
     </div>
-  </UApp>
+  </div>
 </template>
 
-<style>
-:root {
-  --bg-color: #ffffff;
-  --text-color: #1e1e1e;
-  --footer-bg-color: #f5f5f7;
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-color: #1e1e1e;
-    --text-color: #f0f0f0;
-    --footer-bg-color: #252526;
-  }
-}
-html,
-body,
-#app,
-.container {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  font-family: var(--font-family);
-}
-body {
-  background-color: var(--bg-color);
-}
-.container {
-  display: flex;
-  flex-direction: column;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-textarea {
-  flex-grow: 1;
-  width: 100%;
-  padding: 20px;
-  font-size: 16px;
-  line-height: 1.6;
-  border: none;
-  outline: none;
-  resize: none;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  box-sizing: border-box;
-}
-textarea::placeholder {
-  color: var(--text-color);
-  opacity: 0.4;
-}
-.status-bar {
-  height: 30px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  opacity: 0.6;
-  background-color: var(--footer-bg-color);
-  color: var(--text-color);
-  border-top: 1px solid rgba(128, 128, 128, 0.1);
-}
-</style>
+<!-- 
+  Блок <style> был ПОЛНОСТЬЮ УДАЛЕН. 
+  Все стили теперь управляются через Tailwind в <template> и глобальном main.css.
+-->
