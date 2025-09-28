@@ -12,6 +12,6 @@ edition = "2021"
 tauri-build = { version = "1.5", features = [] }
 
 [dependencies]
-tauri = { version = "1.6", features = [ "macos-private-api", "global-shortcut-all", "global-shortcut", "fs-all", "path-all", "window-all"] }
+tauri = { version = "1.6", features = [ "http-all", "notification-all", "macos-private-api", "global-shortcut-all", "global-shortcut", "fs-all", "path-all", "window-all"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

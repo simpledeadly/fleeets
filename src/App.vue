@@ -1,14 +1,33 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { invoke } from '@tauri-apps/api'
 import { getCurrent } from '@tauri-apps/api/window'
 import { listen } from '@tauri-apps/api/event'
 import { Textarea } from './components/ui/textarea'
 import { Button } from './components/ui/button'
+import {
+  isPermissionGranted,
+  requestPermission,
+  sendNotification,
+} from '@tauri-apps/api/notification'
+import { invoke } from '@tauri-apps/api'
+import { fetch as tauriFetch, Body } from '@tauri-apps/api/http'
+
+async function checkNotificationPermission() {
+  let permissionGranted = await isPermissionGranted()
+  if (!permissionGranted) {
+    const permission = await requestPermission()
+    permissionGranted = permission === 'granted'
+  }
+}
+
+async function showNotification(title: string, body: string) {
+  await invoke('show_notification', { title, body })
+}
 
 interface Note {
   id: number
   content: string
+  status: 'idle' | 'sending' // 'idle' - обычное состояние, 'sending' - отправляется
 }
 
 // --- СОСТОЯНИЕ ---
@@ -18,27 +37,17 @@ const noteContent = ref('')
 const notes = ref<Note[]>([])
 const appWindow = getCurrent()
 
-// --- НОВАЯ ФУНКЦИЯ ДЛЯ СОХРАНЕНИЯ ЗАМЕТКИ ---
 function handleNoteSubmit() {
   const content = noteContent.value.trim()
   if (content) {
-    // Создаем новый объект заметки
     const newNote: Note = {
-      id: Date.now(), // Используем timestamp как уникальный ID
+      id: Date.now(),
       content: content,
+      status: 'idle', // Новые заметки всегда в состоянии 'idle'
     }
     notes.value.unshift(newNote)
     noteContent.value = ''
   }
-}
-
-// --- ЛОГИКА ВЗАИМОДЕЙСТВИЯ С RUST ---
-const saveNote = async () => {
-  await invoke('save_note', { content: noteContent.value })
-}
-
-const loadNote = async () => {
-  noteContent.value = await invoke<string>('load_note')
 }
 
 function handleKeyDown(event: KeyboardEvent) {
@@ -88,8 +97,8 @@ async function toggleWindow() {
   }
 }
 
-onMounted(() => {
-  loadNote()
+onMounted(async () => {
+  await checkNotificationPermission()
   window.addEventListener('keydown', handleKeyDown)
   listen('toggle-window', toggleWindow)
   appWindow.onFocusChanged(({ payload: focused }) => {
@@ -103,33 +112,51 @@ onUnmounted(() => {
   window.removeEventListener('keydown', handleKeyDown)
 })
 
+async function testNotification() {
+  console.log('Попытка отправить тестовое уведомление...')
+  try {
+    await sendNotification({
+      title: 'ЭТО ТЕСТ',
+      body: 'Если вы видите это, значит API работает.',
+    })
+    console.log('Команда на отправку уведомления выполнена без ошибок.')
+  } catch (error) {
+    console.error('ОШИБКА при вызове sendNotification:', error)
+  }
+}
+
 const N8N_WEBHOOK_URL = 'http://localhost:5678/webhook-test/fleets'
 
 async function sendToN8n(noteToSend: Note) {
-  if (!N8N_WEBHOOK_URL.startsWith('http')) {
-    alert('Пожалуйста, установите корректный Webhook URL для n8n в коде App.vue')
-    return
-  }
+  const noteInList = notes.value.find((n) => n.id === noteToSend.id)
+  if (!noteInList || noteInList.status === 'sending') return
 
   try {
-    const response = await fetch(N8N_WEBHOOK_URL, {
+    noteInList.status = 'sending'
+
+    // ИСПРАВЛЕНО: Используем наш переименованный tauriFetch
+    const response = await tauriFetch(N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        text: noteToSend.content, // Отправляем контент из объекта
+      body: Body.json({
+        text: noteToSend.content,
         source: 'Fleets App',
         timestamp: new Date().toISOString(),
       }),
     })
+
     if (!response.ok) {
-      throw new Error(`Сервер n8n ответил ошибкой: ${response.status}`)
+      throw new Error(`HTTP error: ${response.status}`)
     }
 
-    // Удаляем заметку, находя ее по уникальному ID
     notes.value = notes.value.filter((note) => note.id !== noteToSend.id)
+    await sendNotification({ title: 'Успешно!', body: 'Заметка отправлена в n8n.' })
   } catch (error) {
     console.error('Ошибка при отправке в n8n:', error)
-    alert(`Не удалось отправить заметку. Проверьте консоль и n8n.`)
+    await sendNotification({ title: 'Ошибка', body: 'Не удалось отправить заметку.' })
+    if (noteInList) {
+      noteInList.status = 'idle'
+    }
   }
 }
 </script>
@@ -148,14 +175,16 @@ async function sendToN8n(noteToSend: Note) {
         class="flex-grow overflow-y-auto max-h-[50vh] pr-2"
       >
         <div
-          v-for="(note, index) in notes"
-          :key="index"
-          class="text-neutral-200 px-2 py-1 whitespace-pre-wrap"
+          v-for="note in notes"
+          :key="note.id"
+          class="group relative text-neutral-200 bg-black/20 rounded-md p-3 mb-2 whitespace-pre-wrap"
+          :class="{ 'opacity-50': note.status === 'sending' }"
         >
           {{ note.content }}
           <Button
+            v-if="note.status === 'idle'"
             @click="sendToN8n(note)"
-            class="absolute top-2 right-2 p-1 rounded-lg bg-neutral-700/50 text-neutral-300 group-hover:opacity-100 transition-opacity hover:bg-blue-600 hover:text-white"
+            class="absolute top-2 right-2 p-1 rounded-md bg-neutral-700/50 text-neutral-300 opacity-0 group-hover:opacity-100 transition-all hover:bg-blue-600 hover:text-white"
             title="Отправить в n8n"
           >
             <!-- Простая SVG иконка "стрелка вверх" -->
@@ -174,6 +203,34 @@ async function sendToN8n(noteToSend: Note) {
               <path d="m18 11-6-6-6 6" />
             </svg>
           </Button>
+
+          <div
+            v-if="note.status === 'sending'"
+            class="absolute top-2 right-2 p-1"
+          >
+            <svg
+              class="animate-spin text-neutral-400"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+          </div>
         </div>
       </div>
 
@@ -186,7 +243,6 @@ async function sendToN8n(noteToSend: Note) {
           v-model="noteContent"
           @mousedown.stop
           @keydown.enter.prevent="handleNoteSubmit"
-          @input="saveNote"
           placeholder="Начните печатать вашу заметку..."
           spellcheck="false"
           autofocus
@@ -207,8 +263,3 @@ async function sendToN8n(noteToSend: Note) {
     </div>
   </div>
 </template>
-
-<!-- 
-  Блок <style> был ПОЛНОСТЬЮ УДАЛЕН. 
-  Все стили теперь управляются через Tailwind в <template> и глобальном main.css.
--->
