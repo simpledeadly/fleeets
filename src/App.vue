@@ -4,7 +4,7 @@ import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api'
 import { appWindow } from '@tauri-apps/api/window'
 import type { Event } from '@tauri-apps/api/event'
-import { checkUpdate, onUpdaterEvent } from '@tauri-apps/api/updater'
+import { checkUpdate } from '@tauri-apps/api/updater'
 
 async function checkForUpdates() {
   try {
