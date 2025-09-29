@@ -12,7 +12,6 @@ jobs:
   release:
     runs-on: macos-latest
 
-    # ЭТОТ БЛОК НЕ ДАСТ ДВУМ СБОРКАМ ИДТИ ОДНОВРЕМЕННО
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
@@ -21,8 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # МЫ СКАЧИВАЕМ КОД С ТОКЕНОМ, ЧТОБЫ ИМЕТЬ ПРАВА НА ПУШ
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT }}
 
       - name: Install Node.js & Bun & Configure Git
         uses: ./.github/actions/setup
@@ -44,7 +42,7 @@ jobs:
       - name: Build and Create Release
         uses: tauri-apps/tauri-action@v0
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
