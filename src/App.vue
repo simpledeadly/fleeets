@@ -4,17 +4,31 @@ import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api'
 import { appWindow } from '@tauri-apps/api/window'
 import type { Event } from '@tauri-apps/api/event'
-import { checkUpdate } from '@tauri-apps/api/updater'
+import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
+import { ask } from '@tauri-apps/api/dialog'
 
 async function checkForUpdates() {
   try {
+    console.log('Проверяем обновления...')
     const { shouldUpdate, manifest } = await checkUpdate()
+    console.log(`Нужно обновиться: ${shouldUpdate}, манифест:`, manifest)
+
     if (shouldUpdate) {
-      // Tauri автоматически покажет диалог, так как "dialog": true в конфиге.
-      // Эта часть кода нужна для более сложной логики, например, для показа кастомного окна.
-      console.log(
-        `Устанавливается обновление ${manifest?.version}, скачивается с ${manifest?.body}`
+      // 1. Показываем нативный диалог
+      const wantToUpdate = await ask(
+        `Доступна новая версия: ${manifest?.version}. Хотите установить ее сейчас?`,
+        {
+          title: 'Доступно обновление',
+          okLabel: 'Установить и перезапустить',
+          cancelLabel: 'Позже',
+        }
       )
+
+      if (wantToUpdate) {
+        // 2. Если пользователь согласился, запускаем установку
+        await installUpdate()
+        // Приложение автоматически перезапустится
+      }
     }
   } catch (error) {
     console.error('Ошибка при проверке обновлений:', error)
