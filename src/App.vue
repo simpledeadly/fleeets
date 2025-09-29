@@ -9,12 +9,20 @@ import { ask } from '@tauri-apps/api/dialog'
 
 async function checkForUpdates() {
   try {
-    console.log('Проверяем обновления...')
+    await invoke('log_to_console', { message: 'Проверяем обновления...' })
     const { shouldUpdate, manifest } = await checkUpdate()
-    console.log(`Нужно обновиться: ${shouldUpdate}, манифест:`, manifest)
+
+    await invoke('log_to_console', { message: `Нужно обновиться: ${shouldUpdate}` })
+    if (manifest) {
+      await invoke('log_to_console', {
+        message: `Манифест получен: версия ${manifest.version}, дата: ${manifest.date}`,
+      })
+    } else {
+      await invoke('log_to_console', { message: 'Манифест НЕ получен (null).' })
+    }
 
     if (shouldUpdate) {
-      // 1. Показываем нативный диалог
+      await invoke('log_to_console', { message: 'Показываем диалог обновления...' })
       const wantToUpdate = await ask(
         `Доступна новая версия: ${manifest?.version}. Хотите установить ее сейчас?`,
         {
@@ -25,13 +33,18 @@ async function checkForUpdates() {
       )
 
       if (wantToUpdate) {
-        // 2. Если пользователь согласился, запускаем установку
+        await invoke('log_to_console', {
+          message: 'Пользователь согласился. Запускаем установку...',
+        })
         await installUpdate()
-        // Приложение автоматически перезапустится
+      } else {
+        await invoke('log_to_console', { message: 'Пользователь отказался от обновления.' })
       }
     }
-  } catch (error) {
-    console.error('Ошибка при проверке обновлений:', error)
+  } catch (err) {
+    await invoke('log_to_console', {
+      message: `Критическая ошибка при проверке обновлений: ${JSON.stringify(err)}`,
+    })
   }
 }
 
@@ -75,7 +88,7 @@ onMounted(async () => {
       autofocus
     ></textarea>
     <footer class="status-bar">
-      <p>Нажмите Esc или кликните вне окна, чтобы скрыть</p>
+      <p>Нажмите Esc или кликните вне окна, чтобы скрыть (v0.1.6)</p>
     </footer>
   </div>
 </template>
@@ -128,7 +141,7 @@ textarea {
   background-color: var(--bg-color);
   color: var(--text-color);
   box-sizing: border-box;
-  caret-color: tomato;
+  caret-color: dodgerblue;
 }
 textarea::placeholder {
   color: var(--text-color);

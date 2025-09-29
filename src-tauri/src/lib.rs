@@ -43,6 +43,11 @@ async fn load_note<R: Runtime>(app: AppHandle<R>) -> Result<String, String> {
     }
 }
 
+#[tauri::command]
+fn log_to_console(message: String) {
+    println!("[FRONTEND LOG] {}", message);
+}
+
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -66,7 +71,7 @@ pub fn run() {
                 .expect("Не удалось зарегистрировать глобальное сочетание клавиш");
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![save_note, load_note])
+        .invoke_handler(tauri::generate_handler![save_note, load_note, log_to_console])
         .run(tauri::generate_context!())
         .expect("Ошибка при запуске приложения Tauri");
 }
