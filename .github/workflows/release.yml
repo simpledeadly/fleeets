@@ -50,7 +50,7 @@ jobs:
         with:
           # Возвращаемся к самому простому варианту. Пусть tauri-action сам разбирается.
           tagName: ${{ steps.bump_version.outputs.tag_name }}
-          releaseName: 'Release ${{ steps.bump_version.outputs.tag_name }}'
+          releaseName: '${{ steps.bump_version.outputs.tag_name }}'
           releaseBody: 'Automated release of new version.'
           releaseDraft: false
           prerelease: false
