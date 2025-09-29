@@ -3,22 +3,19 @@ name: 'Release'
 on:
   push:
     branches:
-      - master # Или 'main', если ваша основная ветка называется так
+      - master
 
 permissions:
-  contents: write # Даем права на создание релизов и пуш коммитов
+  contents: write
 
 jobs:
-  build-and-release:
-    runs-on: ubuntu-latest # Эта задача будет управлять версиями и создавать релиз
-    outputs:
-      release_id: ${{ steps.create_release.outputs.id }}
+  release: # <-- ОДНА ЕДИНСТВЕННАЯ ЗАДАЧА
+    runs-on: ubuntu-latest # Управление версиями всегда на Ubuntu
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Нам нужен полный доступ к истории, чтобы пушить
           fetch-depth: 0
 
       - name: Install Node.js
@@ -40,10 +37,7 @@ jobs:
       - name: Bump version
         id: bump_version
         run: |
-          # Увеличиваем patch-версию (0.1.0 -> 0.1.1)
           npm version patch --no-git-tag-version
-
-          # Получаем новую версию из package.json для использования в следующих шагах
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "tag_name=v$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
@@ -52,51 +46,17 @@ jobs:
         run: |
           git add package.json bun.lockb
           git commit -m "chore: Bump version to ${{ steps.bump_version.outputs.new_version }}"
-          git push
+          # Мы больше не пушим здесь, тег создаст create-release
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ steps.bump_version.outputs.tag_name }}
-          release_name: 'Release ${{ steps.bump_version.outputs.tag_name }}'
-          body: 'Automated release of new version.'
-          draft: false
-          prerelease: false
-
-  build-tauri:
-    needs: build-and-release # Эта задача начнется после создания релиза
-    strategy:
-      fail-fast: false
-      matrix:
-        platform: [macos-latest, windows-latest]
-
-    runs-on: ${{ matrix.platform }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v1
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Build the app
+      - name: Create Release and Upload Artifacts
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
-          releaseId: ${{ needs.build-and-release.outputs.release_id }}
+          tagName: ${{ steps.bump_version.outputs.tag_name }}
+          releaseName: 'Release ${{ steps.bump_version.outputs.tag_name }}'
+          releaseBody: 'Automated release of new version.'
+          releaseDraft: false
+          prerelease: false
