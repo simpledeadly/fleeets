@@ -47,6 +47,12 @@
         "fullscreen": false,
         "visible": false
       }
-    ]
+    ],
+    "updater": {
+      "active": true,
+      "dialog": true,
+      "endpoints": ["https://api.github.com/repos/simpledeadly/fleets/releases/latest"],
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk5NkQyNTAzRTdDRjVGRTEKUldUaFg4L25BeVZ0bVlQOW1xV0RZNlV2THVTVkd4enE4QUw1WjJVaG1YNkc3aUl0N2JUZEp0d1kK"
+    }
   }
 }

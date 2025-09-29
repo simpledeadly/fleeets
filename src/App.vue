@@ -4,6 +4,22 @@ import { ref, onMounted } from 'vue'
 import { invoke } from '@tauri-apps/api'
 import { appWindow } from '@tauri-apps/api/window'
 import type { Event } from '@tauri-apps/api/event'
+import { checkUpdate, onUpdaterEvent } from '@tauri-apps/api/updater'
+
+async function checkForUpdates() {
+  try {
+    const { shouldUpdate, manifest } = await checkUpdate()
+    if (shouldUpdate) {
+      // Tauri автоматически покажет диалог, так как "dialog": true в конфиге.
+      // Эта часть кода нужна для более сложной логики, например, для показа кастомного окна.
+      console.log(
+        `Устанавливается обновление ${manifest?.version}, скачивается с ${manifest?.body}`
+      )
+    }
+  } catch (error) {
+    console.error('Ошибка при проверке обновлений:', error)
+  }
+}
 
 const noteContent = ref('')
 
@@ -15,7 +31,9 @@ const loadNote = async () => {
   noteContent.value = await invoke<string>('load_note')
 }
 
-onMounted(() => {
+onMounted(async () => {
+  await checkForUpdates()
+
   loadNote()
 
   document.addEventListener('keydown', (e) => {
@@ -96,7 +114,7 @@ textarea {
   background-color: var(--bg-color);
   color: var(--text-color);
   box-sizing: border-box;
-  caret-color: gold;
+  caret-color: chartreuse;
 }
 textarea::placeholder {
   color: var(--text-color);
