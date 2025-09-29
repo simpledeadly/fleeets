@@ -1,0 +1,16 @@
+name: 'Setup Environment'
+description: 'Installs Node.js, Bun, and configures Git'
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Install Bun
+      uses: oven-sh/setup-bun@v1
+    - name: Configure Git
+      shell: bash
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"

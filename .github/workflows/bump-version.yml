@@ -1,0 +1,34 @@
+name: 'Bump Version & Create Tag'
+
+on:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: write
+
+jobs:
+  bump-version:
+    if: "!contains(github.event.head_commit.message, 'chore: Bump version')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js & Bun & Configure Git
+        uses: ./.github/actions/setup
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Bump version, create commit and tag
+        run: |
+          npm version patch -m "chore: Bump version to %s"
+
+      - name: Push changes and tags
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          tags: true
