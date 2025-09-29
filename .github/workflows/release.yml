@@ -12,10 +12,6 @@ jobs:
   release:
     runs-on: macos-latest
 
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: true
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -29,12 +25,16 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Bump version, create commit and tag
+      - name: Bump version and prepare variables
         id: bump_version
         run: |
           git pull
-          VERSION=$(npm version patch -m "chore: Bump version to %s [skip ci]")
-          echo "tag_name=$VERSION" >> $GITHUB_OUTPUT
+          # VERSION_WITH_V будет, например, 'v0.1.25'
+          VERSION_WITH_V=$(npm version patch -m "chore: Bump version to %s [skip ci]")
+          # VERSION_CLEAN будет '0.1.25'
+          VERSION_CLEAN=${VERSION_WITH_V#v}
+          echo "tag_name=${VERSION_WITH_V}" >> $GITHUB_OUTPUT
+          echo "clean_version=${VERSION_CLEAN}" >> $GITHUB_OUTPUT
 
       - name: Push changes and tags
         run: git push --follow-tags
@@ -42,13 +42,18 @@ jobs:
       - name: Build and Create Release
         uses: tauri-apps/tauri-action@v0
         env:
+          # РЕШЕНИЕ №1: Правильный токен для создания подписи
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           tagName: ${{ steps.bump_version.outputs.tag_name }}
-          # ИСПРАВЛЕНИЕ: Убраны одинарные кавычки для правильной обработки переменной
-          releaseName: ${{ steps.bump_version.outputs.tag_name }}
+          # Имя релиза, которое нравится tauri-action@v0 для генерации подписи
+          releaseName: 'Release ${{ steps.bump_version.outputs.tag_name }}'
+
+          # РЕШЕНИЕ №2: Передача чистой версии для записи в latest.json
+          appVersion: ${{ steps.bump_version.outputs.clean_version }}
+
           releaseBody: 'Automated release of new version.'
           releaseDraft: false
           prerelease: false
