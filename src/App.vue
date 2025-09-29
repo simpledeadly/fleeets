@@ -128,7 +128,7 @@ textarea {
   background-color: var(--bg-color);
   color: var(--text-color);
   box-sizing: border-box;
-  caret-color: dodgerblue;
+  caret-color: tomato;
 }
 textarea::placeholder {
   color: var(--text-color);
