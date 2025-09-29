@@ -53,13 +53,14 @@ onMounted(() => {
   --bg-color: #ffffff;
   --text-color: #1e1e1e;
   --footer-bg-color: #f5f5f7;
-  --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  /* --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; */
+  --font-family: 'Copperplate';
 }
 @media (prefers-color-scheme: dark) {
   :root {
-    --bg-color: #1e1e1e;
+    --bg-color: #181818;
     --text-color: #f0f0f0;
-    --footer-bg-color: #252526;
+    --footer-bg-color: #222;
   }
 }
 html,
@@ -86,14 +87,16 @@ textarea {
   flex-grow: 1;
   width: 100%;
   padding: 20px;
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: 28px;
+  line-height: 1.4;
+  font-family: 'Copperplate';
   border: none;
   outline: none;
   resize: none;
   background-color: var(--bg-color);
   color: var(--text-color);
   box-sizing: border-box;
+  caret-color: gold;
 }
 textarea::placeholder {
   color: var(--text-color);
@@ -105,7 +108,7 @@ textarea::placeholder {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   opacity: 0.6;
   background-color: var(--footer-bg-color);
   color: var(--text-color);

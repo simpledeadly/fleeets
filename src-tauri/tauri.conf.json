@@ -37,13 +37,14 @@
     },
     "windows": [
       {
-        "fullscreen": false,
-        "height": 450,
-        "resizable": true,
         "title": "Fleets",
         "width": 700,
-        "decorations": false,
+        "height": 450,
+        "resizable": true,
         "alwaysOnTop": true,
+        "decorations": false,
+        "transparent": true,
+        "fullscreen": false,
         "visible": false
       }
     ]
