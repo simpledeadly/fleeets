@@ -7,7 +7,7 @@
   },
   "package": {
     "productName": "Fleets",
-    "version": "0.1.0"
+    "version": "../package.json"
   },
   "tauri": {
     "allowlist": {
