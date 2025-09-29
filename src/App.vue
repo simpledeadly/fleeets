@@ -114,7 +114,7 @@ textarea {
   background-color: var(--bg-color);
   color: var(--text-color);
   box-sizing: border-box;
-  caret-color: chartreuse;
+  caret-color: dodgerblue;
 }
 textarea::placeholder {
   color: var(--text-color);
