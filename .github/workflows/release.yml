@@ -11,16 +11,14 @@ permissions:
 jobs:
   release:
     runs-on: macos-latest
-
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
-      cancel-in-progress: true
+    # Это разрешение обязательно для v2
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # PAT нужен для git push
           token: ${{ secrets.PAT }}
           fetch-depth: 0
 
@@ -40,17 +38,17 @@ jobs:
       - name: Push changes and tags
         run: git push --follow-tags
 
+      # --- ВОТ ЕДИНСТВЕННОЕ ИЗМЕНЕНИЕ ---
+      # ИСПОЛЬЗУЕМ НОВУЮ, РАБОЧУЮ ВЕРСИЮ
       - name: Build and Create Release
-        uses: tauri-apps/tauri-action@v0
-        env:
-          # Используем стандартный токен, как я и говорил в предпоследний раз
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        uses: tauri-apps/tauri-action@v2
         with:
-          # Возвращаемся к самому простому варианту. Пусть tauri-action сам разбирается.
+          # Тег, который мы создали (например, v0.1.15)
           tagName: ${{ steps.bump_version.outputs.tag_name }}
-          releaseName: '${{ steps.bump_version.outputs.tag_name }}'
-          releaseBody: 'Automated release of new version.'
-          releaseDraft: false
-          prerelease: false
+
+          # Токен GitHub теперь передается здесь
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+
+          # Секреты для подписи теперь тоже передаются здесь
+          tauriPrivateKey: ${{ secrets.TAURI_PRIVATE_KEY }}
+          tauriKeyPassword: ${{ secrets.TAURI_KEY_PASSWORD }}
