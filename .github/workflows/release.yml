@@ -43,13 +43,13 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           # РЕШЕНИЕ №1: Правильный токен для создания подписи
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           tagName: ${{ steps.bump_version.outputs.tag_name }}
           # Имя релиза, которое нравится tauri-action@v0 для генерации подписи
-          releaseName: 'Release ${{ steps.bump_version.outputs.tag_name }}'
+          releaseName: '${{ steps.bump_version.outputs.tag_name }}'
 
           # РЕШЕНИЕ №2: Передача чистой версии для записи в latest.json
           appVersion: ${{ steps.bump_version.outputs.clean_version }}
