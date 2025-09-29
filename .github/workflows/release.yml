@@ -21,6 +21,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.PAT }}
+          fetch-depth: 0
 
       - name: Install Node.js & Bun & Configure Git
         uses: ./.github/actions/setup
@@ -28,17 +29,26 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
+      # --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+      # Мы получаем версию с 'v' и без 'v' в разные переменные
       - name: Bump version, create commit and tag
         id: bump_version
         run: |
-          # ЭТА КОМАНДА САМА СОЗДАСТ КОММИТ И ТЕГ
-          git pull # На всякий случай синхронизируемся
-          VERSION=$(npm version patch -m "chore: Bump version to %s [skip ci]")
-          echo "tag_name=$VERSION" >> $GITHUB_OUTPUT
+          git pull
+          # Получаем версию с префиксом 'v' (например, v0.1.8)
+          VERSION_WITH_V=$(npm version patch -m "chore: Bump version to %s [skip ci]")
+          # Удаляем 'v' из начала строки (получаем 0.1.8)
+          VERSION_CLEAN=${VERSION_WITH_V#v}
+          # Отдаем тег с 'v' для GitHub
+          echo "tag_name=${VERSION_WITH_V}" >> $GITHUB_OUTPUT
+          # Отдаем чистую версию для Tauri
+          echo "clean_version=${VERSION_CLEAN}" >> $GITHUB_OUTPUT
 
       - name: Push changes and tags
         run: git push --follow-tags
 
+      # --- И ИЗМЕНЕНИЕ ЗДЕСЬ ---
+      # Мы используем разные переменные для tagName и для внутренней версии Tauri
       - name: Build and Create Release
         uses: tauri-apps/tauri-action@v0
         env:
@@ -46,8 +56,14 @@ jobs:
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
+          # Тег для релиза на GitHub (например, v0.1.8)
           tagName: ${{ steps.bump_version.outputs.tag_name }}
-          releaseName: '${{ steps.bump_version.outputs.tag_name }}'
+          # Название релиза на GitHub (например, v0.1.8)
+          releaseName: ${{ steps.bump_version.outputs.tag_name }}
+          # КРИТИЧЕСКИ ВАЖНО: Чистая версия для генерации latest.json и подписи (например, 0.1.8)
+          version: ${{ steps.bump_version.outputs.clean_version }}
+
           releaseBody: 'Automated release of new version.'
           releaseDraft: false
           prerelease: false
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
