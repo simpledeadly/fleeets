@@ -9,7 +9,7 @@ name: 'Bump Version & Create Tag'
 
   jobs:
     bump-version:
-      if: "!contains(github.event.head_commit.message, 'chore: Bump version')"
+      if: "!startsWith(github.event.head_commit.message, 'chore: Bump version')"
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v4
