@@ -7,10 +7,11 @@ on:
 
 permissions:
   contents: write
+  releases: write
 
 jobs:
   release-macos:
-    runs-on: macos-latest # <-- ТОЛЬКО MACOS
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
@@ -22,7 +23,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
+
       - name: Install Bun
         uses: oven-sh/setup-bun@v1
 
