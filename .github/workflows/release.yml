@@ -1,29 +1,55 @@
-name: 'Create Release'
+name: 'Release'
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - master
 
 permissions:
   contents: write
 
 jobs:
-  build-tauri:
+  release:
     runs-on: macos-latest
+
+    # ЭТОТ БЛОК НЕ ДАСТ ДВУМ СБОРКАМ ИДТИ ОДНОВРЕМЕННО
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # МЫ СКАЧИВАЕМ КОД С ТОКЕНОМ, ЧТОБЫ ИМЕТЬ ПРАВА НА ПУШ
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install Node.js & Bun
+      - name: Install Node.js & Bun & Configure Git
         uses: ./.github/actions/setup
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Build and Release
+      - name: Bump version, create commit and tag
+        id: bump_version
+        run: |
+          # ЭТА КОМАНДА САМА СОЗДАСТ КОММИТ И ТЕГ
+          git pull # На всякий случай синхронизируемся
+          VERSION=$(npm version patch -m "chore: Bump version to %s [skip ci]")
+          echo "tag_name=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Push changes and tags
+        run: git push --follow-tags
+
+      - name: Build and Create Release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+        with:
+          tagName: ${{ steps.bump_version.outputs.tag_name }}
+          releaseName: 'Release ${{ steps.bump_version.outputs.tag_name }}'
+          releaseBody: 'Automated release of new version.'
+          releaseDraft: false
+          prerelease: false
