@@ -11,9 +11,10 @@ permissions:
 jobs:
   release:
     runs-on: macos-latest
-    # Это разрешение обязательно для v2
-    permissions:
-      contents: write
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
 
     steps:
       - name: Checkout repository
@@ -38,17 +39,16 @@ jobs:
       - name: Push changes and tags
         run: git push --follow-tags
 
-      # --- ВОТ ЕДИНСТВЕННОЕ ИЗМЕНЕНИЕ ---
-      # ИСПОЛЬЗУЕМ НОВУЮ, РАБОЧУЮ ВЕРСИЮ
       - name: Build and Create Release
-        uses: tauri-apps/tauri-action@v2
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
-          # Тег, который мы создали (например, v0.1.15)
           tagName: ${{ steps.bump_version.outputs.tag_name }}
-
-          # Токен GitHub теперь передается здесь
-          githubToken: ${{ secrets.GITHUB_TOKEN }}
-
-          # Секреты для подписи теперь тоже передаются здесь
-          tauriPrivateKey: ${{ secrets.TAURI_PRIVATE_KEY }}
-          tauriKeyPassword: ${{ secrets.TAURI_KEY_PASSWORD }}
+          # ИСПРАВЛЕНИЕ: Убраны одинарные кавычки для правильной обработки переменной
+          releaseName: ${{ steps.bump_version.outputs.tag_name }}
+          releaseBody: 'Automated release of new version.'
+          releaseDraft: false
+          prerelease: false
