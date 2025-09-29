@@ -17,6 +17,7 @@
     "@tauri-apps/cli": "^1.5.9",
     "@vitejs/plugin-vue": "^4.2.3",
     "typescript": "^5.0.2",
-    "vite": "^4.4.4"
+    "vite": "^4.4.4",
+    "vue-tsc": "^3.1.0"
   }
 }
