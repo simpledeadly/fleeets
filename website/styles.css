@@ -1,0 +1,135 @@
+/* File: style.css */
+
+/* 1. Подключение шрифта и базовые настройки */
+:root {
+  --bg-color: #121212;
+  --text-color: #eaeaea;
+  --primary-color: dodgerblue; /* Яркий акцент для кнопки и шортката */
+  --secondary-bg: #1e1e1e;
+  --border-color: #333333;
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+    sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-family);
+  line-height: 1.6;
+}
+
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+}
+
+/* 2. Главный контейнер */
+.container {
+  max-width: 1024px;
+  width: 100%;
+}
+
+/* 3. Элементы контента */
+h1 {
+  font-size: 48px;
+  font-weight: 700;
+  margin-bottom: 32px;
+  letter-spacing: -1px;
+}
+
+.shortcut {
+  color: var(--primary-color);
+  background-color: var(--secondary-bg);
+  padding: 4px 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  border: 1px solid var(--border-color);
+  white-space: nowrap; /* Чтобы не переносилось на другую строку */
+}
+
+/* 4. Заглушка для медиа */
+.media-placeholder {
+  width: 100%;
+  aspect-ratio: 16 / 9; /* Сохраняем пропорции 16:9 */
+  background-color: var(--secondary-bg);
+  border: 1px dashed var(--border-color);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 32px;
+  color: #888;
+  font-size: 18px;
+}
+
+/* 5. Кнопка (Call to Action) */
+.cta-button {
+  display: inline-block;
+  background-color: var(--primary-color);
+  background-color: rgba(30, 144, 255, 0.8);
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  padding: 16px 32px;
+  border-radius: 10px;
+  text-decoration: none;
+  transition: transform 0.2s ease, background-color 0.2s ease;
+}
+
+.cta-button:hover {
+  transform: scale(1.05);
+  background-color: rgba(30, 144, 255, 0.9);
+}
+
+.version-info {
+  margin-top: 8px;
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+/* 6. Футер */
+footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+}
+
+footer a {
+  color: #888;
+  text-decoration: none;
+  margin-left: 16px;
+  transition: color 0.2s ease;
+}
+
+footer a:hover {
+  color: var(--text-color);
+}
+
+/* 7. Адаптивность для мобильных устройств */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 32px;
+  }
+
+  .cta-button {
+    font-size: 16px;
+    padding: 14px 28px;
+  }
+}

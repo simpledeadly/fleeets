@@ -88,7 +88,7 @@ onMounted(async () => {
       autofocus
     ></textarea>
     <footer class="status-bar">
-      <p>Нажмите Esc или кликните вне окна, чтобы скрыть (v0.1.16)</p>
+      <p>Нажмите Esc или кликните вне окна, чтобы скрыть (v0.1.17)</p>
     </footer>
   </div>
 </template>
@@ -141,7 +141,7 @@ textarea {
   background-color: var(--bg-color);
   color: var(--text-color);
   box-sizing: border-box;
-  caret-color: coral;
+  caret-color: dodgerblue;
 }
 textarea::placeholder {
   color: var(--text-color);
