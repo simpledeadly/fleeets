@@ -1,0 +1,20 @@
+# .github/workflows/deploy-website.yml
+name: Deploy Website
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'website/**' # Запускать только если были изменения в папке website
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./website # Указываем, какую папку деплоить
