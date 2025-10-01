@@ -88,7 +88,7 @@ onMounted(async () => {
       autofocus
     ></textarea>
     <footer class="status-bar">
-      <p>Нажмите Esc или кликните вне окна, чтобы скрыть (v0.1.17)</p>
+      <p>Нажмите Esc или кликните вне окна, чтобы скрыть (v0.1.18)</p>
     </footer>
   </div>
 </template>

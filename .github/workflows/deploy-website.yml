@@ -1,20 +1,52 @@
-# .github/workflows/deploy-website.yml
-name: Deploy Website
+# File: .github/workflows/deploy-website.yml
 
+name: Deploy Website to GitHub Pages
+
+# Триггер: Запускать этот workflow при каждом пуше в ветку `master`
 on:
   push:
-    branches:
-      - master
+    branches: ['master']
     paths:
-      - 'website/**' # Запускать только если были изменения в папке website
+      - 'website/**'
+      - '.github/workflows/deploy-website.yml'
+
+  # Эта строчка позволяет запускать workflow вручную со страницы Actions
+  workflow_dispatch:
+
+# Разрешения для GITHUB_TOKEN, чтобы Action мог деплоить на gh-pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Отменяем предыдущие запуски для этого workflow, чтобы всегда деплоилась только последняя версия
+concurrency:
+  group: 'pages'
+  cancel-in-progress: true
 
 jobs:
   deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+      # 1. Скачиваем код из твоего репозитория
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # 2. Настраиваем GitHub Pages
+      - name: Setup Pages
+        uses: actions/configure-pages@v3
+
+      # 3. Собираем артефакт (в нашем случае это просто указание папки)
+      # GitHub Action создаст архив из содержимого папки `./website`
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./website # Указываем, какую папку деплоить
+          path: './website' # Указываем, что наш сайт лежит в папке 'website'
+
+      # 4. Деплоим собранный артефакт на GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2

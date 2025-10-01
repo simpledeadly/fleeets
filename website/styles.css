@@ -90,7 +90,7 @@ h1 {
 
 .cta-button:hover {
   transform: scale(1.05);
-  background-color: rgba(30, 144, 255, 0.9);
+  background-color: rgba(30, 144, 255, 1);
 }
 
 .version-info {
