@@ -4,6 +4,11 @@ on:
   push:
     branches:
       - master
+    paths-ignore:
+      - 'website/**'
+      - '.github/workflows/deploy-website.yml'
+      - 'docs/**'
+      - '**.md'
 
 permissions:
   contents: write
