@@ -1,0 +1,120 @@
+<!-- File: index.html -->
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0"
+    />
+    <title>Fleeets – Самый быстрый способ зафиксировать мысль.</title>
+    <meta
+      name="description"
+      content="Fleeets — это минималистичное приложение для macOS, созданное для скорости. Нажмите шорткат, запишите мысль, продолжайте."
+    />
+
+    <!-- Подключаем стили -->
+    <link
+      rel="stylesheet"
+      href="styles.css"
+    />
+
+    <!-- Подключаем шрифты с Google Fonts -->
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Главный заголовок, который продает идею -->
+      <h1>Пришла мысль? <span class="shortcut">⌥+Space</span> → Записал. Всё.</h1>
+
+      <!-- Заглушка под твою гифку или видео -->
+      <div class="media-placeholder">
+        <p>Здесь будет GIF-демонстрация</p>
+      </div>
+
+      <!-- Главная кнопка -->
+      <a
+        href="#"
+        id="download-button"
+        class="cta-button"
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        Скачать для macOS
+      </a>
+
+      <!-- Информация о версии и будущем -->
+      <p class="version-info">
+        Бесплатно | v<span id="version-placeholder">...</span> | Скоро для Web.
+      </p>
+    </div>
+
+    <footer>
+      <p>© 2025 Fleeets</p>
+      <!-- Оставь заглушки под будущие ссылки -->
+      <a
+        href="https://github.com/simpledeadly/fleeets"
+        target="_blank"
+      >
+        GitHub
+      </a>
+      <a href="#">Политика конфиденциальности</a>
+      <a href="#">Пользовательское соглашение</a>
+    </footer>
+
+    <script>
+      async function setupDownloadLink() {
+        const repo = 'simpledeadly/fleets'
+        const downloadButton = document.getElementById('download-button')
+        const versionElement = document.getElementById('version-placeholder')
+
+        if (!downloadButton) return
+
+        try {
+          const response = await fetch(`https://api.github.com/repos/${repo}/releases/latest`)
+          if (!response.ok) throw new Error('API request failed')
+
+          const data = await response.json()
+
+          // 1. Обновляем номер версии на странице
+          const latestVersion = data.tag_name.replace('v', '')
+          if (versionElement) {
+            versionElement.textContent = latestVersion
+          }
+
+          // 2. Ищем нужный файл среди ассетов
+          // Мы ищем файл, который содержит `aarch64.dmg` (для Apple Silicon)
+          const asset = data.assets.find((asset) => asset.name.includes('aarch64.dmg'))
+
+          if (asset) {
+            // 3. Если файл найден, подставляем ссылку и меняем текст кнопки
+            downloadButton.href = asset.browser_download_url
+            downloadButton.textContent = 'Скачать для macOS'
+          } else {
+            // Запасной вариант, если .dmg не найден
+            downloadButton.textContent = 'Релиз не найден'
+            downloadButton.href = `https://github.com/${repo}/releases/latest`
+          }
+        } catch (error) {
+          console.error('Failed to fetch release info:', error)
+          downloadButton.textContent = 'Посмотреть на GitHub'
+          downloadButton.href = `https://github.com/${repo}/releases`
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', setupDownloadLink)
+    </script>
+  </body>
+</html>
