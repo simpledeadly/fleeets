@@ -33,20 +33,20 @@ jobs:
     steps:
       # 1. Скачиваем код из твоего репозитория
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       # 2. Настраиваем GitHub Pages
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v4
 
       # 3. Собираем артефакт (в нашем случае это просто указание папки)
       # GitHub Action создаст архив из содержимого папки `./website`
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: './website' # Указываем, что наш сайт лежит в папке 'website'
 
       # 4. Деплоим собранный артефакт на GitHub Pages
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
