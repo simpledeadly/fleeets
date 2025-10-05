@@ -16,9 +16,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "74D3032EA7C987535C67A5AE"
-               BuildableName = "fleets_iOS.app"
-               BlueprintName = "fleets_iOS"
-               ReferencedContainer = "container:fleets.xcodeproj">
+               BuildableName = "fleeets_iOS.app"
+               BlueprintName = "fleeets_iOS"
+               ReferencedContainer = "container:fleeets.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -33,9 +33,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "74D3032EA7C987535C67A5AE"
-            BuildableName = "fleets_iOS.app"
-            BlueprintName = "fleets_iOS"
-            ReferencedContainer = "container:fleets.xcodeproj">
+            BuildableName = "fleeets_iOS.app"
+            BlueprintName = "fleeets_iOS"
+            ReferencedContainer = "container:fleeets.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -70,9 +70,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "74D3032EA7C987535C67A5AE"
-            BuildableName = "fleets_iOS.app"
-            BlueprintName = "fleets_iOS"
-            ReferencedContainer = "container:fleets.xcodeproj">
+            BuildableName = "fleeets_iOS.app"
+            BlueprintName = "fleeets_iOS"
+            ReferencedContainer = "container:fleeets.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>
@@ -101,9 +101,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "74D3032EA7C987535C67A5AE"
-            BuildableName = "fleets_iOS.app"
-            BlueprintName = "fleets_iOS"
-            ReferencedContainer = "container:fleets.xcodeproj">
+            BuildableName = "fleeets_iOS.app"
+            BlueprintName = "fleeets_iOS"
+            ReferencedContainer = "container:fleeets.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <CommandLineArguments>

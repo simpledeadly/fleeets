@@ -1,6 +1,6 @@
-name: fleets
+name: fleeets
 options:
-  bundleIdPrefix: com.simpledeadly.fleets
+  bundleIdPrefix: com.simpledeadly.fleeets
   deploymentTarget:
     iOS: 14.0
 fileGroups: [../../src]
@@ -10,8 +10,8 @@ configs:
 settingGroups:
   app:
     base:
-      PRODUCT_NAME: fleets
-      PRODUCT_BUNDLE_IDENTIFIER: com.simpledeadly.fleets
+      PRODUCT_NAME: fleeets
+      PRODUCT_BUNDLE_IDENTIFIER: com.simpledeadly.fleeets
 targetTemplates:
   app:
     type: application
@@ -24,20 +24,20 @@ targetTemplates:
     settings:
       groups: [app]
 targets:
-  fleets_iOS:
+  fleeets_iOS:
     type: application
     platform: iOS
     sources:
       - path: Sources
       - path: Assets.xcassets
       - path: Externals
-      - path: fleets_iOS
+      - path: fleeets_iOS
       - path: assets
         buildPhase: resources
         type: folder
       - path: LaunchScreen.storyboard
     info:
-      path: fleets_iOS/Info.plist
+      path: fleeets_iOS/Info.plist
       properties:
         LSRequiresIPhoneOS: true
         UILaunchStoryboardName: LaunchScreen
@@ -54,7 +54,7 @@ targets:
         CFBundleShortVersionString: 0.1.0
         CFBundleVersion: "0.1.0"
     entitlements:
-      path: fleets_iOS/fleets_iOS.entitlements
+      path: fleeets_iOS/fleeets_iOS.entitlements
     scheme:
       environmentVariables:
         RUST_BACKTRACE: full

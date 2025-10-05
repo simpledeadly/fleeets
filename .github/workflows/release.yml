@@ -35,7 +35,7 @@ jobs:
         run: |
           git pull
           # VERSION_WITH_V будет, например, 'v0.1.25'
-          VERSION_WITH_V=$(npm version patch -m "chore: Bump version to %s [skip ci]")
+          VERSION_WITH_V=$(npm version patch -m "chore: bumped version to %s [skip ci]")
           # VERSION_CLEAN будет '0.1.25'
           VERSION_CLEAN=${VERSION_WITH_V#v}
           echo "tag_name=${VERSION_WITH_V}" >> $GITHUB_OUTPUT

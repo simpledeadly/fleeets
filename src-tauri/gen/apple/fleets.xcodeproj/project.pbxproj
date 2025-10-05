@@ -23,13 +23,13 @@
 
 /* Begin PBXFileReference section */
 		231EDB8988D4D93B774D173C /* bindings.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = bindings.h; sourceTree = "<group>"; };
-		3A7E1C9D41B761CB4A9E876E /* fleets_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = fleets_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3A7E1C9D41B761CB4A9E876E /* fleeets_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = fleeets_iOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3FD21F641712323CCB7AD6B3 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
 		44360919425CE0B04DEE67E1 /* main.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = main.mm; sourceTree = "<group>"; };
 		45D9CF0F9B0878A4A191BAA1 /* MetalKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MetalKit.framework; path = System/Library/Frameworks/MetalKit.framework; sourceTree = SDKROOT; };
 		4A48C5B40B6984FC014213A4 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
 		58C0B233F97886EFB501D7A7 /* Security.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Security.framework; path = System/Library/Frameworks/Security.framework; sourceTree = SDKROOT; };
-		596C4D9949BF0E73274BDD9C /* fleets_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = fleets_iOS.entitlements; sourceTree = "<group>"; };
+		596C4D9949BF0E73274BDD9C /* fleeets_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = fleeets_iOS.entitlements; sourceTree = "<group>"; };
 		5FDD8331DFAF294EBF8C0F86 /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
 		774A8034CD0AC5CCF0F660E5 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		82ECA8129B5F5EFFDDA3594A /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
@@ -68,19 +68,19 @@
 			path = Externals;
 			sourceTree = "<group>";
 		};
-		32ADA4AD117C9D0798201BC2 /* fleets */ = {
+		32ADA4AD117C9D0798201BC2 /* fleeets */ = {
 			isa = PBXGroup;
 			children = (
 				44360919425CE0B04DEE67E1 /* main.mm */,
 				B805DD6366D6CAFECCD1BFFB /* bindings */,
 			);
-			path = fleets;
+			path = fleeets;
 			sourceTree = "<group>";
 		};
 		5137081AE05619317499F924 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				32ADA4AD117C9D0798201BC2 /* fleets */,
+				32ADA4AD117C9D0798201BC2 /* fleeets */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -103,7 +103,7 @@
 		A7E0470E86BC613F708F99E4 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				3A7E1C9D41B761CB4A9E876E /* fleets_iOS.app */,
+				3A7E1C9D41B761CB4A9E876E /* fleeets_iOS.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -133,7 +133,7 @@
 				F7F1CC5EB7630841967C3CE2 /* Assets.xcassets */,
 				E12B236C35BB36D8086364C2 /* LaunchScreen.storyboard */,
 				18D683F9C65064105BD3E847 /* Externals */,
-				F75E0F252783952CE0750293 /* fleets_iOS */,
+				F75E0F252783952CE0750293 /* fleeets_iOS */,
 				5137081AE05619317499F924 /* Sources */,
 				B79CA5A7A034B520139AE655 /* src */,
 				A6E4491AA17673E7C422CE32 /* Frameworks */,
@@ -141,21 +141,21 @@
 			);
 			sourceTree = "<group>";
 		};
-		F75E0F252783952CE0750293 /* fleets_iOS */ = {
+		F75E0F252783952CE0750293 /* fleeets_iOS */ = {
 			isa = PBXGroup;
 			children = (
-				596C4D9949BF0E73274BDD9C /* fleets_iOS.entitlements */,
+				596C4D9949BF0E73274BDD9C /* fleeets_iOS.entitlements */,
 				E5F1F1520A109E9F7F8B9C59 /* Info.plist */,
 			);
-			path = fleets_iOS;
+			path = fleeets_iOS;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		74D3032EA7C987535C67A5AE /* fleets_iOS */ = {
+		74D3032EA7C987535C67A5AE /* fleeets_iOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 25C754B0E3845007EC231BE5 /* Build configuration list for PBXNativeTarget "fleets_iOS" */;
+			buildConfigurationList = 25C754B0E3845007EC231BE5 /* Build configuration list for PBXNativeTarget "fleeets_iOS" */;
 			buildPhases = (
 				78A2797B122ABBAEE5DA35D4 /* Build Rust Code */,
 				4E1560EAF828003CA61701B8 /* Sources */,
@@ -166,11 +166,11 @@
 			);
 			dependencies = (
 			);
-			name = fleets_iOS;
+			name = fleeets_iOS;
 			packageProductDependencies = (
 			);
-			productName = fleets_iOS;
-			productReference = 3A7E1C9D41B761CB4A9E876E /* fleets_iOS.app */;
+			productName = fleeets_iOS;
+			productReference = 3A7E1C9D41B761CB4A9E876E /* fleeets_iOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -182,7 +182,7 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 			};
-			buildConfigurationList = 6CCA580FC2C42E25EBCEB766 /* Build configuration list for PBXProject "fleets" */;
+			buildConfigurationList = 6CCA580FC2C42E25EBCEB766 /* Build configuration list for PBXProject "fleeets" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -196,7 +196,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				74D3032EA7C987535C67A5AE /* fleets_iOS */,
+				74D3032EA7C987535C67A5AE /* fleeets_iOS */,
 			);
 		};
 /* End PBXProject section */
@@ -314,7 +314,7 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = fleets_iOS/fleets_iOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = fleeets_iOS/fleeets_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
@@ -322,15 +322,15 @@
 					"$(inherited)",
 					"\".\"",
 				);
-				INFOPLIST_FILE = fleets_iOS/Info.plist;
+				INFOPLIST_FILE = fleeets_iOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.simpledeadly.fleets;
-				PRODUCT_NAME = fleets;
+				PRODUCT_BUNDLE_IDENTIFIER = com.simpledeadly.fleeets;
+				PRODUCT_NAME = fleeets;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -408,7 +408,7 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = fleets_iOS/fleets_iOS.entitlements;
+				CODE_SIGN_ENTITLEMENTS = fleeets_iOS/fleeets_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
@@ -416,15 +416,15 @@
 					"$(inherited)",
 					"\".\"",
 				);
-				INFOPLIST_FILE = fleets_iOS/Info.plist;
+				INFOPLIST_FILE = fleeets_iOS/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.simpledeadly.fleets;
-				PRODUCT_NAME = fleets;
+				PRODUCT_BUNDLE_IDENTIFIER = com.simpledeadly.fleeets;
+				PRODUCT_NAME = fleeets;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -434,7 +434,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		25C754B0E3845007EC231BE5 /* Build configuration list for PBXNativeTarget "fleets_iOS" */ = {
+		25C754B0E3845007EC231BE5 /* Build configuration list for PBXNativeTarget "fleeets_iOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3285900FDCCBAF566CD079BC /* debug */,
@@ -443,7 +443,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = debug;
 		};
-		6CCA580FC2C42E25EBCEB766 /* Build configuration list for PBXProject "fleets" */ = {
+		6CCA580FC2C42E25EBCEB766 /* Build configuration list for PBXProject "fleeets" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4D0A21F1FBD4CF5A98402BC1 /* debug */,

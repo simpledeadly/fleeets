@@ -1,13 +1,13 @@
 # Uncomment the next line to define a global platform for your project
 
-target 'fleets_iOS' do
+target 'fleeets_iOS' do
 platform :ios, '14.0'
-  # Pods for fleets_iOS
+  # Pods for fleeets_iOS
 end
 
-target 'fleets_macOS' do
+target 'fleeets_macOS' do
 platform :osx, '11.0'
-  # Pods for fleets_macOS
+  # Pods for fleeets_macOS
 end
 
 # Delete the deployment target for iOS and macOS, causing it to be inherited from the Podfile

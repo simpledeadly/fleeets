@@ -6,7 +6,7 @@
     "distDir": "../dist"
   },
   "package": {
-    "productName": "Fleets",
+    "productName": "Fleeets",
     "version": "../package.json"
   },
   "tauri": {
@@ -29,7 +29,7 @@
     "bundle": {
       "active": true,
       "targets": "all",
-      "identifier": "com.simpledeadly.fleets",
+      "identifier": "com.simpledeadly.fleeets",
       "icon": []
     },
     "security": {
@@ -37,7 +37,7 @@
     },
     "windows": [
       {
-        "title": "Fleets",
+        "title": "Fleeets",
         "width": 700,
         "height": 450,
         "resizable": true,
@@ -51,7 +51,7 @@
     "updater": {
       "active": true,
       "dialog": false,
-      "endpoints": ["https://github.com/simpledeadly/fleets/releases/latest/download/latest.json"],
+      "endpoints": ["https://github.com/simpledeadly/fleeets/releases/latest/download/latest.json"],
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDk5NkQyNTAzRTdDRjVGRTEKUldUaFg4L25BeVZ0bVlQOW1xV0RZNlV2THVTVkd4enE4QUw1WjJVaG1YNkc3aUl0N2JUZEp0d1kK"
     }
   }
