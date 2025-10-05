@@ -7,7 +7,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0"
     />
-    <title>Fleeets – Самый быстрый способ зафиксировать мысль.</title>
+    <title>Fleeets – самый быстрый способ зафиксировать мысль.</title>
     <meta
       name="description"
       content="Fleeets — это минималистичное приложение для macOS, созданное для скорости. Нажмите шорткат, запишите мысль, продолжайте."
@@ -61,6 +61,13 @@
       rel="manifest"
       href="/fleeets/icons/site.webmanifest"
     />
+
+    <script src="./js/sentry.bundle.min.js"></script>
+    <script
+      defer
+      src="http://localhost:3002/script.js"
+      data-website-id="615a937f-c14f-48fe-9ca6-e10eb95e336b"
+    ></script>
   </head>
   <body>
     <div class="container">
@@ -98,10 +105,15 @@
       </a>
       <a href="#">Политика конфиденциальности</a>
       <a href="#">Пользовательское соглашение</a>
-      <p style="margin-top: 4px;">© 2025 Fleeets</p>
+      <p style="margin-top: 4px">© 2025 Fleeets</p>
     </footer>
 
     <script>
+      Sentry.init({
+        dsn: 'http://5a3cf3195995473b86da597d0c65f1ad@localhost:8000/1',
+        tracesSampleRate: 0.01,
+      })
+
       async function setupDownloadLink() {
         const repo = 'simpledeadly/fleeets'
         const downloadButton = document.getElementById('download-button')
@@ -145,6 +157,9 @@
           }
         } catch (error) {
           console.error('Failed to fetch release info:', error)
+
+          Sentry.captureException(error)
+
           downloadButton.textContent = 'Посмотреть на GitHub'
           downloadButton.href = `https://github.com/${repo}/releases`
         }
