@@ -10,13 +10,17 @@
     "version": "../package.json"
   },
   "tauri": {
+    "macOSPrivateApi": true,
     "allowlist": {
       "all": false,
       "fs": {
         "all": true,
-        "scope": ["$APPCONFIG/*"]
+        "scope": ["$DOWNLOAD/*", "$DESKTOP/*", "$DOCUMENTS/*", "$APPCONFIG/*"]
       },
       "globalShortcut": {
+        "all": true
+      },
+      "dialog": {
         "all": true
       },
       "path": {
@@ -24,6 +28,11 @@
       },
       "window": {
         "all": true
+      },
+      "http": {
+        "all": true,
+        "request": true,
+        "scope": ["https://*"]
       }
     },
     "bundle": {
@@ -38,11 +47,11 @@
     "windows": [
       {
         "title": "Fleeets",
-        "width": 700,
-        "height": 450,
+        "width": 900,
+        "height": 700,
         "resizable": true,
-        "alwaysOnTop": true,
-        "decorations": false,
+        "alwaysOnTop": false,
+        "decorations": true,
         "transparent": true,
         "fullscreen": false,
         "visible": false

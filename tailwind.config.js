@@ -4,11 +4,17 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ['Raleway', 'sans-serif'],
       },
       colors: {
-        glass: 'rgba(30, 30, 30, 0.6)',
-        glassBorder: 'rgba(255, 255, 255, 0.1)',
+        bg: '#09090b', // Глубокий черный
+        surface: '#18181b', // Чуть светлее
+        dim: '#71717a', // Серый текст
+
+        // Возвращаем базу, если она пропала
+        white: '#ffffff',
+        black: '#000000',
+        transparent: 'transparent',
       },
     },
   },
