@@ -24,16 +24,28 @@ jobs:
           token: ${{ secrets.PAT }}
           fetch-depth: 0
 
-      - name: Install Node.js & Bun & Configure Git
-        uses: ./.github/actions/setup
+      # 1. Ставим Node.js вместо Bun
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
 
+      # 2. Настраиваем Git (нужно для npm version, чтобы создать коммит)
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      # 3. Чистая установка через npm
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Bump version and prepare variables
         id: bump_version
         run: |
           git pull
+          # npm version сам обновит package.json и package-lock.json и создаст коммит
           # VERSION_WITH_V будет, например, 'v0.1.25'
           VERSION_WITH_V=$(npm version patch -m "chore: bumped version to %s [skip ci]")
           # VERSION_CLEAN будет '0.1.25'
@@ -47,18 +59,13 @@ jobs:
       - name: Build and Create Release
         uses: tauri-apps/tauri-action@v0
         env:
-          # РЕШЕНИЕ №1: Правильный токен для создания подписи
           GITHUB_TOKEN: ${{ secrets.PAT }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           tagName: ${{ steps.bump_version.outputs.tag_name }}
-          # Имя релиза, которое нравится tauri-action@v0 для генерации подписи
           releaseName: '${{ steps.bump_version.outputs.tag_name }}'
-
-          # РЕШЕНИЕ №2: Передача чистой версии для записи в latest.json
           appVersion: ${{ steps.bump_version.outputs.clean_version }}
-
           releaseBody: 'Automated release of new version.'
           releaseDraft: false
           prerelease: false
