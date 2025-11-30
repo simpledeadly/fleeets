@@ -62,6 +62,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.PAT }}
           TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
           TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_KEY: ${{ secrets.VITE_SUPABASE_KEY }}
         with:
           tagName: ${{ steps.bump_version.outputs.tag_name }}
           releaseName: '${{ steps.bump_version.outputs.tag_name }}'
