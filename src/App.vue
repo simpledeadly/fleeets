@@ -1,162 +1,73 @@
-<!-- File: src/App.vue -->
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { invoke } from '@tauri-apps/api'
-import { appWindow } from '@tauri-apps/api/window'
-import type { Event } from '@tauri-apps/api/event'
-import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
-import { ask } from '@tauri-apps/api/dialog'
+import { ref } from 'vue'
+import { supabase } from './supabase'
+import TelegramLogin from './components/TelegramLogin.vue'
 
-async function checkForUpdates() {
-  try {
-    await invoke('log_to_console', { message: 'Проверяем обновления...' })
-    const { shouldUpdate, manifest } = await checkUpdate()
+const botName = import.meta.env.VITE_TELEGRAM_BOT_NAME
+const user = ref<any>(null)
 
-    await invoke('log_to_console', { message: `Нужно обновиться: ${shouldUpdate}` })
-    if (manifest) {
-      await invoke('log_to_console', {
-        message: `Манифест получен: версия ${manifest.version}, дата: ${manifest.date}`,
-      })
-    } else {
-      await invoke('log_to_console', { message: 'Манифест НЕ получен (null).' })
-    }
+const handleLogin = async (telegramUser: any) => {
+  console.log('Logging in via Supabase Function...')
 
-    if (shouldUpdate) {
-      await invoke('log_to_console', { message: 'Показываем диалог обновления...' })
-      const wantToUpdate = await ask(
-        `Доступна новая версия: ${manifest?.version}. Хотите установить ее сейчас?`,
-        {
-          title: 'Доступно обновление',
-          okLabel: 'Установить и перезапустить',
-          cancelLabel: 'Позже',
-        }
-      )
+  // 1. Вызываем нашу функцию
+  const { data, error } = await supabase.functions.invoke('telegram-auth', {
+    body: { user: telegramUser },
+  })
 
-      if (wantToUpdate) {
-        await invoke('log_to_console', {
-          message: 'Пользователь согласился. Запускаем установку...',
-        })
-        await installUpdate()
-      } else {
-        await invoke('log_to_console', { message: 'Пользователь отказался от обновления.' })
-      }
-    }
-  } catch (err) {
-    await invoke('log_to_console', {
-      message: `Критическая ошибка при проверке обновлений: ${JSON.stringify(err)}`,
+  if (error) {
+    alert('Ошибка входа: ' + error.message)
+    return
+  }
+
+  // 2. Если функция вернула сессию, сохраняем её в клиенте
+  if (data?.access_token) {
+    const { error: sessionError } = await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
     })
+
+    if (sessionError) {
+      console.error('Ошибка установки сессии', sessionError)
+    } else {
+      console.log('Успешный вход!', data.user)
+      // Тут можно перезагрузить страницу или обновить стейт
+      user.value = data.user
+    }
   }
 }
-
-const noteContent = ref('')
-
-const saveNote = async () => {
-  await invoke('save_note', { content: noteContent.value })
-}
-
-const loadNote = async () => {
-  noteContent.value = await invoke<string>('load_note')
-}
-
-onMounted(async () => {
-  await checkForUpdates()
-
-  loadNote()
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      appWindow.hide()
-    }
-  })
-
-  appWindow.onFocusChanged((event: Event<boolean>) => {
-    const focused = event.payload
-    if (!focused) {
-      appWindow.hide()
-    }
-  })
-})
 </script>
 
 <template>
   <div class="container">
-    <textarea
-      v-model="noteContent"
-      @input="saveNote"
-      placeholder="Начните печатать вашу заметку..."
-      spellcheck="false"
-      autofocus
-    ></textarea>
-    <footer class="status-bar">
-      <p>Нажмите Esc или кликните вне окна, чтобы скрыть (v0.1.23)</p>
-    </footer>
+    <div v-if="!user">
+      <h1>Добро пожаловать в Fleeets</h1>
+      <p>Пожалуйста, войдите, чтобы синхронизировать заметки.</p>
+
+      <!-- Кнопка входа -->
+      <TelegramLogin
+        :botName="botName"
+        @login="handleLogin"
+      />
+    </div>
+
+    <div v-else>
+      <h1>Привет, {{ user.first_name }}!</h1>
+      <pre>{{ user }}</pre>
+      <button @click="user = null">Выйти</button>
+    </div>
   </div>
 </template>
 
 <style>
-:root {
-  --bg-color: #ffffff;
-  --text-color: #1e1e1e;
-  --footer-bg-color: #f5f5f7;
-  /* --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; */
-  --font-family: 'Copperplate';
-}
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg-color: #181818;
-    --text-color: #f0f0f0;
-    --footer-bg-color: #222;
-  }
-}
-html,
-body,
-#app,
-.container {
-  height: 100%;
-  width: 100%;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  font-family: var(--font-family);
-}
 body {
-  background-color: var(--bg-color);
+  background: #1e1e1e;
+  color: white;
+  font-family: sans-serif;
 }
 .container {
   display: flex;
   flex-direction: column;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-textarea {
-  flex-grow: 1;
-  width: 100%;
-  padding: 20px;
-  font-size: 28px;
-  line-height: 1.4;
-  font-family: 'Copperplate';
-  border: none;
-  outline: none;
-  resize: none;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  box-sizing: border-box;
-  caret-color: dodgerblue;
-}
-textarea::placeholder {
-  color: var(--text-color);
-  opacity: 0.4;
-}
-.status-bar {
-  height: 30px;
-  flex-shrink: 0;
-  display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  opacity: 0.6;
-  background-color: var(--footer-bg-color);
-  color: var(--text-color);
-  border-top: 1px solid rgba(128, 128, 128, 0.1);
+  padding-top: 50px;
 }
 </style>

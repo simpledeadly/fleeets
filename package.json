@@ -5,11 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:host": "vite --host",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.86.0",
     "@tauri-apps/api": "^1.5.3",
     "vue": "^3.3.4"
   },
