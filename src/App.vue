@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
+import { invoke } from '@tauri-apps/api'
+import { ask } from '@tauri-apps/api/dialog'
+import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
 import { Zap } from 'lucide-vue-next'
 import { useAuth } from './composables/useAuth'
 import { useAppSettings } from './composables/useAppSettings'
@@ -23,6 +26,47 @@ const {
   initSettings,
   cleanupSettings,
 } = useAppSettings()
+
+async function checkForUpdates() {
+  try {
+    await invoke('log_to_console', { message: 'Проверяем обновления...' })
+    const { shouldUpdate, manifest } = await checkUpdate()
+
+    await invoke('log_to_console', { message: `Нужно обновиться: ${shouldUpdate}` })
+    if (manifest) {
+      await invoke('log_to_console', {
+        message: `Манифест получен: версия ${manifest.version}, дата: ${manifest.date}`,
+      })
+    } else {
+      await invoke('log_to_console', { message: 'Манифест НЕ получен (null).' })
+    }
+
+    if (shouldUpdate) {
+      await invoke('log_to_console', { message: 'Показываем диалог обновления...' })
+      const wantToUpdate = await ask(
+        `Доступна новая версия: ${manifest?.version}. Хотите установить ее сейчас?`,
+        {
+          title: 'Доступно обновление',
+          okLabel: 'Установить и перезапустить',
+          cancelLabel: 'Позже',
+        }
+      )
+
+      if (wantToUpdate) {
+        await invoke('log_to_console', {
+          message: 'Пользователь согласился. Запускаем установку...',
+        })
+        await installUpdate()
+      } else {
+        await invoke('log_to_console', { message: 'Пользователь отказался от обновления.' })
+      }
+    }
+  } catch (err) {
+    await invoke('log_to_console', {
+      message: `Критическая ошибка при проверке обновлений: ${JSON.stringify(err)}`,
+    })
+  }
+}
 
 const isBooting = ref(true)
 
@@ -63,6 +107,8 @@ const onNoteSubmit = (payload: { content: string; file?: File }) => {
 }
 
 onMounted(async () => {
+  // 0. Сначала проверяем на наличие обновлений
+  await checkForUpdates()
   // 1. Сначала применяем настройки (масштаб, тема)
   await initSettings()
 
