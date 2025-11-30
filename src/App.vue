@@ -9,6 +9,9 @@ const user = ref<any>(null)
 const notesStore = useNotesStore()
 const activeNoteId = ref<string | null>(null)
 
+const email = ref('')
+const loading = ref(false)
+
 // Computed: Активная заметка для редактора
 const activeNote = computed(() => notesStore.notes.find((n) => n.id === activeNoteId.value))
 
@@ -21,6 +24,24 @@ onMounted(async () => {
     if (notesStore.notes.length > 0) activeNoteId.value = notesStore.notes[0].id
   }
 })
+
+const handleEmailLogin = async () => {
+  try {
+    loading.value = true
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.value,
+      options: {
+        emailRedirectTo: window.location.origin, // Вернет обратно на сайт
+      },
+    })
+    if (error) throw error
+    alert('Ссылка для входа отправлена на ' + email.value + '!\nПроверьте почту.')
+  } catch (error: any) {
+    alert(error.error_description || error.message)
+  } finally {
+    loading.value = false
+  }
+}
 
 const handleLogin = async (telegramUser: any) => {
   const { data } = await supabase.functions.invoke('telegram-auth', {
@@ -39,7 +60,7 @@ const handleLogin = async (telegramUser: any) => {
 
 const createNote = () => {
   notesStore.addNote()
-  
+
   if (notesStore.notes.length > 0) {
     activeNoteId.value = notesStore.notes[0].id
   }
@@ -107,10 +128,31 @@ const getPreview = (content: string) => {
     >
       <h1 class="text-3xl font-bold mb-2">Fleeets</h1>
       <p class="text-gray-400 mb-6">Ваши мысли, синхронизированные везде.</p>
+
+      <!-- Телеграм (который временно в бане) -->
       <TelegramLogin
-        botName="fleeets_app_bot"
+        botName="fleeets_auth_bot"
         @login="handleLogin"
       />
+
+      <div class="my-4 text-xs text-gray-500">или войдите через почту</div>
+
+      <!-- Вход по почте -->
+      <div class="flex flex-col gap-2">
+        <input
+          v-model="email"
+          type="email"
+          placeholder="your@email.com"
+          class="p-2 rounded bg-white/5 border border-white/10 text-white outline-none focus:border-blue-500"
+        />
+        <button
+          @click="handleEmailLogin"
+          :disabled="loading"
+          class="bg-blue-600 hover:bg-blue-500 text-white py-2 px-4 rounded transition disabled:opacity-50"
+        >
+          {{ loading ? 'Отправка...' : 'Получить ссылку для входа' }}
+        </button>
+      </div>
     </div>
 
     <!-- ГЛАВНЫЙ ИНТЕРФЕЙС -->
