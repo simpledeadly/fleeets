@@ -12,6 +12,16 @@
       content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://oauth.telegram.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://telegram.org https://oauth.telegram.org https://*.supabase.co; frame-src 'self' https://oauth.telegram.org; connect-src 'self' https://*.supabase.co;"
     />
     <title>Fleeets</title>
+    <script>
+      ;(function () {
+        try {
+          const savedScale = localStorage.getItem('fleeets_scale')
+          if (savedScale) {
+            document.documentElement.style.fontSize = 16 * (Number(savedScale) / 100) + 'px'
+          }
+        } catch (e) {}
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

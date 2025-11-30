@@ -6,7 +6,7 @@ export function useAppSettings() {
   const isTauri = window.__TAURI__ !== undefined
   const appVersion = ref('0.0.0')
   const isComfortMode = ref(true)
-  const uiScale = ref(100)
+  const uiScale = ref(110)
   const isOffline = ref(!navigator.onLine)
 
   const updateOnlineStatus = () => (isOffline.value = !navigator.onLine)

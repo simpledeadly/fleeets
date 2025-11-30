@@ -35,10 +35,9 @@ const submitNote = () => {
 
 <template>
   <div
-    class="shrink-0 z-30 border-t border-[#27272a]"
+    class="shrink-0 z-30 border-t border-[#27272a] bg-[#0c0c0e]"
     :class="[
       props.isComfortMode ? 'px-4 md:px-[15%] lg:px-[25%] py-0' : 'px-2 py-0',
-      props.isTauri ? 'bg-[#0c0c0e]' : 'bg-[#0c0c0e]/90 backdrop-blur-md',
     ]"
   >
     <div class="flex items-center gap-1.5 bg-transparent transition-all duration-100">

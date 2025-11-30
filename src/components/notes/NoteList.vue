@@ -32,8 +32,8 @@ defineExpose({ scrollToBottom })
         v-if="notesStore.notes.length === 0"
         class="text-center text-[#52525b] select-none flex flex-col items-center gap-4 opacity-70 py-20 my-auto animate-enter-up"
       >
-        <Zap class="w-12 h-12 stroke-[1.2] text-yellow-500" />
-        <span class="text-sm font-medium tracking-wide">Добавьте свой первый флит</span>
+        <Zap class="w-12 h-12 text-yellow-500/60" />
+        <span class="text-sm font-medium tracking-wide">Буфер пуст</span>
       </div>
 
       <NoteItem

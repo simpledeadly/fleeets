@@ -18,7 +18,7 @@ export function useAuth() {
     return false
   }
 
-  const handleTelegramLogin = async (tgUser: any) => {
+  const handleTelegramLogin = async (tgUser: any): Promise<boolean> => {
     try {
       const { data, error } = await supabase.functions.invoke('telegram-auth', {
         body: { user: tgUser },
@@ -33,10 +33,12 @@ export function useAuth() {
         const { data: u } = await supabase.auth.getUser()
         user.value = u.user
         await notesStore.fetchNotes()
+        return true
       }
     } catch (e: any) {
       alert('Ошибка: ' + e.message)
     }
+    return false
   }
 
   const handleEmailLogin = async (email: string) => {

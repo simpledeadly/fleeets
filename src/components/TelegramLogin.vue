@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { FileQuestion } from 'lucide-vue-next'
 import { onMounted } from 'vue'
 
 // const props = defineProps<{
@@ -54,7 +55,7 @@ const devLogin = () => {
     @click="devLogin"
     class="dev-btn"
   >
-    🕵️‍♂️ Dev Fake Login
+    <FileQuestion class="w-8 h-8" />
   </button>
 </template>
 
@@ -62,13 +63,17 @@ const devLogin = () => {
 .login-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 20px;
+  /* margin-top: 20px; */
 }
 .dev-btn {
-  background: #333;
-  color: #aaa;
-  border: 1px dashed #555;
-  padding: 5px 10px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  /* background: #333; */
+  /* border: 1px dashed #555; */
+  /* padding: 5px 10px; */
+  color: #555;
+  border-radius: 12px;
   cursor: pointer;
 }
 </style>
