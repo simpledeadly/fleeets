@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 
-const props = defineProps<{
-  botName: string
-}>()
+// const props = defineProps<{
+//   botName: string
+// }>()
 
 const emit = defineEmits(['login'])
 
