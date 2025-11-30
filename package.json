@@ -13,6 +13,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.86.0",
     "@tauri-apps/api": "^1.5.3",
+    "@vercel/analytics": "^1.5.0",
+    "@vercel/speed-insights": "^1.2.0",
     "lucide-vue-next": "^0.555.0",
     "pinia": "^3.0.4",
     "vue": "^3.3.4"

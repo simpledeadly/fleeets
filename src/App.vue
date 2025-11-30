@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
+import { inject } from '@vercel/analytics'
+import { injectSpeedInsights } from '@vercel/speed-insights'
 import { supabase } from './supabase'
 import TelegramLogin from './components/TelegramLogin.vue'
 import { useNotesStore } from './stores/notes'
 import { Plus, Trash2, LogOut, Menu } from 'lucide-vue-next'
+
+inject()
+injectSpeedInsights()
 
 const user = ref<any>(null)
 const notesStore = useNotesStore()
