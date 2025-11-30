@@ -178,7 +178,7 @@ onUnmounted(() => {
           <div
             v-if="showSettings"
             @click="showSettings = false"
-            class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm md:bg-black/50"
+            class="fixed inset-0 z-40 bg-black/50 md:bg-black/40"
           ></div>
 
           <Transition name="fade-slide">
@@ -272,11 +272,21 @@ onUnmounted(() => {
 
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: all 150ms cubic-bezier(0.2, 0, 0.2, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); /* Apple-like spring */
 }
+
 .fade-slide-enter-from,
 .fade-slide-leave-to {
   opacity: 0;
-  transform: translateY(15px) scale(0.95);
+  transform: translateY(20px) scale(0.96);
+}
+
+/* На мобильных (экраны < 768px) делаем выезд снизу на 100% */
+@media (max-width: 768px) {
+  .fade-slide-enter-from,
+  .fade-slide-leave-to {
+    opacity: 1; /* opacity не меняем, чтобы не было просвечивания при выезде */
+    transform: translateY(100%);
+  }
 }
 </style>
