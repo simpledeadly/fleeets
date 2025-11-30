@@ -1,13 +1,22 @@
-// src/stores/notes.ts
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '../supabase'
 
 export interface Note {
   id: string
+  user_id?: string
   content: string
   updated_at: string
   is_pinned: boolean
+}
+
+// Простая функция генерации UUID (работает везде, даже без HTTPS)
+function generateUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
 }
 
 export const useNotesStore = defineStore('notes', () => {
@@ -17,7 +26,6 @@ export const useNotesStore = defineStore('notes', () => {
   // 1. Скачать все заметки
   const fetchNotes = async () => {
     isLoading.value = true
-    // RLS (политика базы) сама отфильтрует только заметки этого юзера
     const { data, error } = await supabase
       .from('notes')
       .select('*')
@@ -29,35 +37,51 @@ export const useNotesStore = defineStore('notes', () => {
     isLoading.value = false
   }
 
-  // 2. Добавить новую заметку
+  // 2. Добавить новую заметку (Мгновенная)
   const addNote = async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser()
     if (!user) return
 
-    const newNote = {
+    // Генерируем ID вручную
+    const tempId = generateUUID()
+
+    const newNote: Note = {
+      id: tempId,
       user_id: user.id,
-      content: '', // Создаем пустую, как в Apple Notes
+      content: '',
+      is_pinned: false,
+      updated_at: new Date().toISOString(),
     }
 
-    const { data, error } = await supabase.from('notes').insert(newNote).select().single()
+    // МГНОВЕННО показываем
+    notes.value.unshift(newNote)
+
+    // Отправляем на сервер
+    const { data, error } = await supabase
+      .from('notes')
+      .insert({ user_id: user.id, content: '' }) // База создаст свой ID
+      .select()
+      .single()
 
     if (error) {
       console.error('Ошибка создания:', error)
+      notes.value = notes.value.filter((n) => n.id !== tempId)
     } else if (data) {
-      // Добавляем в начало списка локально
-      notes.value.unshift(data)
+      // Подменяем временную заметку на настоящую (с ID от базы)
+      const index = notes.value.findIndex((n) => n.id === tempId)
+      if (index !== -1) {
+        notes.value[index] = data
+      }
     }
   }
 
-  // 3. Сохранить изменения (Обновить текст)
+  // 3. Сохранить изменения
   const updateNote = async (id: string, content: string) => {
-    // Сначала обновляем локально (чтобы интерфейс был быстрым)
     const note = notes.value.find((n) => n.id === id)
     if (note) note.content = content
 
-    // Отправляем в базу
     const { error } = await supabase
       .from('notes')
       .update({ content, updated_at: new Date().toISOString() })
@@ -68,7 +92,7 @@ export const useNotesStore = defineStore('notes', () => {
 
   // 4. Удалить заметку
   const deleteNote = async (id: string) => {
-    notes.value = notes.value.filter((n) => n.id !== id) // Удаляем визуально сразу
+    notes.value = notes.value.filter((n) => n.id !== id)
 
     const { error } = await supabase.from('notes').delete().eq('id', id)
 
