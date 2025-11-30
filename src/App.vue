@@ -107,27 +107,29 @@ const onNoteSubmit = (payload: { content: string; file?: File }) => {
 }
 
 onMounted(async () => {
-  // 0. Сначала проверяем на наличие обновлений
-  // await checkForUpdates()
-  // 1. Сначала применяем настройки (масштаб, тема)
-  await initSettings()
+  try {
+    // 1. Применяем настройки
+    await initSettings()
 
-  // 2. Параллельно запускаем проверку сессии и минимальный таймер
-  // Это гарантирует, что сплеш-скрин повисит хотя бы 800мс (чтобы не было моргания),
-  // но если интернет медленный, он будет висеть пока не загрузятся данные.
-  const minLoadTime = new Promise((resolve) => setTimeout(resolve, 800))
-  const sessionCheck = initSession() // Внутри initSession мы уже ждем fetchNotes()
+    // 2. Ждем загрузку (минимум 800мс или пока проверится сессия)
+    const minLoadTime = new Promise((resolve) => setTimeout(resolve, 800))
+    const sessionCheck = initSession()
 
-  await Promise.all([minLoadTime, sessionCheck])
+    await Promise.all([minLoadTime, sessionCheck])
 
-  // 3. Если пользователь есть, скроллим вниз сразу (пока еще под сплеш-скрином)
-  if (user.value) {
-    await nextTick() // Даем Vue отрендерить список в DOM
-    await triggerScroll()
+    // 3. Если юзер есть — скроллим
+    if (user.value) {
+      await nextTick()
+      await triggerScroll()
+    }
+  } catch (error) {
+    // Если произошла любая ошибка — выводим её в консоль
+    console.error('CRITICAL BOOT ERROR:', error)
+    alert('Ошибка загрузки: ' + error) // Временно покажем алерт, чтобы ты увидел текст
+  } finally {
+    // ГЛАВНОЕ: Убираем черный экран в любом случае!
+    isBooting.value = false
   }
-
-  // 4. Плавно убираем сплеш-скрин
-  isBooting.value = false
 
   window.addEventListener('resize', triggerScroll)
 })
