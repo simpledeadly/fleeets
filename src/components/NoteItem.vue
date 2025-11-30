@@ -144,7 +144,7 @@ const downloadFile = async () => {
       v-model="localContent"
       @input="adjustHeight"
       @blur="onBlur"
-      class="w-full bg-transparent text-white/90 resize-none outline-none border-none p-0 text-base leading-relaxed placeholder-dim/30 overflow-hidden block"
+      class="w-full font-medium bg-transparent text-white/90 resize-none outline-none border-none p-0 text-base leading-relaxed placeholder-dim/30 overflow-hidden block"
       rows="1"
       spellcheck="false"
       placeholder="Пустая заметка..."
