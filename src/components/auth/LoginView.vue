@@ -4,11 +4,13 @@ import { Zap, ArrowRight, Mail } from 'lucide-vue-next'
 import TelegramLogin from '../TelegramLogin.vue'
 import AuroraBackground from './AuroraBackground.vue'
 import { useAuth } from '../../composables/useAuth'
+import { usePostHog } from '../../composables/usePostHog'
 
 const emit = defineEmits(['login-telegram'])
-
 const { handleEmailLogin, emailLoading } = useAuth()
 const email = ref('')
+
+const posthog = usePostHog()
 
 // Настройки "Авроры" подстраиваем под скриншот (более темные, глубокие тона)
 const auroraHue = ref(240) // Сине-фиолетовый
@@ -17,6 +19,11 @@ const auroraSat = ref(60)
 const randomizeAurora = () => {
   auroraHue.value = Math.floor(Math.random() * 360)
   auroraSat.value = 60 + Math.floor(Math.random() * 40)
+
+  posthog.capture('aurora_changed', {
+    hue: auroraHue.value,
+    sat: auroraSat.value,
+  })
 }
 
 const onTelegramAuth = (tgUser: any) => {

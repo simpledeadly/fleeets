@@ -28,5 +28,17 @@ export default defineConfig(async () => ({
       ignored: ['**/src-tauri/**'],
     },
     allowedHosts: ['lvh.me'],
+    proxy: {
+      '/api/telemetry/static': {
+        target: 'https://us-assets.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/telemetry\/static/, '/static'),
+      },
+      '/api/telemetry': {
+        target: 'https://us.i.posthog.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/telemetry/, ''),
+      },
+    },
   },
 }))
