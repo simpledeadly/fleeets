@@ -3,41 +3,68 @@ import { getVersion } from '@tauri-apps/api/app'
 import { supabase } from '../supabase'
 import { useAuth } from './useAuth'
 
+// Помощник для определения платформы
+const getPlatform = (): 'mobile' | 'desktop' => {
+  // @ts-ignore
+  if (window.__TAURI__) return 'desktop'
+
+  const ua = navigator.userAgent.toLowerCase()
+  if (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua)) {
+    return 'mobile'
+  }
+  return 'desktop'
+}
+
 export function useAppSettings() {
   const { user } = useAuth()
+  const currentPlatform = getPlatform() // 'mobile' или 'desktop'
 
   // @ts-ignore
   const isTauri = window.__TAURI__ !== undefined
   const appVersion = ref('0.0.0')
   const isComfortMode = ref(true)
-  const uiScale = ref(115)
+  const uiScale = ref(110)
   const isOffline = ref(!navigator.onLine)
 
-  // --- ЛОГИКА ОБЛАКА (НОВОЕ) ---
   let debounceTimer: any = null
 
-  // Сохранение в Supabase (с задержкой 1 сек, чтобы не спамить базу)
+  // --- ЛОГИКА ОБЛАКА (ОБНОВЛЕНАЯ) ---
+
+  // Сохраняем ТОЛЬКО для текущей платформы, не ломая другую
   const saveCloud = () => {
     if (!user.value) return
 
     clearTimeout(debounceTimer)
     debounceTimer = setTimeout(async () => {
       try {
+        // 1. Сначала получаем текущий JSON из базы (чтобы не стереть настройки другой платформы)
+        const { data: existingData } = await supabase
+          .from('user_settings')
+          .select('preferences')
+          .eq('user_id', user.value.id)
+          .single()
+
+        // Берем существующий объект или создаем пустой
+        const allPreferences = existingData?.preferences || {}
+
+        // 2. Обновляем ветку только текущей платформы
+        allPreferences[currentPlatform] = {
+          isComfortMode: isComfortMode.value,
+          uiScale: uiScale.value,
+        }
+
+        // 3. Записываем обратно полный объект
         await supabase.from('user_settings').upsert({
           user_id: user.value.id,
-          preferences: {
-            isComfortMode: isComfortMode.value,
-            uiScale: uiScale.value,
-          },
+          preferences: allPreferences,
           updated_at: new Date(),
         })
       } catch (e) {
-        console.error('Ошибка синхронизации настроек:', e)
+        console.error('Ошибка сохранения настроек:', e)
       }
     }, 1000)
   }
 
-  // Загрузка из Supabase
   const fetchCloudSettings = async () => {
     if (!user.value) return
 
@@ -48,18 +75,28 @@ export function useAppSettings() {
       .single()
 
     if (data?.preferences) {
-      // Применяем настройки, если они есть в облаке
-      if (data.preferences.isComfortMode !== undefined) {
-        isComfortMode.value = data.preferences.isComfortMode
-        // Обновляем локальный кэш
-        localStorage.setItem('fleeets_layout', isComfortMode.value ? 'comfort' : 'full')
+      const prefs = data.preferences
+
+      // 1. Ищем настройки конкретно для нашей платформы (mobile/desktop)
+      const platformPrefs = prefs[currentPlatform]
+
+      if (platformPrefs) {
+        // Если нашли — применяем
+        if (platformPrefs.isComfortMode !== undefined)
+          isComfortMode.value = platformPrefs.isComfortMode
+        if (platformPrefs.uiScale !== undefined) uiScale.value = platformPrefs.uiScale
+      } else {
+        // МИГРАЦИЯ: Если платформенных настроек нет, но есть старые "плоские" (от прошлой версии)
+        // можно попробовать применить их как фоллбэк
+        if (typeof prefs.isComfortMode === 'boolean') isComfortMode.value = prefs.isComfortMode
+        if (typeof prefs.uiScale === 'number') uiScale.value = prefs.uiScale
       }
 
-      if (data.preferences.uiScale !== undefined) {
-        uiScale.value = data.preferences.uiScale
-        // Применяем масштаб + обновляем локальный кэш внутри applyScale
-        applyScale()
-      }
+      // Применяем локально (обновит localStorage и стили)
+      applyScale()
+
+      // Обновляем localStorage для layout
+      localStorage.setItem('fleeets_layout', isComfortMode.value ? 'comfort' : 'full')
     }
   }
   // -----------------------------
@@ -68,14 +105,15 @@ export function useAppSettings() {
 
   const applyScale = () => {
     document.documentElement.style.fontSize = `${16 * (uiScale.value / 100)}px`
+    // LocalStorage остается уникальным для каждого браузера, так что ключи можно не менять
     localStorage.setItem('fleeets_scale', String(uiScale.value))
-    saveCloud() // <-- Триггер сохранения в облако
+    saveCloud()
   }
 
   const toggleLayout = () => {
     isComfortMode.value = !isComfortMode.value
     localStorage.setItem('fleeets_layout', isComfortMode.value ? 'comfort' : 'full')
-    saveCloud() // <-- Триггер сохранения в облако
+    saveCloud()
   }
 
   const initSettings = async () => {
@@ -88,7 +126,7 @@ export function useAppSettings() {
       appVersion.value = 'Web'
     }
 
-    // 1. Сначала грузим локально (чтобы интерфейс появился мгновенно)
+    // 1. Грузим локально
     const savedLayout = localStorage.getItem('fleeets_layout')
     if (savedLayout === 'full') isComfortMode.value = false
 
@@ -98,7 +136,7 @@ export function useAppSettings() {
       applyScale()
     }
 
-    // 2. Если пользователь уже вошел — подтягиваем актуальное из облака
+    // 2. Грузим из облака (с учетом платформы)
     if (user.value) {
       await fetchCloudSettings()
     }
@@ -111,7 +149,7 @@ export function useAppSettings() {
 
   watch(uiScale, applyScale)
 
-  // Следим за юзером: как только вошли в аккаунт — тянем настройки
+  // Следим за юзером
   watch(user, (newUser) => {
     if (newUser) fetchCloudSettings()
   })
