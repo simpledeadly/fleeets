@@ -92,11 +92,21 @@ export const useNotesStore = defineStore('notes', () => {
       }
       case 'UPDATE': {
         const note = newRecord as Note
+        // Ищем индекс заметки
         const index = notes.value.findIndex((n) => n.id === note.id)
+
         if (index !== -1) {
-          console.log('📝 Заметка обновилась')
-          // Слияние старых данных с новыми (сохраняет реактивность)
-          notes.value[index] = { ...notes.value[index], ...note }
+          console.log('⚡️ UPDATE прилетел:', note.content) // Лог для проверки
+
+          // 1. Берем старую заметку
+          const oldNote = notes.value[index]
+
+          // 2. Создаем АБСОЛЮТНО НОВЫЙ объект, объединяя старое и новое
+          const updatedNote = { ...oldNote, ...note }
+
+          // 3. Жестко заменяем элемент массива.
+          // Метод splice триггерит перерисовку списка даже если Vue "спит".
+          notes.value.splice(index, 1, updatedNote)
         }
         break
       }
