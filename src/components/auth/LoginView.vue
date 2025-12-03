@@ -1,14 +1,17 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Zap, ArrowRight, Mail } from 'lucide-vue-next'
+import { Zap, ArrowRight, Mail, KeyRound } from 'lucide-vue-next'
 import TelegramLogin from '../TelegramLogin.vue'
 import AuroraBackground from './AuroraBackground.vue'
 import { useAuth } from '../../composables/useAuth'
 import { usePostHog } from '../../composables/usePostHog'
 
 const emit = defineEmits(['login-telegram'])
-const { handleEmailLogin, emailLoading } = useAuth()
+const { emailLoading, sendEmailOtp, verifyEmailOtp } = useAuth()
+
 const email = ref('')
+const otpCode = ref('')
+const step = ref<'email' | 'otp'>('email') // Состояние экрана
 
 const posthog = usePostHog()
 
@@ -30,8 +33,26 @@ const onTelegramAuth = (tgUser: any) => {
   emit('login-telegram', tgUser)
 }
 
-const onEmailSubmit = () => {
-  if (email.value) handleEmailLogin(email.value)
+// Шаг 1: Отправка кода
+const onEmailSubmit = async () => {
+  if (!email.value) return
+  try {
+    await sendEmailOtp(email.value)
+    step.value = 'otp' // Переходим к вводу кода
+  } catch (e: any) {
+    alert('Ошибка отправки: ' + e.message)
+  }
+}
+
+// Шаг 2: Проверка кода
+const onOtpSubmit = async () => {
+  if (!otpCode.value) return
+  try {
+    await verifyEmailOtp(email.value, otpCode.value)
+    // В случае успеха useAuth сам обновит user.value, и App.vue скроет этот экран
+  } catch (e: any) {
+    alert('Неверный код: ' + e.message)
+  }
 }
 </script>
 
@@ -102,39 +123,74 @@ const onEmailSubmit = () => {
         ></div>
       </div>
 
-      <!-- 4. EMAIL INPUT (КАСТОМНЫЙ ДИЗАЙН) -->
       <div
         class="w-full relative group animate-enter-up"
         style="animation-delay: 300ms"
       >
-        <Mail
-          class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#616166] transition-colors duration-200 group-focus-within:text-white z-20"
-        />
-        <input
-          v-model="email"
-          placeholder="name@example.com"
-          @keydown.enter="onEmailSubmit"
-          class="w-full bg-white/[0.03] backdrop-blur-md border border-white/[0.06] rounded-2xl py-4 pl-11 pr-4 text-white placeholder-[#52525b] outline-none focus:border-white/20 focus:bg-white/[0.07] transition-all duration-200 shadow-lg"
-        />
-        <button
-          @click="onEmailSubmit"
-          :disabled="emailLoading || !email"
-          class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full transition-all duration-200 active:scale-90 z-20"
-          :class="
-            email
-              ? 'bg-white text-black hover:bg-gray-200 shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-              : 'text-[#52525b] bg-white/5 cursor-not-allowed'
-          "
+        <!-- ШАГ 1: ПОЧТА -->
+        <div
+          v-if="step === 'email'"
+          class="relative"
         >
-          <ArrowRight
-            v-if="!emailLoading"
-            class="w-5 h-5 stroke-[2]"
+          <Mail class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#616166]" />
+          <input
+            v-model="email"
+            placeholder="name@example.com"
+            @keydown.enter="onEmailSubmit"
+            class="w-full bg-white/[0.03] backdrop-blur-md border border-white/[0.06] rounded-2xl py-4 pl-11 pr-12 text-white outline-none focus:bg-white/[0.07] transition-all"
           />
-          <div
-            v-else
-            class="w-4 h-4 border-2 border-[#555] border-t-[#888] rounded-full animate-spin"
-          ></div>
-        </button>
+          <button
+            @click="onEmailSubmit"
+            :disabled="emailLoading || !email"
+            class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white text-black disabled:opacity-50"
+          >
+            <div
+              v-if="emailLoading"
+              class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"
+            ></div>
+            <ArrowRight
+              v-else
+              class="w-5 h-5"
+            />
+          </button>
+        </div>
+
+        <!-- ШАГ 2: КОД -->
+        <div
+          v-else
+          class="relative"
+        >
+          <KeyRound class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#616166]" />
+          <input
+            v-model="otpCode"
+            placeholder="Код из письма (123456)"
+            @keydown.enter="onOtpSubmit"
+            class="w-full bg-white/[0.03] backdrop-blur-md border border-white/[0.06] rounded-2xl py-4 pl-11 pr-12 text-white outline-none focus:bg-white/[0.07] transition-all"
+            autofocus
+          />
+          <button
+            @click="onOtpSubmit"
+            :disabled="emailLoading || !otpCode"
+            class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white text-black disabled:opacity-50"
+          >
+            <div
+              v-if="emailLoading"
+              class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"
+            ></div>
+            <ArrowRight
+              v-else
+              class="w-5 h-5"
+            />
+          </button>
+
+          <!-- Кнопка назад -->
+          <button
+            @click="step = 'email'"
+            class="absolute -bottom-8 left-1 text-xs text-gray-500 hover:text-white"
+          >
+            ← Изменить почту
+          </button>
+        </div>
       </div>
     </div>
   </div>

@@ -9,23 +9,30 @@ const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
 serve(async (req) => {
   try {
     const update = await req.json()
+    const message = update.message
 
-    if (update.message?.text?.startsWith('/start')) {
-      const chatId = update.message.chat.id
-      const text = update.message.text
-      const user = update.message.from
+    if (!message) return new Response('OK')
 
+    const chatId = message.chat.id
+    const telegramUserId = message.from.id
+    const text = message.text || ''
+
+    // === СЦЕНАРИЙ 1: ЛОГИН (/start <код>) ===
+    if (text.startsWith('/start')) {
       const parts = text.split(' ')
       const sessionId = parts.length > 1 ? parts[1].trim() : null
 
       if (!sessionId) {
-        await sendMessage(chatId, 'Ошибка: нет кода сессии.')
+        await sendMessage(
+          chatId,
+          "👋 Привет! Это бот Fleeets.\n\nЧтобы войти в приложение, нажмите кнопку 'Войти через Telegram' на сайте или в приложении."
+        )
         return new Response('OK')
       }
 
-      // 1. Авторизуем/Создаем пользователя (стандартный код)
-      const email = `${user.id}@telegram.fleeets.app`
-      const password = `tg_${user.id}_${SUPABASE_SERVICE_ROLE_KEY}`
+      // 1. Находим или создаем пользователя
+      const email = `${telegramUserId}@telegram.fleeets.app`
+      const password = `tg_${telegramUserId}_${SUPABASE_SERVICE_ROLE_KEY}`
 
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
       if (!existingUsers.users.find((u) => u.email === email)) {
@@ -34,13 +41,14 @@ serve(async (req) => {
           password,
           email_confirm: true,
           user_metadata: {
-            telegram_id: user.id,
-            first_name: user.first_name,
-            username: user.username,
+            telegram_id: telegramUserId,
+            first_name: message.from.first_name,
+            username: message.from.username,
           },
         })
       }
 
+      // 2. Получаем токены
       const { data: sessionData } = await supabaseAdmin.auth.signInWithPassword({ email, password })
 
       if (!sessionData.session) {
@@ -48,7 +56,7 @@ serve(async (req) => {
         return new Response('OK')
       }
 
-      // 2. ВМЕСТО REALTIME -> ПИШЕМ В БАЗУ
+      // 3. Записываем токены в базу (UPSERT)
       const { error: dbError } = await supabaseAdmin.from('auth_sessions').upsert({
         id: sessionId,
         status: 'success',
@@ -61,11 +69,45 @@ serve(async (req) => {
 
       if (dbError) {
         console.error(dbError)
-        await sendMessage(chatId, 'Что-то пошло не так, попробуйте еще раз.')
+        await sendMessage(chatId, 'Ошибка базы данных.')
       } else {
-        await sendMessage(chatId, `✅ Вход выполнен!\nВернитесь в приложение.`)
+        await sendMessage(chatId, `✅ Вход выполнен!\nВозвращайтесь в приложение.`)
       }
+      return new Response('OK')
     }
+
+    // === СЦЕНАРИЙ 2: СОХРАНЕНИЕ ЗАМЕТКИ (Любой другой текст) ===
+
+    // 1. Находим юзера по ID
+    const email = `${telegramUserId}@telegram.fleeets.app`
+    const { data: users } = await supabaseAdmin.auth.admin.listUsers()
+    const user = users.users.find((u) => u.email === email)
+
+    if (!user) {
+      await sendMessage(
+        chatId,
+        'Сначала войдите в приложение через команду /start (из приложения).'
+      )
+      return new Response('OK')
+    }
+
+    // 2. Сохраняем в базу
+    const { error } = await supabaseAdmin.from('notes').insert({
+      id: crypto.randomUUID(),
+      user_id: user.id,
+      content: text || 'Вложение',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+
+    if (error) {
+      console.error(error)
+      await sendMessage(chatId, 'Ошибка сохранения.')
+    } else {
+      // Ставим реакцию
+      await setReaction(chatId, message.message_id, '👍')
+    }
+
     return new Response('OK')
   } catch (err) {
     console.error(err)
@@ -78,5 +120,17 @@ async function sendMessage(chatId: number, text: string) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ chat_id: chatId, text }),
+  })
+}
+
+async function setReaction(chatId: number, messageId: number, emoji: string) {
+  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/setMessageReaction`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      message_id: messageId,
+      reaction: [{ type: 'emoji', emoji }],
+    }),
   })
 }

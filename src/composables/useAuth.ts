@@ -66,7 +66,7 @@ export function useAuth() {
             return true
           }
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error('Check error', e)
       }
       return false
@@ -146,12 +146,50 @@ export function useAuth() {
     else alert(`Ссылка отправлена на ${email}`)
   }
 
+  // --- EMAIL OTP LOGIC (ОБНОВЛЕНО) ---
+
+  // 1. Отправка кода
+  const sendEmailOtp = async (email: string) => {
+    emailLoading.value = true
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      // ВАЖНО: Мы не шлем редирект, мы надеемся что юзер введет код
+    })
+    emailLoading.value = false
+    if (error) throw error
+    return true
+  }
+
+  // 2. Проверка кода
+  const verifyEmailOtp = async (email: string, token: string) => {
+    emailLoading.value = true
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email',
+    })
+
+    if (error) {
+      emailLoading.value = false
+      throw error
+    }
+
+    if (data.session) {
+      user.value = data.user
+      await notesStore.fetchNotes()
+    }
+    emailLoading.value = false
+    return true
+  }
+
   return {
     user,
     emailLoading,
     initSession,
-    startPollingAuth, // <-- Новый метод
-    logout, // <-- Исправленный метод
+    startPollingAuth,
+    logout,
     handleEmailLogin,
+    sendEmailOtp,
+    verifyEmailOtp,
   }
 }
