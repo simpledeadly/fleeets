@@ -1,9 +1,9 @@
 // api/telegram-webhook.ts
 import { createClient } from '@supabase/supabase-js'
 
-// 1. Исправление ошибки с типами переменных окружения (добавили || '')
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || ''
 const supabaseKey = process.env.VITE_SUPABASE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const supabaseAuthUrl = process.env.SUPABASE_AUTH_FUNCTION_URL // URL старой функции Supabase
 
 const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -11,47 +11,66 @@ export const config = {
   maxDuration: 60,
 }
 
-// 2. Исправление ошибки "implicitly has an 'any' type"
-// Мы явно указываем any, чтобы TypeScript успокоился
 export default async function handler(req: any, res: any) {
-  // Проверка метода
   if (req.method !== 'POST') return res.status(200).send('OK')
 
   const { message } = req.body
-  if (!message || !message.voice) {
-    return res.status(200).send('Not a voice message')
-  }
+  if (!message) return res.status(200).send('No message')
 
   const chatId = message.chat.id
-  const fileId = message.voice.file_id
-
-  // Берем переменные окружения
   const botToken = process.env.TELEGRAM_BOT_TOKEN
+
+  // === ЛОГИКА ДИСПЕТЧЕРА ===
+
+  // 1. Если это НЕ голосовое (например /start или текст), отправляем в Supabase (чтобы работал вход)
+  if (!message.voice) {
+    console.log('Text message detected, proxying to Supabase Auth...')
+
+    if (!supabaseAuthUrl) {
+      console.error('SUPABASE_AUTH_FUNCTION_URL not set')
+      // Пытаемся ответить юзеру, что сервис временно недоступен
+      await sendMessage(chatId, botToken, '⚠️ Техническая настройка. Авторизация скоро вернется.')
+      return res.status(200).send('Auth URL not configured')
+    }
+
+    try {
+      // Проксируем запрос в Supabase как есть
+      await fetch(supabaseAuthUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req.body),
+      })
+      return res.status(200).send('Proxied to Supabase')
+    } catch (e) {
+      console.error('Proxy error:', e)
+      return res.status(200).send('Proxy error')
+    }
+  }
+
+  // === ЛОГИКА ГОЛОСОВЫХ (Vercel) ===
+
+  console.log('Voice message detected, processing...')
   const groqKey = process.env.GROQ_API_KEY
 
   if (!botToken || !groqKey) {
-    console.error('Missing API keys')
-    return res.status(500).json({ error: 'Server configuration error' })
+    console.error('Missing keys')
+    return res.status(500).json({ error: 'Config error' })
   }
 
   try {
-    // Получаем ссылку на файл
+    // 1. Получаем файл
+    const fileId = message.voice.file_id
     const fileRes = await fetch(`https://api.telegram.org/bot${botToken}/getFile?file_id=${fileId}`)
     const fileData = await fileRes.json()
 
-    if (!fileData.ok) throw new Error('Failed to get file path from Telegram')
+    if (!fileData.ok) throw new Error('Telegram GetFile Error')
+    const fileUrl = `https://api.telegram.org/file/bot${botToken}/${fileData.result.file_path}`
 
-    const filePath = fileData.result.file_path
-    const fileUrl = `https://api.telegram.org/file/bot${botToken}/${filePath}`
-
-    // Скачиваем аудио
+    // 2. Whisper (Transcribe)
     const audioBlob = await fetch(fileUrl).then((r) => r.blob())
-
-    // Отправляем в Groq (Whisper)
     const formData = new FormData()
     formData.append('file', audioBlob, 'voice.ogg')
-    formData.append('model', 'whisper-large-v3')
-    formData.append('temperature', '0')
+    formData.append('model', 'whisper-large-v3') // Или whisper-large-v3-turbo (быстрее)
 
     const transResponse = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
       method: 'POST',
@@ -60,15 +79,18 @@ export default async function handler(req: any, res: any) {
     })
 
     const transJson = await transResponse.json()
-    // 3. Исправление "error is of type unknown" (через проверку)
-    if (!transResponse.ok) {
-      console.error('Groq Error:', transJson)
-      throw new Error(`Groq Transcription API Error: ${JSON.stringify(transJson)}`)
-    }
+    if (!transResponse.ok) throw new Error(`Groq Whisper Error: ${JSON.stringify(transJson)}`)
 
     const transcribedText = transJson.text
+    console.log('Transcribed:', transcribedText)
 
-    // Структурируем через Llama 3
+    if (!transcribedText || transcribedText.trim().length < 2) {
+      await sendMessage(chatId, botToken, '🤔 Не удалось разобрать слова. Попробуйте еще раз.')
+      return res.status(200).send('Empty transcription')
+    }
+
+    // 3. Llama (Structure)
+    // Я упростил промпт и добавил json_object, чтобы избежать ошибки
     const completionResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -80,38 +102,40 @@ export default async function handler(req: any, res: any) {
         messages: [
           {
             role: 'system',
-            content: `Ты — AI-ассистент. Твоя задача — извлечь из текста задачи, идеи или заметки.
-            Верни ответ ТОЛЬКО в формате JSON следующей структуры:
+            content: `Analyze the user's text. Extract tasks, ideas, or notes.
+            Return JSON ONLY. Format:
             {
-              "summary": "Краткая суть",
+              "summary": "Short summary",
               "items": [
-                {
-                  "type": "task" | "idea" | "note",
-                  "content": "Текст сущности",
-                  "tags": ["тег1", "тег2"]
-                }
+                { "type": "task", "content": "Task text", "tags": ["tag1"] }
               ]
-            }
-            Не пиши ничего кроме JSON.`,
+            }`,
           },
-          {
-            role: 'user',
-            content: transcribedText,
-          },
+          { role: 'user', content: transcribedText },
         ],
         response_format: { type: 'json_object' },
       }),
     })
 
     const completionJson = await completionResponse.json()
+
+    if (!completionResponse.ok) {
+      console.error('Groq Llama Error:', completionJson)
+      throw new Error('Groq LLM API Failed')
+    }
+
     const content = completionJson.choices?.[0]?.message?.content
+    if (!content) throw new Error('LLM returned empty content')
 
-    if (!content) throw new Error('Failed to get structure from LLM')
+    let structuredData
+    try {
+      structuredData = JSON.parse(content)
+    } catch (e) {
+      console.error('JSON Parse Error:', content)
+      throw new Error('Failed to parse JSON from LLM')
+    }
 
-    const structuredData = JSON.parse(content)
-
-    // Пишем в Supabase
-    // ВАЖНО: убедись, что user_id не обязателен или добавь логику поиска юзера по chat_id
+    // 4. Save to DB
     const { error } = await supabase.from('inbox').insert({
       telegram_chat_id: chatId,
       raw_text: transcribedText,
@@ -119,23 +143,27 @@ export default async function handler(req: any, res: any) {
       status: 'new',
     })
 
-    if (error) throw error
+    if (error) {
+      console.error('Supabase Insert Error:', error)
+      throw error
+    }
 
-    // Отвечаем в ТГ
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: chatId,
-        text: `✅ Сохранено:\n${transcribedText.slice(0, 100)}...`,
-        reply_to_message_id: message.message_id,
-      }),
-    })
+    // 5. Notify User
+    await sendMessage(chatId, botToken, `✅ Сохранено:\n"${transcribedText}"`)
 
     return res.status(200).json({ success: true })
   } catch (err: any) {
-    // Явное указание any для ошибки
-    console.error(err)
-    return res.status(200).json({ error: err.message || 'Unknown error' })
+    console.error('Global Handler Error:', err)
+    await sendMessage(chatId, botToken, `❌ Ошибка: ${err.message || 'Unknown error'}`)
+    return res.status(200).json({ error: err.message })
   }
+}
+
+// Вспомогательная функция отправки
+async function sendMessage(chatId: any, token: any, text: string) {
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ chat_id: chatId, text: text }),
+  })
 }
