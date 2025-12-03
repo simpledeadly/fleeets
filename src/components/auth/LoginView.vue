@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Zap, ArrowRight, Mail, KeyRound } from 'lucide-vue-next'
+import { Zap, ArrowRight, Mail } from 'lucide-vue-next'
 import TelegramLogin from '../TelegramLogin.vue'
 import AuroraBackground from './AuroraBackground.vue'
 import { useAuth } from '../../composables/useAuth'
@@ -11,7 +11,9 @@ const { emailLoading, sendEmailOtp, verifyEmailOtp, handleGoogleLogin } = useAut
 
 const email = ref('')
 const otpCode = ref('')
-const step = ref<'email' | 'otp'>('email') // Состояние экрана
+
+// Режимы нижнего блока: 'socials' (кнопки) | 'email' (ввод почты) | 'otp' (ввод кода)
+const authMode = ref<'socials' | 'email' | 'otp'>('socials')
 
 const posthog = usePostHog()
 
@@ -29,29 +31,34 @@ const randomizeAurora = () => {
   })
 }
 
-const onTelegramAuth = (tgUser: any) => {
-  emit('login-telegram', tgUser)
+const onTelegramAuth = (tgUser: any) => emit('login-telegram', tgUser)
+
+// Логика Email
+const startEmailAuth = () => {
+  authMode.value = 'email'
+}
+const cancelEmailAuth = () => {
+  authMode.value = 'socials'
+  email.value = ''
+  otpCode.value = ''
 }
 
-// Шаг 1: Отправка кода
 const onEmailSubmit = async () => {
   if (!email.value) return
   try {
     await sendEmailOtp(email.value)
-    step.value = 'otp' // Переходим к вводу кода
+    authMode.value = 'otp'
   } catch (e: any) {
-    alert('Ошибка отправки: ' + e.message)
+    alert(e.message)
   }
 }
 
-// Шаг 2: Проверка кода
 const onOtpSubmit = async () => {
   if (!otpCode.value) return
   try {
     await verifyEmailOtp(email.value, otpCode.value)
-    // В случае успеха useAuth сам обновит user.value, и App.vue скроет этот экран
   } catch (e: any) {
-    alert('Неверный код: ' + e.message)
+    alert(e.message)
   }
 }
 </script>
@@ -64,10 +71,10 @@ const onOtpSubmit = async () => {
       :sat="auroraSat"
     />
 
-    <div class="w-full max-w-[380px] flex flex-col items-center gap-5 relative z-20">
+    <div class="w-full max-w-[380px] flex flex-col items-center relative z-20">
       <!-- 1. ЛОГОТИП И ЗАГОЛОВОК -->
       <div
-        class="text-center flex flex-col items-center animate-enter-up"
+        class="text-center mb-8 flex flex-col items-center animate-enter-up"
         style="animation-delay: 0ms"
       >
         <!-- Контейнер логотипа -->
@@ -84,147 +91,178 @@ const onOtpSubmit = async () => {
         </div>
 
         <h1 class="text-4xl font-bold tracking-tighter text-white drop-shadow-sm">Fleeets</h1>
-        <p class="text-[#71717a] text-[16px] mt-1 font-medium tracking-wide">
+        <p class="text-white/45 text-[16px] mt-1 font-medium tracking-wide">
           Ловите мысли молниеносно.
         </p>
       </div>
 
-      <!-- СОЦСЕТИ (TELEGRAM + GOOGLE) -->
+      <!-- Telegram -->
       <div
-        class="w-full flex flex-col gap-3 animate-enter-up"
+        class="w-full mb-8 animate-enter-up"
         style="animation-delay: 100ms"
       >
-        <!-- Telegram -->
-        <div
-          class="bg-white/[0.03] border border-white/[0.06] backdrop-blur-xl rounded-2xl p-4 flex justify-center shadow-lg transition-transform hover:scale-[1.02]"
-        >
-          <TelegramLogin @login="onTelegramAuth" />
-        </div>
- 
-        <!-- Google -->
-        <button
-          @click="handleGoogleLogin"
-          class="w-full bg-white text-black font-semibold rounded-2xl p-3 flex items-center justify-center gap-3 shadow-lg hover:bg-gray-100 transition-all active:scale-95"
-        >
-          <!-- SVG иконка Google -->
-          <svg
-            class="w-5 h-5"
-            viewBox="0 0 24 24"
-          >
-            <path
-              fill="currentColor"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="currentColor"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="currentColor"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            />
-            <path
-              fill="currentColor"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
-          </svg>
-          <span>Войти через Google</span>
-        </button>
+        <TelegramLogin @login="onTelegramAuth" />
       </div>
 
       <!-- 3. РАЗДЕЛИТЕЛЬ -->
       <div
-        class="flex items-center gap-4 w-full px-4 animate-enter-up"
-        style="animation-delay: 200ms"
+        class="flex items-center gap-4 w-full mb-4 opacity-40 animate-enter-up"
+        style="animation-delay: 150ms"
       >
-        <div
-          class="h-px bg-gradient-to-r from-transparent via-[#27272a] to-transparent flex-1"
-        ></div>
-        <span class="text-[11px] uppercase tracking-widest text-[#52525b] select-none font-medium"
-          >или</span
-        >
-        <div
-          class="h-px bg-gradient-to-r from-transparent via-[#27272a] to-transparent flex-1"
-        ></div>
+        <div class="h-px bg-white/10 flex-1"></div>
+        <span class="text-[12px] uppercase tracking-widest text-white/50 font-bold">или</span>
+        <div class="h-px bg-white/10 flex-1"></div>
       </div>
 
+      <!-- 3. ALTERNATIVES AREA (SWITCHABLE) -->
       <div
-        class="w-full relative group animate-enter-up"
-        style="animation-delay: 300ms"
+        class="w-full h-[60px] relative animate-enter-up"
+        style="animation-delay: 200ms"
       >
-        <!-- ШАГ 1: ПОЧТА -->
-        <div
-          v-if="step === 'email'"
-          class="relative"
+        <Transition
+          name="fade-slide"
+          mode="out-in"
         >
-          <Mail class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#616166]" />
-          <input
-            v-model="email"
-            placeholder="name@example.com"
-            @keydown.enter="onEmailSubmit"
-            class="w-full bg-white/[0.03] backdrop-blur-md border border-white/[0.06] rounded-2xl py-4 pl-11 pr-12 text-white outline-none focus:bg-white/[0.07] transition-all"
-          />
-          <button
-            @click="onEmailSubmit"
-            :disabled="emailLoading || !email"
-            class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white text-black disabled:opacity-50"
+          <!-- ВАРИАНТ А: КРУГЛЫЕ КНОПКИ -->
+          <div
+            v-if="authMode === 'socials'"
+            class="flex justify-center gap-4 w-full absolute inset-0"
           >
-            <div
-              v-if="emailLoading"
-              class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"
-            ></div>
-            <ArrowRight
-              v-else
-              class="w-5 h-5"
-            />
-          </button>
-        </div>
+            <!-- Google Button -->
+            <button
+              @click="handleGoogleLogin"
+              class="w-12 h-12 rounded-full bg-white text-black flex items-center justify-center hover:scale-110 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)] transition-all duration-150 group"
+              title="Войти через Google"
+            >
+              <svg
+                class="w-6 h-6 group-hover:rotate-12 transition-transform duration-150"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  fill="currentColor"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+            </button>
 
-        <!-- ШАГ 2: КОД -->
-        <div
-          v-else
-          class="relative"
-        >
-          <KeyRound class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#616166]" />
-          <input
-            v-model="otpCode"
-            placeholder="Код из письма (123456)"
-            @keydown.enter="onOtpSubmit"
-            class="w-full bg-white/[0.03] backdrop-blur-md border border-white/[0.06] rounded-2xl py-4 pl-11 pr-12 text-white outline-none focus:bg-white/[0.07] transition-all"
-            autofocus
-          />
-          <button
-            @click="onOtpSubmit"
-            :disabled="emailLoading || !otpCode"
-            class="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white text-black disabled:opacity-50"
-          >
-            <div
-              v-if="emailLoading"
-              class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"
-            ></div>
-            <ArrowRight
-              v-else
-              class="w-5 h-5"
-            />
-          </button>
+            <!-- Email Button -->
+            <button
+              @click="startEmailAuth"
+              class="w-12 h-12 rounded-full bg-[#1c1c1e] border border-white/10 text-white flex items-center justify-center hover:scale-110 hover:border-white/30 hover:bg-[#27272a] transition-all duration-150 group"
+              title="Войти по почте"
+            >
+              <Mail class="w-6 h-6 text-gray-400 group-hover:text-white transition-colors" />
+            </button>
+          </div>
 
-          <!-- Кнопка назад -->
-          <button
-            @click="step = 'email'"
-            class="absolute -bottom-8 left-1 text-xs text-gray-500 hover:text-white"
+          <!-- ВАРИАНТ Б: ВВОД ПОЧТЫ -->
+          <div
+            v-else-if="authMode === 'email'"
+            class="w-full absolute inset-0"
           >
-            ← Изменить почту
-          </button>
-        </div>
+            <div class="relative group">
+              <input
+                v-model="email"
+                placeholder="name@example.com"
+                @keydown.enter="onEmailSubmit"
+                class="w-full h-14 bg-[#1c1c1e] border border-white/10 rounded-2xl pl-4 pr-12 text-white placeholder-gray-500 outline-none focus:border-white/20 focus:bg-[#27272a] transition-all font-medium text-sm"
+                autoFocus
+              />
+              <!-- Кнопка Отмены (Крестик) -->
+              <button
+                v-if="!email"
+                @click="cancelEmailAuth"
+                class="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-500 hover:text-white transition-colors"
+              >
+                <X class="w-4 h-4" />
+              </button>
+              <!-- Кнопка Далее (Стрелка) -->
+              <button
+                v-else
+                @click="onEmailSubmit"
+                :disabled="emailLoading"
+                class="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-white text-black rounded-xl hover:scale-105 active:scale-95 transition-all"
+              >
+                <div
+                  v-if="emailLoading"
+                  class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"
+                ></div>
+                <ArrowRight
+                  v-else
+                  class="w-4 h-4"
+                />
+              </button>
+            </div>
+          </div>
+
+          <!-- ВАРИАНТ В: ВВОД КОДА -->
+          <div
+            v-else-if="authMode === 'otp'"
+            class="w-full absolute inset-0"
+          >
+            <div class="relative group">
+              <input
+                v-model="otpCode"
+                placeholder="Код из письма"
+                @keydown.enter="onOtpSubmit"
+                class="w-full h-14 bg-[#1c1c1e] border border-white/10 rounded-2xl pl-4 pr-12 text-white placeholder-gray-500 outline-none focus:border-blue-500/50 focus:bg-[#27272a] transition-all font-medium text-sm tracking-widest"
+                autoFocus
+              />
+              <button
+                @click="onOtpSubmit"
+                :disabled="emailLoading || !otpCode"
+                class="absolute right-3 top-1/2 -translate-y-1/2 p-2 bg-white text-black rounded-xl hover:scale-105 active:scale-95 transition-all"
+              >
+                <div
+                  v-if="emailLoading"
+                  class="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"
+                ></div>
+                <ArrowRight
+                  v-else
+                  class="w-4 h-4"
+                />
+              </button>
+
+              <button
+                @click="authMode = 'email'"
+                class="absolute -bottom-6 left-1 text-[10px] text-gray-500 hover:text-white transition-colors"
+              >
+                ← Назад
+              </button>
+            </div>
+          </div>
+        </Transition>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* Тонкая настройка теней для максимального сходства */
-input::placeholder {
-  color: #3f3f46;
-  font-weight: 500;
+/* Анимация переключения режимов */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(10px) scale(0.95);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px) scale(0.95);
 }
 </style>
