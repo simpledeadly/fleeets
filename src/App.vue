@@ -79,25 +79,42 @@ const triggerScroll = async () => {
 }
 
 const onLoginStart = async (tgUser: any) => {
-  // 1. Мгновенно включаем сплеш-скрин (пользователь видит fade-in логотипа)
+  // 1. Мгновенно включаем сплеш-скрин.
+  // Интерфейс входа пропадает, пользователь видит красивый логотип.
   isBooting.value = true
 
-  // 2. Ждем выполнения двух вещей: авторизации И минимальной задержки для красоты
-  const minDelay = new Promise((resolve) => setTimeout(resolve, 1000))
+  try {
+    // 2. Ждем выполнения двух вещей параллельно:
+    // - Авторизации в Supabase
+    // - Минимальной задержки анимации (чтобы не моргнуло слишком быстро)
+    const minDelay = new Promise((resolve) => setTimeout(resolve, 1200))
+    const loginPromise = handleTelegramLogin(tgUser)
 
-  // 3. Выполняем вход (внутри fetchNotes уже вызовется)
-  const success = await handleTelegramLogin(tgUser)
+    const [_, success] = await Promise.all([minDelay, loginPromise])
 
-  await Promise.all([minDelay, success ? Promise.resolve() : Promise.resolve()])
+    if (success) {
+      // === ВОТ ОНА, БЕСШОВНАЯ МАГИЯ ===
+      // Мы тихо удаляем ?id=...&hash=... из адресной строки браузера.
+      // Страница НЕ перезагружается.
+      const cleanUrl = window.location.pathname
+      window.history.replaceState({}, document.title, cleanUrl)
 
-  // 4. Если успех - скроллим список (пока еще под шторкой)
-  if (success) {
-    await nextTick()
-    await triggerScroll()
+      // 3. Подготавливаем интерфейс (скролл вниз)
+      await nextTick()
+      await triggerScroll()
+    } else {
+      // Если вход не удался (например, поддельный хэш),
+      // можно показать алерт или просто вернуть пользователя на экран входа
+      console.error('Login returned false')
+    }
+  } catch (err) {
+    console.error('Login process error:', err)
+  } finally {
+    // 4. Плавно убираем шторку загрузки.
+    // Если вход успешен -> под шторкой уже NoteList (благодаря v-if="!user" в шаблоне)
+    // Если вход не удался -> под шторкой снова LoginView
+    isBooting.value = false
   }
-
-  // 5. Плавно убираем шторку. Вуаля! Пользователь уже внутри.
-  isBooting.value = false
 }
 
 const onNoteSubmit = (payload: { content: string; file?: File }) => {
