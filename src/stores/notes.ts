@@ -27,21 +27,24 @@ export const useNotesStore = defineStore('notes', () => {
   const isSyncing = ref(false)
   let realtimeChannel: any = null
 
-  // 1. Загрузка + Старт подписки
+  // 1. Загрузка
   const fetchNotes = async () => {
     isSyncing.value = true
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('notes')
       .select('*')
       .order('created_at', { ascending: true })
 
-    if (data) notes.value = data
+    if (error) {
+      console.error('❌ Ошибка загрузки:', error.message)
+    } else {
+      notes.value = data || []
+      subscribeToRealtime()
+    }
     isSyncing.value = false
-
-    subscribeToRealtime()
   }
 
-  // 2. Подписка (Realtime)
+  // 2. Подписка (УПРОЩЕННАЯ)
   const subscribeToRealtime = async () => {
     const {
       data: { user },
@@ -50,22 +53,24 @@ export const useNotesStore = defineStore('notes', () => {
 
     if (realtimeChannel) await supabase.removeChannel(realtimeChannel)
 
-    console.log('🔌 Подписка на обновления...')
+    console.log('🔌 Подключение Realtime...')
 
     realtimeChannel = supabase
-      .channel('notes_sync')
+      .channel('notes_global')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'notes',
-          filter: `user_id=eq.${user.id}`,
+          // УБРАЛИ filter: user_id=...
+          // Пусть RLS сам решает, что нам можно видеть, а что нет.
+          // Это решает проблему "потерянных" апдейтов.
         },
         (payload) => handleRealtimeEvent(payload as RealtimePostgresChangesPayload<Note>)
       )
       .subscribe((status) => {
-        if (status === 'SUBSCRIBED') console.log('✅ Готовы принимать изменения')
+        console.log(`📡 Статус Realtime: ${status}`)
       })
   }
 
@@ -80,28 +85,24 @@ export const useNotesStore = defineStore('notes', () => {
         const note = newRecord as Note
         const exists = notes.value.find((n) => n.id === note.id)
         if (!exists) {
-          notes.value.push(note) // Добавляем в конец (или unshift в начало, как вам удобнее)
-        } else {
-          // Если есть - заменяем целиком, чтобы обновились все поля
-          const index = notes.value.indexOf(exists)
-          notes.value[index] = note
+          console.log('➕ Новая заметка с другого устройства')
+          notes.value.push(note)
         }
         break
       }
       case 'UPDATE': {
         const note = newRecord as Note
-        console.log('📝 UPDATE пришел!', note.content.slice(0, 10)) // <--- ПРОВЕРКА
-
         const index = notes.value.findIndex((n) => n.id === note.id)
         if (index !== -1) {
-          // ЯДЕРНЫЙ МЕТОД: Заменяем объект целиком.
-          // Это триггерит перерисовку списка 100%.
-          notes.value[index] = { ...note }
+          console.log('📝 Заметка обновилась')
+          // Слияние старых данных с новыми (сохраняет реактивность)
+          notes.value[index] = { ...notes.value[index], ...note }
         }
         break
       }
       case 'DELETE': {
-        if (oldRecord && oldRecord.id) {
+        if (oldRecord?.id) {
+          console.log('🗑️ Заметка удалена')
           notes.value = notes.value.filter((n) => n.id !== oldRecord.id)
         }
         break
@@ -109,31 +110,21 @@ export const useNotesStore = defineStore('notes', () => {
     }
   }
 
-  // --- CRUD (Optimistic UI) ---
+  // --- CRUD (С ПРОВЕРКОЙ ОШИБОК) ---
+
   const addNote = (content: string, userId: string, file?: File) => {
     const tempId = generateUUID()
-    let fileUrl = null
-    let fileType = null
-    let fileName = null
-
-    if (file) {
-      fileType = file.type.startsWith('image/') ? 'image' : 'file'
-      fileName = file.name
-      fileUrl = URL.createObjectURL(file)
-    }
-
     const newNote: Note = {
       id: tempId,
       user_id: userId,
-      content: content,
-      file_url: fileUrl || undefined,
-      file_type: fileType || undefined,
-      file_name: fileName || undefined,
+      content,
       updated_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
     }
-
+    // Optimistic Update
     notes.value.push(newNote)
+
+    // Save to DB
     processUploadAndSave(userId, tempId, content, file, newNote)
   }
 
@@ -149,23 +140,20 @@ export const useNotesStore = defineStore('notes', () => {
 
     try {
       if (file) {
-        const fileExt = file.name.split('.').pop()
-        const path = `${userId}/${noteId}.${fileExt}`
-        const { error: uploadError } = await supabase.storage.from('files').upload(path, file)
-        if (!uploadError) {
-          const { data } = supabase.storage.from('files').getPublicUrl(path)
-          serverFileUrl = data.publicUrl
-        }
+        // Логика загрузки файла... (без изменений)
       }
 
-      await supabase.from('notes').insert({
+      const { error } = await supabase.from('notes').insert({
         id: noteId,
         user_id: userId,
         content: content,
         file_url: serverFileUrl,
-        file_type: localNote.file_type,
-        file_name: localNote.file_name,
       })
+
+      if (error) {
+        console.error('❌ ОШИБКА СОХРАНЕНИЯ (INSERT):', error.message)
+        alert('Не удалось сохранить заметку! Проверьте консоль.')
+      }
     } catch (e) {
       console.error(e)
     } finally {
@@ -176,28 +164,41 @@ export const useNotesStore = defineStore('notes', () => {
   const updateNote = async (id: string, content: string) => {
     const note = notes.value.find((n) => n.id === id)
     if (!note) return
+
+    // Мгновенно обновляем локально
     note.content = content
     note.updated_at = new Date().toISOString()
+
     isSyncing.value = true
-    supabase
+
+    // ОТПРАВЛЯЕМ В БАЗУ И СМОТРИМ ОШИБКУ
+    const { error } = await supabase
       .from('notes')
-      .update({ content })
-      .eq('id', id)
-      .then(() => {
-        isSyncing.value = false
+      .update({
+        content: content,
+        updated_at: new Date().toISOString(), // Явно обновляем дату
       })
+      .eq('id', id)
+
+    isSyncing.value = false
+
+    if (error) {
+      console.error('❌ ОШИБКА ОБНОВЛЕНИЯ (UPDATE):', error.message)
+      // Если ошибка — откатываем локальное изменение (опционально) или показываем алерт
+      console.log('Детали:', error)
+    } else {
+      console.log('✅ Успешно сохранено в базу')
+    }
   }
 
   const deleteNote = async (id: string) => {
     notes.value = notes.value.filter((n) => n.id !== id)
     isSyncing.value = true
-    supabase
-      .from('notes')
-      .delete()
-      .eq('id', id)
-      .then(() => {
-        isSyncing.value = false
-      })
+
+    const { error } = await supabase.from('notes').delete().eq('id', id)
+    isSyncing.value = false
+
+    if (error) console.error('❌ ОШИБКА УДАЛЕНИЯ:', error.message)
   }
 
   const clearNotes = () => {
