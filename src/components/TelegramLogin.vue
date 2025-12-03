@@ -1,64 +1,50 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, onUnmounted, ref, watch } from 'vue'
 import { Send } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth'
 
 // Мы просто сообщаем наверх: "Есть данные для входа"
 const emit = defineEmits(['login'])
-const { startRealtimeAuth, user } = useAuth()
+const { startPollingAuth, user } = useAuth()
 
 // Имя вашего бота (проверьте, чтобы совпадало с тем, что в BotFather)
 const BOT_USERNAME = 'fleeets_app_bot'
-
 const loginUrl = ref('')
-const isWaiting = ref(false)
+let stopPolling: (() => void) | undefined
 
-onMounted(() => {
-  // 1. Генерируем сессию сразу при маунте (или можно по клику)
-  const sessionId = startRealtimeAuth()
+onMounted(async () => {
+  // Запускаем процесс: получаем ID и начинаем опрос
+  const { sessionId, stop } = await startPollingAuth()
+  stopPolling = stop
 
-  // 2. Формируем ссылку: t.me/bot?start=UUID
   loginUrl.value = `https://t.me/${BOT_USERNAME}?start=${sessionId}`
-
-  // Начинаем ждать (визуально можно показать спиннер или просто ждать)
-  isWaiting.value = true
 })
 
-// Следим за юзером: если он появился (через Realtime), значит вход успешен
+onUnmounted(() => {
+  if (stopPolling) stopPolling()
+})
+
 watch(user, (newUser) => {
-  if (newUser) {
-    emit('login', newUser) // Сообщаем App.vue, чтобы убрать сплеш
-  }
+  if (newUser) emit('login', newUser)
 })
 </script>
 
 <template>
   <div class="flex flex-col items-center gap-4">
-    <!-- Кнопка-ссылка (Deep Link) -->
-    <!-- target="_blank" нужен, чтобы Telegram открылся в новом окне/приложении, 
-         а текущая вкладка осталась ждать возврата (или редиректа) -->
     <a
       :href="loginUrl"
-      class="telegram-btn group relative overflow-hidden"
+      class="telegram-btn group relative"
       target="_blank"
     >
-      <div class="flex items-center gap-2 relative z-10">
-        <Send
-          class="w-5 h-5 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-        />
+      <div class="flex items-center gap-2">
+        <Send class="w-5 h-5" />
         <span>Войти через Telegram</span>
       </div>
-
-      <!-- Анимация ожидания (опционально) -->
-      <div
-        v-if="isWaiting"
-        class="absolute bottom-0 left-0 h-1 bg-white/20 w-full animate-pulse"
-      ></div>
+      <!-- Индикатор работы -->
+      <div class="absolute bottom-0 left-0 h-0.5 bg-white/30 w-full animate-pulse"></div>
     </a>
-
-    <!-- Текст-подсказка -->
-    <p class="text-[13px] text-white/40 font-medium text-center max-w-[200px] leading-tight">
-      Нажмите кнопку и запустите бота. <br />Вход произойдет автоматически.
+    <p class="text-[13px] text-white/40 text-center">
+      Нажмите и запустите бота.<br />Вход произойдет автоматически.
     </p>
   </div>
 </template>
