@@ -91,22 +91,20 @@ export const useNotesStore = defineStore('notes', () => {
         break
       }
       case 'UPDATE': {
-        const note = newRecord as Note
-        // Ищем индекс заметки
-        const index = notes.value.findIndex((n) => n.id === note.id)
+        const serverNote = newRecord as Note
+        // 1. Быстрый поиск по ссылке (find эффективнее перебора map)
+        const localNote = notes.value.find((n) => n.id === serverNote.id)
 
-        if (index !== -1) {
-          console.log('⚡️ UPDATE прилетел:', note.content) // Лог для проверки
+        if (localNote) {
+          console.log('⚡️ Fast Update:', serverNote.content.slice(0, 10))
 
-          // 1. Берем старую заметку
-          const oldNote = notes.value[index]
-
-          // 2. Создаем АБСОЛЮТНО НОВЫЙ объект, объединяя старое и новое
-          const updatedNote = { ...oldNote, ...note }
-
-          // 3. Жестко заменяем элемент массива.
-          // Метод splice триггерит перерисовку списка даже если Vue "спит".
-          notes.value.splice(index, 1, updatedNote)
+          // 2. Точечное обновление полей.
+          // Мы НЕ меняем ссылку на объект localNote, мы меняем его внутренности.
+          // Vue 3 Proxy это видит и триггерит обновление только текстового узла в DOM.
+          localNote.content = serverNote.content
+          localNote.updated_at = serverNote.updated_at
+          if (serverNote.file_url) localNote.file_url = serverNote.file_url
+          // Добавьте другие поля, если они меняются (например, file_name)
         }
         break
       }

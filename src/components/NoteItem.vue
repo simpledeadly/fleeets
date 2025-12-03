@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, nextTick } from 'vue'
 import { type Note } from '../stores/notes'
 import { Trash2, Download, FileText } from 'lucide-vue-next'
 
@@ -26,7 +26,24 @@ const adjustHeight = () => {
 onMounted(adjustHeight)
 watch(localContent, adjustHeight)
 
-const onBlur = () => emit('update', props.note.id, localContent.value)
+watch(
+  () => props.note.content,
+  (newServerContent) => {
+    // Проверка, чтобы не сбить курсор, если тексты совпадают
+    if (localContent.value !== newServerContent) {
+      localContent.value = newServerContent
+      // После обновления текста нужно пересчитать высоту
+      nextTick(adjustHeight)
+    }
+  }
+)
+
+const onBlur = () => {
+  // Отправляем изменение, только если оно реально было
+  if (localContent.value !== props.note.content) {
+    emit('update', props.note.id, localContent.value)
+  }
+}
 
 // Умное скачивание (Web + Desktop)
 const downloadFile = async () => {
