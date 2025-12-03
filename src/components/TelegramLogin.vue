@@ -19,10 +19,7 @@ onMounted(() => {
 
   // Убедитесь, что имя бота совпадает с BotFather (без @)
   // Лучше брать из env, но для теста можно хардкодом
-  script.setAttribute(
-    'data-telegram-login',
-    import.meta.env.VITE_TELEGRAM_BOT_NAME || 'fleeets_auth_bot'
-  )
+  script.setAttribute('data-telegram-login', 'fleeets_auth_bot')
   script.setAttribute('data-size', 'large')
   script.setAttribute('data-radius', '12')
   script.setAttribute('data-request-access', 'write')
