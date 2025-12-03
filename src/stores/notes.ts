@@ -86,10 +86,10 @@ export const useNotesStore = defineStore('notes', () => {
       }
       case 'UPDATE': {
         const note = newRecord as Note
-        const index = notes.value.findIndex((n) => n.id === note.id)
-        if (index !== -1) {
-          // Splice важен для реактивности Vue
-          notes.value.splice(index, 1, note)
+        const existingNote = notes.value.find((n) => n.id === note.id)
+
+        if (existingNote) {
+          Object.assign(existingNote, note)
         }
         break
       }
@@ -170,6 +170,7 @@ export const useNotesStore = defineStore('notes', () => {
     const note = notes.value.find((n) => n.id === id)
     if (!note) return
     note.content = content
+    note.updated_at = new Date().toISOString()
     isSyncing.value = true
     supabase
       .from('notes')
