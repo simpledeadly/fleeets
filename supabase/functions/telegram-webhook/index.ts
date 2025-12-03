@@ -30,12 +30,17 @@ serve(async (req) => {
         return new Response('OK')
       }
 
-      // 1. Находим или создаем пользователя
+      // 1. ПОЛУЧАЕМ АВАТАРКУ
+      const avatarUrl = await getUserProfilePhotoUrl(telegramUserId)
+
+      // 2. Создаем/Находим юзера
       const email = `${telegramUserId}@telegram.fleeets.app`
       const password = `tg_${telegramUserId}_${SUPABASE_SERVICE_ROLE_KEY}`
 
       const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
-      if (!existingUsers.users.find((u) => u.email === email)) {
+      let user = existingUsers.users.find((u) => u.email === email)
+
+      if (!user) {
         await supabaseAdmin.auth.admin.createUser({
           email,
           password,
@@ -44,34 +49,35 @@ serve(async (req) => {
             telegram_id: telegramUserId,
             first_name: message.from.first_name,
             username: message.from.username,
+            avatar_url: avatarUrl, // <-- СОХРАНЯЕМ СЮДА
+          },
+        })
+      } else {
+        // Если юзер уже был, ОБНОВЛЯЕМ ему аватарку (вдруг сменил)
+        await supabaseAdmin.auth.admin.updateUserById(user.id, {
+          user_metadata: {
+            ...user.user_metadata,
+            avatar_url: avatarUrl,
           },
         })
       }
 
-      // 2. Получаем токены
+      // 3. Логиним и отдаем токены
       const { data: sessionData } = await supabaseAdmin.auth.signInWithPassword({ email, password })
 
-      if (!sessionData.session) {
-        await sendMessage(chatId, 'Ошибка авторизации.')
-        return new Response('OK')
-      }
-
-      // 3. Записываем токены в базу (UPSERT)
-      const { error: dbError } = await supabaseAdmin.from('auth_sessions').upsert({
-        id: sessionId,
-        status: 'success',
-        tokens: {
-          access_token: sessionData.session.access_token,
-          refresh_token: sessionData.session.refresh_token,
-          user: sessionData.user,
-        },
-      })
-
-      if (dbError) {
-        console.error(dbError)
-        await sendMessage(chatId, 'Ошибка базы данных.')
+      if (sessionData.session) {
+        await supabaseAdmin.from('auth_sessions').upsert({
+          id: sessionId,
+          status: 'success',
+          tokens: {
+            access_token: sessionData.session.access_token,
+            refresh_token: sessionData.session.refresh_token,
+            user: sessionData.user, // Тут уже будет обновленная метадата
+          },
+        })
+        await sendMessage(chatId, `✅ Вход выполнен! Возвращайтесь в приложение.`)
       } else {
-        await sendMessage(chatId, `✅ Вход выполнен!\nВозвращайтесь в приложение.`)
+        await sendMessage(chatId, 'Ошибка авторизации.')
       }
       return new Response('OK')
     }
@@ -133,4 +139,38 @@ async function setReaction(chatId: number, messageId: number, emoji: string) {
       reaction: [{ type: 'emoji', emoji }],
     }),
   })
+}
+
+async function getUserProfilePhotoUrl(userId: number): Promise<string | null> {
+  try {
+    // 1. Спрашиваем список фоток юзера
+    const res = await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/getUserProfilePhotos?user_id=${userId}&limit=1`
+    )
+    const data = await res.json()
+
+    if (!data.ok || data.result.total_count === 0) return null
+
+    // Берем самую последнюю (самую большую) версию первой фотки
+    const photos = data.result.photos[0]
+    const bestPhoto = photos[photos.length - 1]
+    const fileId = bestPhoto.file_id
+
+    // 2. Получаем путь к файлу
+    const fileRes = await fetch(
+      `https://api.telegram.org/bot${BOT_TOKEN}/getFile?file_id=${fileId}`
+    )
+    const fileData = await fileRes.json()
+
+    if (!fileData.ok) return null
+
+    // 3. Формируем публичную ссылку (она работает через сервера Telegram)
+    // Примечание: Эта ссылка временная (ок. часа), но для сессии хватит.
+    // В идеале: скачивать файл и лить в Supabase Storage, но это усложнит код в 3 раза.
+    // Пока оставим так.
+    return `https://api.telegram.org/file/bot${BOT_TOKEN}/${fileData.result.file_path}`
+  } catch (e) {
+    console.error('Avatar fetch error:', e)
+    return null
+  }
 }

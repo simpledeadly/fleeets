@@ -182,6 +182,24 @@ export function useAuth() {
     return true
   }
 
+  // === ВХОД ЧЕРЕЗ GOOGLE ===
+  const handleGoogleLogin = async () => {
+    try {
+      // Supabase сам разрулит редиректы
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          // Куда вернуться после входа.
+          // window.location.origin вернет текущий адрес (https://fleeets.vercel.app или localhost)
+          redirectTo: window.location.origin,
+        },
+      })
+      if (error) throw error
+    } catch (e: any) {
+      alert('Ошибка Google: ' + e.message)
+    }
+  }
+
   return {
     user,
     emailLoading,
@@ -191,5 +209,6 @@ export function useAuth() {
     handleEmailLogin,
     sendEmailOtp,
     verifyEmailOtp,
+    handleGoogleLogin,
   }
 }
