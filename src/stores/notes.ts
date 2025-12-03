@@ -50,6 +50,8 @@ export const useNotesStore = defineStore('notes', () => {
 
     if (realtimeChannel) await supabase.removeChannel(realtimeChannel)
 
+    console.log('🔌 Подписка на обновления...')
+
     realtimeChannel = supabase
       .channel('notes_sync')
       .on(
@@ -62,7 +64,9 @@ export const useNotesStore = defineStore('notes', () => {
         },
         (payload) => handleRealtimeEvent(payload as RealtimePostgresChangesPayload<Note>)
       )
-      .subscribe()
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') console.log('✅ Готовы принимать изменения')
+      })
   }
 
   // 3. Обработка событий
@@ -74,22 +78,25 @@ export const useNotesStore = defineStore('notes', () => {
     switch (eventType) {
       case 'INSERT': {
         const note = newRecord as Note
-        // Проверяем дубликаты (Optimistic UI)
         const exists = notes.value.find((n) => n.id === note.id)
         if (!exists) {
-          notes.value.push(note)
+          notes.value.push(note) // Добавляем в конец (или unshift в начало, как вам удобнее)
         } else {
-          // Если заметка уже есть (мы её создали), обновляем её данные с сервера
-          Object.assign(exists, note)
+          // Если есть - заменяем целиком, чтобы обновились все поля
+          const index = notes.value.indexOf(exists)
+          notes.value[index] = note
         }
         break
       }
       case 'UPDATE': {
         const note = newRecord as Note
-        const existingNote = notes.value.find((n) => n.id === note.id)
+        console.log('📝 UPDATE пришел!', note.content.slice(0, 10)) // <--- ПРОВЕРКА
 
-        if (existingNote) {
-          Object.assign(existingNote, note)
+        const index = notes.value.findIndex((n) => n.id === note.id)
+        if (index !== -1) {
+          // ЯДЕРНЫЙ МЕТОД: Заменяем объект целиком.
+          // Это триггерит перерисовку списка 100%.
+          notes.value[index] = { ...note }
         }
         break
       }
