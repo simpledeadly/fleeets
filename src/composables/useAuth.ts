@@ -4,6 +4,10 @@ import { useNotesStore } from '../stores/notes'
 
 const user = ref<any>(null)
 
+// ВАЖНО: Вставьте сюда ваш URL проекта Supabase (без /funcions/v1...)
+// Я взял его из вашего лога, но перепроверьте
+const SUPABASE_PROJECT_URL = 'https://euarsaudarjevvhttwpv.supabase.co'
+
 export function useAuth() {
   const notesStore = useNotesStore()
   const emailLoading = ref(false)
@@ -20,10 +24,25 @@ export function useAuth() {
 
   const handleTelegramLogin = async (tgUser: any): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.functions.invoke('telegram-auth', {
-        body: { user: tgUser },
+      // === ИСПРАВЛЕНИЕ ДЛЯ iOS ===
+      // Используем нативный fetch вместо supabase.functions.invoke
+      const response = await fetch(`${SUPABASE_PROJECT_URL}/functions/v1/telegram-auth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Используем Anon Key, так как пользователь еще не авторизован
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_KEY}`,
+        },
+        body: JSON.stringify({ user: tgUser }),
       })
-      if (error) throw error
+
+      if (!response.ok) {
+        const errText = await response.text()
+        throw new Error(`Server error ${response.status}: ${errText}`)
+      }
+
+      const data = await response.json()
+
       if (data?.session || data?.access_token) {
         const s = data.session || data
         await supabase.auth.setSession({
@@ -36,7 +55,9 @@ export function useAuth() {
         return true
       }
     } catch (e: any) {
-      alert('Ошибка: ' + e.message)
+      console.error('Auth error:', e)
+      // Можно раскомментировать алерт для отладки, если нужно
+      alert('Ошибка входа: ' + e.message)
     }
     return false
   }
