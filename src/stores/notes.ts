@@ -11,10 +11,9 @@ export interface Note {
   file_type?: string
   file_name?: string
   updated_at: string
-  created_at?: string // Добавил поле, чтобы сортировка работала корректно
+  created_at?: string
 }
 
-// Утилита для генерации ID
 function generateUUID() {
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = (Math.random() * 16) | 0
@@ -27,68 +26,92 @@ export const useNotesStore = defineStore('notes', () => {
   const notes = ref<Note[]>([])
   const isSyncing = ref(false)
 
-  // Храним подписку в переменной, чтобы не экспортировать её наружу
+  // Храним канал здесь
   let realtimeChannel: any = null
 
-  // 1. Загрузка + Подписка
   const fetchNotes = async () => {
     isSyncing.value = true
-
-    // Сначала грузим статику
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('notes')
       .select('*')
-      .order('created_at', { ascending: true }) // Старые сверху, новые снизу
+      .order('created_at', { ascending: true })
 
+    if (error) console.error('Ошибка загрузки заметок:', error)
     if (data) notes.value = data
+
     isSyncing.value = false
 
-    // Сразу включаем магию Realtime
+    // Запускаем подписку
     subscribeToRealtime()
   }
 
-  // --- REALTIME MAGIC ---
   const subscribeToRealtime = async () => {
-    // Если уже подписаны — выходим, чтобы не дублировать
-    if (realtimeChannel) return
-
+    // 1. Проверяем пользователя
     const {
       data: { user },
     } = await supabase.auth.getUser()
-    if (!user) return
+    if (!user) {
+      console.warn('⚠️ Realtime: Нет пользователя, подписка невозможна')
+      return
+    }
 
+    // 2. Если канал уже есть — сначала отписываемся, чтобы не плодить дубли
+    if (realtimeChannel) {
+      console.log('🔄 Realtime: Переподключение...')
+      await supabase.removeChannel(realtimeChannel)
+    }
+
+    console.log(`🔌 Realtime: Подключение к каналу для user ${user.id}...`)
+
+    // 3. Создаем канал с явным фильтром
     realtimeChannel = supabase
-      .channel('notes_sync')
+      .channel('notes_sync') // Уникальное имя канала
       .on(
         'postgres_changes',
         {
-          event: '*', // Слушаем INSERT, UPDATE, DELETE
+          event: '*', // Слушаем всё
           schema: 'public',
           table: 'notes',
-          filter: `user_id=eq.${user.id}`, // Только свои заметки
+          filter: `user_id=eq.${user.id}`, // <-- ВАЖНО: Фильтр по UUID
         },
-        (payload) => handleRealtimeEvent(payload as RealtimePostgresChangesPayload<Note>)
+        (payload) => {
+          console.log('🔥 Realtime: ПРИШЛО СОБЫТИЕ!', payload) // ЛОГ СОБЫТИЯ
+          handleRealtimeEvent(payload as RealtimePostgresChangesPayload<Note>)
+        }
       )
-      .subscribe()
+      .subscribe((status) => {
+        // 4. ЛОГИРУЕМ СТАТУС ПОДКЛЮЧЕНИЯ
+        console.log(`📡 Realtime Status: ${status}`)
 
-    console.log('🔌 Realtime подключен')
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Realtime: Успешно подписаны и слушаем изменения.')
+        }
+        if (status === 'CHANNEL_ERROR') {
+          console.error('❌ Realtime: Ошибка канала! Проверьте RLS и настройки репликации.')
+        }
+        if (status === 'TIMED_OUT') {
+          console.error('❌ Realtime: Таймаут подключения (плохой интернет?).')
+        }
+      })
   }
 
   const handleRealtimeEvent = (payload: RealtimePostgresChangesPayload<Note>) => {
     const { eventType, new: newRecord, old: oldRecord } = payload
 
+    // Дополнительная защита: убедимся, что пришел объект
+    if (!newRecord && eventType !== 'DELETE') return
+
     switch (eventType) {
       case 'INSERT': {
         const note = newRecord as Note
-        // Проверяем, есть ли эта заметка уже (Optimistic UI мог её добавить)
-        const existingIndex = notes.value.findIndex((n) => n.id === note.id)
-
-        if (existingIndex !== -1) {
-          // Если есть — обновляем её серверными данными (там правильный URL файла и даты)
-          notes.value[existingIndex] = note
-        } else {
-          // Если нет (пришло с другого устройства) — добавляем в конец
+        // Проверяем, не дубликат ли (Optimistic UI)
+        const exists = notes.value.find((n) => n.id === note.id)
+        if (!exists) {
+          console.log('➕ Realtime: Добавляю новую заметку в список')
           notes.value.push(note)
+        } else {
+          console.log('🔄 Realtime: Заметка уже есть (обновляем данные)')
+          Object.assign(exists, note)
         }
         break
       }
@@ -96,22 +119,23 @@ export const useNotesStore = defineStore('notes', () => {
         const note = newRecord as Note
         const index = notes.value.findIndex((n) => n.id === note.id)
         if (index !== -1) {
-          notes.value[index] = note
+          console.log('📝 Realtime: Обновляю заметку', note.id)
+          // Используем splice для реактивности
+          notes.value.splice(index, 1, note)
         }
         break
       }
       case 'DELETE': {
-        // Удаляем, если пришло событие удаления
         if (oldRecord && oldRecord.id) {
+          console.log('🗑️ Realtime: Удаляю заметку', oldRecord.id)
           notes.value = notes.value.filter((n) => n.id !== oldRecord.id)
         }
         break
       }
     }
   }
-  // ----------------------
 
-  // 2. МГНОВЕННОЕ Создание (Optimistic)
+  // --- Методы CRUD (без изменений, кроме логов) ---
   const addNote = (content: string, userId: string, file?: File) => {
     const tempId = generateUUID()
     let fileUrl = null
@@ -135,14 +159,10 @@ export const useNotesStore = defineStore('notes', () => {
       created_at: new Date().toISOString(),
     }
 
-    // Добавляем локально мгновенно
     notes.value.push(newNote)
-
-    // Крутим сохранение в фоне
     processUploadAndSave(userId, tempId, content, file, newNote)
   }
 
-  // Фоновая функция сохранения
   const processUploadAndSave = async (
     userId: string,
     noteId: string,
@@ -158,16 +178,12 @@ export const useNotesStore = defineStore('notes', () => {
         const fileExt = file.name.split('.').pop()
         const path = `${userId}/${noteId}.${fileExt}`
         const { error: uploadError } = await supabase.storage.from('files').upload(path, file)
-
         if (!uploadError) {
           const { data } = supabase.storage.from('files').getPublicUrl(path)
           serverFileUrl = data.publicUrl
         }
       }
 
-      // Пишем в базу
-      // (Ответ от базы нам по сути не нужен, так как Realtime пришлет событие INSERT,
-      // и мы обновим данные через handleRealtimeEvent, но select() тут не помешает для надежности)
       await supabase.from('notes').insert({
         id: noteId,
         user_id: userId,
@@ -177,20 +193,17 @@ export const useNotesStore = defineStore('notes', () => {
         file_name: localNote.file_name,
       })
     } catch (e) {
-      console.error('Ошибка фоновой синхронизации', e)
+      console.error(e)
     } finally {
       isSyncing.value = false
     }
   }
 
-  // 3. МГНОВЕННОЕ Обновление
   const updateNote = async (id: string, content: string) => {
     const note = notes.value.find((n) => n.id === id)
     if (!note) return
-
     note.content = content
     isSyncing.value = true
-
     supabase
       .from('notes')
       .update({ content })
@@ -200,11 +213,9 @@ export const useNotesStore = defineStore('notes', () => {
       })
   }
 
-  // 4. МГНОВЕННОЕ Удаление
   const deleteNote = async (id: string) => {
     notes.value = notes.value.filter((n) => n.id !== id)
     isSyncing.value = true
-
     supabase
       .from('notes')
       .delete()
@@ -214,22 +225,14 @@ export const useNotesStore = defineStore('notes', () => {
       })
   }
 
-  // 5. Очистка при выходе
   const clearNotes = () => {
     notes.value = []
     if (realtimeChannel) {
+      console.log('🛑 Realtime: Отключение')
       supabase.removeChannel(realtimeChannel)
       realtimeChannel = null
     }
   }
 
-  return {
-    notes,
-    isSyncing,
-    fetchNotes,
-    addNote,
-    updateNote,
-    deleteNote,
-    clearNotes,
-  }
+  return { notes, isSyncing, fetchNotes, addNote, updateNote, deleteNote, clearNotes }
 })
