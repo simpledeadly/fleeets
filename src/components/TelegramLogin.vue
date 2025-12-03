@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { FileQuestion } from 'lucide-vue-next'
 import { onMounted } from 'vue'
+import { supabase } from '../supabase'
 
 // const props = defineProps<{
 //   botName: string
@@ -30,8 +31,44 @@ onMounted(() => {
 
 // Глобальная функция, чтобы Telegram мог до неё достучаться
 // @ts-ignore
-window.onTelegramAuth = (user: any) => {
-  emit('login', user)
+window.onTelegramAuth = async (userData: any) => {
+  // Валидация Telegram data (обязательно для безопасности: проверьте hash с bot token)
+  // Получите bot token из env (VITE_TELEGRAM_BOT_TOKEN или аналогично)
+  const botToken = import.meta.env.VITE_TELEGRAM_BOT_TOKEN // Добавьте в .env и vite.config
+  if (!botToken) {
+    console.error('Bot token not found')
+    return
+  }
+
+  // Telegram validation: создайте check string и сравните hash
+  const checkString = Object.keys(userData)
+    .filter((key) => key !== 'hash')
+    .map((key) => `${key}=${userData[key]}`)
+    .sort()
+    .join('\n')
+
+  const crypto = await import('crypto') // Для хэша (если в браузере, используйте Web Crypto API)
+  const secretKey = crypto.createHash('sha256').update(botToken).digest()
+  const hmac = crypto.createHmac('sha256', secretKey).update(checkString).digest('hex')
+
+  if (hmac !== userData.hash) {
+    console.error('Invalid Telegram hash')
+    return // Не авторизуем, если подделка
+  }
+
+  // Если валидно, авторизуем через Supabase (custom token)
+  const { data, error } = await supabase.auth.signInWithIdToken({
+    provider: 'telegram',
+    token: JSON.stringify(userData), // Или userData.hash + '|' + userData.auth_date
+  })
+
+  if (error) {
+    console.error('Supabase auth error:', error)
+    return
+  }
+
+  console.log('Telegram auth success:', data)
+  emit('login', userData) // Если нужно emit для UI
 }
 
 const devLogin = () => {
