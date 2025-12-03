@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 // import { invoke } from '@tauri-apps/api'
 // import { ask } from '@tauri-apps/api/dialog'
 // import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
-import { Zap } from 'lucide-vue-next'
+import { Zap, ExternalLink } from 'lucide-vue-next'
 import { useAuth } from './composables/useAuth'
 import { useAppSettings } from './composables/useAppSettings'
 import { useNotesStore } from './stores/notes'
@@ -26,47 +26,6 @@ const {
   initSettings,
   cleanupSettings,
 } = useAppSettings()
-
-// async function checkForUpdates() {
-//   try {
-//     await invoke('log_to_console', { message: 'Проверяем обновления...' })
-//     const { shouldUpdate, manifest } = await checkUpdate()
-
-//     await invoke('log_to_console', { message: `Нужно обновиться: ${shouldUpdate}` })
-//     if (manifest) {
-//       await invoke('log_to_console', {
-//         message: `Манифест получен: версия ${manifest.version}, дата: ${manifest.date}`,
-//       })
-//     } else {
-//       await invoke('log_to_console', { message: 'Манифест НЕ получен (null).' })
-//     }
-
-//     if (shouldUpdate) {
-//       await invoke('log_to_console', { message: 'Показываем диалог обновления...' })
-//       const wantToUpdate = await ask(
-//         `Доступна новая версия: ${manifest?.version}. Хотите установить ее сейчас?`,
-//         {
-//           title: 'Доступно обновление',
-//           okLabel: 'Установить и перезапустить',
-//           cancelLabel: 'Позже',
-//         }
-//       )
-
-//       if (wantToUpdate) {
-//         await invoke('log_to_console', {
-//           message: 'Пользователь согласился. Запускаем установку...',
-//         })
-//         await installUpdate()
-//       } else {
-//         await invoke('log_to_console', { message: 'Пользователь отказался от обновления.' })
-//       }
-//     }
-//   } catch (err) {
-//     await invoke('log_to_console', {
-//       message: `Критическая ошибка при проверке обновлений: ${JSON.stringify(err)}`,
-//     })
-//   }
-// }
 
 const isBooting = ref(true)
 
@@ -171,13 +130,10 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <!-- 
-    FIX 1: h-[100dvh] вместо h-screen исправляет исчезновение футера за адресной строкой на мобилках.
-    w-screen и overflow-hidden предотвращают горизонтальный скролл.
-  -->
   <div
     class="h-[100dvh] w-screen overflow-hidden font-sans text-base text-[#ffffff] relative flex items-center justify-center bg-[#050505]"
   >
+    <!-- 1. ЭКРАН-ПРЕДУПРЕЖДЕНИЕ ДЛЯ TELEGRAM -->
     <div
       v-if="isTelegramBrowser"
       class="absolute inset-0 z-[200] bg-[#050505] flex flex-col items-center justify-center p-8 text-center"
@@ -193,32 +149,30 @@ onUnmounted(() => {
       </p>
       <div class="text-sm text-gray-600">Авторизация внутри Telegram не сохранится.</div>
     </div>
-    <div v-else>
-      <!-- ШУМ (Только веб) -->
+
+    <!-- 2. СТАНДАРТНЫЙ ИНТЕРФЕЙС (СКРЫВАЕМ ЕСЛИ TG) -->
+    <template v-else>
       <div
         v-if="!isTauri"
         class="absolute inset-0 z-0 opacity-[0.03] pointer-events-none noise-bg"
       ></div>
 
-      <!-- 1. SPLASH SCREEN (Экран загрузки) -->
+      <!-- SPLASH SCREEN -->
       <Transition name="fade-slow">
         <div
           v-if="isBooting"
           class="absolute inset-0 z-[100] bg-[#050505] flex flex-col items-center justify-center"
         >
-          <!-- Пульсирующий логотип -->
           <div class="relative flex items-center justify-center w-20 h-20 mb-4">
             <div
               class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-yellow-500/10 blur-3xl rounded-full pointer-events-none animate-pulse-slow"
             ></div>
             <Zap class="w-10 h-10 text-yellow-400 relative z-10 animate-pulse" />
           </div>
-          <!-- Небольшой текст (опционально) -->
-          <!-- <span class="text-[#3f3f46] text-xs font-mono animate-pulse">loading...</span> -->
         </div>
       </Transition>
 
-      <!-- КОНТЕЙНЕР ПРИЛОЖЕНИЯ -->
+      <!-- MAIN APP CONTENT -->
       <Transition name="scale-in">
         <div
           v-if="!isBooting"
@@ -229,38 +183,30 @@ onUnmounted(() => {
               : 'w-full h-full border-0 shadow-none bg-[#0c0c0e] md:w-[900px] md:h-[85vh] md:rounded-3xl md:border md:border-[#333]/60 md:shadow-2xl'
           "
         >
-          <!-- ЭКРАН ВХОДА -->
           <LoginView
             v-if="!user"
             @login-telegram="onLoginStart"
           />
 
-          <!-- ИНТЕРФЕЙС ПРИЛОЖЕНИЯ -->
           <div
             v-else
             class="flex-1 flex flex-col relative w-full h-full overflow-hidden"
           >
-            <!-- Drag Region -->
             <div
               v-if="isTauri"
               data-tauri-drag-region
               class="h-8 w-full shrink-0 bg-transparent z-50 absolute top-0 left-0"
             ></div>
 
-            <!-- СПИСОК (занимает всё свободное место) -->
             <NoteList
               ref="listRef"
               :is-comfort-mode="isComfortMode"
             />
-
-            <!-- ВВОД -->
             <NoteInput
               :is-comfort-mode="isComfortMode"
               :is-tauri="isTauri"
               @submit="onNoteSubmit"
             />
-
-            <!-- ФУТЕР (shrink-0 не дает ему сжиматься) -->
             <AppFooter
               class="shrink-0"
               :is-offline="isOffline"
@@ -268,13 +214,11 @@ onUnmounted(() => {
               @toggle-settings="showSettings = !showSettings"
             />
 
-            <!-- Settings Modal Overlay -->
             <div
               v-if="showSettings"
               @click="showSettings = false"
               class="fixed inset-0 z-40 bg-black/50 md:bg-black/40"
             ></div>
-
             <Transition name="fade-slide">
               <SettingsPanel
                 v-if="showSettings"
@@ -288,7 +232,7 @@ onUnmounted(() => {
           </div>
         </div>
       </Transition>
-    </div>
+    </template>
   </div>
 </template>
 
