@@ -13,6 +13,7 @@ import NoteList from './components/notes/NoteList.vue'
 import NoteInput from './components/notes/NoteInput.vue'
 import AppFooter from './components/layout/AppFooter.vue'
 import SettingsPanel from './components/layout/SettingsPanel.vue'
+import InboxPage from './pages/InboxPage.vue'
 
 const notesStore = useNotesStore()
 const { user, initSession } = useAuth()
@@ -31,6 +32,8 @@ const isBooting = ref(true)
 
 const showSettings = ref(false)
 const listRef = ref<InstanceType<typeof NoteList> | null>(null)
+
+const currentView = ref<'notes' | 'inbox'>('notes')
 
 const isTelegramBrowser = computed(() => {
   const ua = navigator.userAgent.toLowerCase()
@@ -166,15 +169,60 @@ onUnmounted(() => {
               class="h-8 w-full shrink-0 bg-transparent z-50 absolute top-0 left-0"
             ></div>
 
-            <NoteList
-              ref="listRef"
-              :is-comfort-mode="isComfortMode"
-            />
-            <NoteInput
-              :is-comfort-mode="isComfortMode"
-              :is-tauri="isTauri"
-              @submit="onNoteSubmit"
-            />
+            <!-- Хедер / Навигация -->
+            <header class="p-4 border-b border-gray-800 flex items-center justify-center gap-2">
+              <button
+                @click="currentView = 'notes'"
+                class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                :class="
+                  currentView === 'notes'
+                    ? 'bg-gray-800 text-white'
+                    : 'text-gray-500 hover:text-white'
+                "
+              >
+                Мои заметки
+              </button>
+
+              <button
+                @click="currentView = 'inbox'"
+                class="px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                :class="
+                  currentView === 'inbox'
+                    ? 'bg-gray-800 text-white'
+                    : 'text-gray-500 hover:text-white'
+                "
+              >
+                <span>Входящие (AI)</span>
+                <!-- Красная точка, если есть новые (можно привязать к стору) -->
+                <!-- <span v-if="inboxStore.hasNewItems" class="w-2 h-2 bg-red-500 rounded-full"></span> -->
+              </button>
+            </header>
+
+            <main class="flex-1 overflow-hidden relative">
+              <!-- Показываем либо заметки, либо инбокс -->
+              <div
+                v-if="currentView === 'notes'"
+                class="h-full"
+              >
+                <NoteList
+                  ref="listRef"
+                  :is-comfort-mode="isComfortMode"
+                />
+                <NoteInput
+                  :is-comfort-mode="isComfortMode"
+                  :is-tauri="isTauri"
+                  @submit="onNoteSubmit"
+                />
+              </div>
+
+              <div
+                v-else-if="currentView === 'inbox'"
+                class="h-full"
+              >
+                <InboxPage />
+              </div>
+            </main>
+
             <AppFooter
               class="shrink-0"
               :is-offline="isOffline"

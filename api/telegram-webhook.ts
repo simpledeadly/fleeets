@@ -102,7 +102,7 @@ export default async function handler(req: any, res: any) {
         messages: [
           {
             role: 'system',
-            content: `Analyze the user's text. Extract tasks, ideas, or notes.
+            content: `Analyze the user's text in Russian. Extract tasks, ideas, or notes MUST be in Russian.
             Return JSON ONLY. Format:
             {
               "summary": "Short summary",
