@@ -135,9 +135,22 @@ export default async function handler(req: any, res: any) {
       throw new Error('Failed to parse JSON from LLM')
     }
 
+    const { data: userSettings } = await supabase
+      .from('user_settings')
+      .select('user_id')
+      .eq('telegram_chat_id', chatId)
+      .single()
+
+    const userId = userSettings?.user_id || null
+
+    if (!userId) {
+      console.warn(`Unknown user for chat_id: ${chatId}. Saving as anonymous.`)
+    }
+
     // 4. Save to DB
     const { error } = await supabase.from('inbox').insert({
       telegram_chat_id: chatId,
+      user_id: userId,
       raw_text: transcribedText,
       structured_data: structuredData,
       status: 'new',
