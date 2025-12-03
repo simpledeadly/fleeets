@@ -8,9 +8,23 @@
   caret-color: dodgerblue;
 }
 
+:root {
+  font-family: 'Raleway', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 500;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 html,
 body {
+  font-family: 'Raleway', sans-serif;
   background-color: #09090b; /* Полная прозрачность */
+  color: #ffffff;
   margin: 0;
   height: 100%;
   overflow: hidden;
@@ -19,13 +33,6 @@ body {
 #app {
   /* Принудительный черный фон, чтобы окно стало видно */
   overflow: hidden;
-}
-
-body {
-  margin: 0;
-  font-family: 'Raleway', sans-serif;
-  color: #ffffff;
-  overflow: hidden; /* Чтобы не было скролла у всего окна */
 }
 
 /* Кастомный скроллбар */

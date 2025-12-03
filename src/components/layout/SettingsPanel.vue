@@ -21,14 +21,35 @@ const setMode = (wantComfort: boolean) => {
   if (props.isComfortMode !== wantComfort) emit('toggleLayout')
 }
 
-// Данные профиля
+// 1. АВАТАРКА
+// Google сам кладет аватарку в avatar_url, Telegram (наш бот) тоже туда кладет.
 const avatarUrl = computed(() => user.value?.user_metadata?.avatar_url)
+
+// 2. ОТОБРАЖАЕМОЕ ИМЯ
 const displayName = computed(() => {
   const meta = user.value?.user_metadata
-  if (!meta) return 'Пользователь'
-  // Если есть username, показываем его (@durov), иначе Имя
+  if (!meta) return user.value?.email || 'Пользователь'
+
+  // Приоритет: Username -> Имя -> Email
   if (meta.username) return `@${meta.username}`
-  return meta.first_name || meta.full_name || user.value?.email?.split('@')[0]
+  if (meta.first_name) return meta.first_name
+  if (meta.full_name) return meta.full_name
+  return user.value?.email?.split('@')[0]
+})
+
+// 3. ТИП АККАУНТА (ДИНАМИЧЕСКИЙ)
+const accountType = computed(() => {
+  const meta = user.value?.user_metadata
+  const appMeta = user.value?.app_metadata
+
+  // Если есть telegram_id в метаданных — значит это наш кастомный Telegram вход
+  if (meta?.telegram_id) return 'Telegram Account'
+
+  // Если провайдер Google
+  if (appMeta?.provider === 'google') return 'Google Account'
+
+  // Иначе это просто почта
+  return 'Email Account'
 })
 </script>
 
@@ -41,7 +62,7 @@ const displayName = computed(() => {
       <div class="w-12 h-1 bg-[#3f3f46] rounded-full"></div>
     </div>
 
-    <!-- ЗАГОЛОВОК -->
+    <!-- HEADER -->
     <div class="px-5 py-4 flex justify-between items-center border-b border-white/5">
       <span class="text-sm font-bold tracking-[0.2em] text-[#71717a] uppercase">Настройки</span>
       <button
@@ -53,7 +74,7 @@ const displayName = computed(() => {
     </div>
 
     <div class="p-5 flex flex-col gap-6">
-      <!-- 0. ПРОФИЛЬ (НОВОЕ) -->
+      <!-- ПРОФИЛЬ -->
       <div class="flex items-center gap-4 pb-4 border-b border-white/5">
         <!-- Аватарка -->
         <div class="relative shrink-0">
@@ -68,20 +89,21 @@ const displayName = computed(() => {
           >
             <User class="w-6 h-6" />
           </div>
-          <!-- Индикатор онлайна (для красоты) -->
+          <!-- Индикатор -->
           <div
             class="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#121214] rounded-full"
           ></div>
         </div>
 
-        <!-- Имя и инфо -->
+        <!-- Инфо -->
         <div class="flex flex-col overflow-hidden">
           <span class="text-white font-medium truncate text-[15px]">{{ displayName }}</span>
-          <span class="text-xs text-[#52525b]">Telegram Account</span>
+          <!-- ВОТ ТУТ ТЕПЕРЬ ДИНАМИКА -->
+          <span class="text-xs text-[#52525b]">{{ accountType }}</span>
         </div>
       </div>
 
-      <!-- 1. МАСШТАБ -->
+      <!-- МАСШТАБ -->
       <div class="flex flex-col gap-3">
         <div class="flex justify-between items-end">
           <span class="flex items-center gap-2 text-sm font-medium text-[#e4e4e7]">
@@ -107,7 +129,7 @@ const displayName = computed(() => {
         </div>
       </div>
 
-      <!-- 2. РЕЖИМ -->
+      <!-- РЕЖИМ -->
       <div class="flex flex-col gap-3">
         <span class="flex items-center gap-2 text-sm font-medium text-[#e4e4e7]">
           <LayoutTemplate class="w-4 h-4 text-[#a1a1aa]" />
@@ -141,7 +163,7 @@ const displayName = computed(() => {
         </div>
       </div>
 
-      <!-- 3. ФУТЕР -->
+      <!-- ФУТЕР -->
       <div class="pt-2 mt-2 border-t border-white/5">
         <button
           @click="onLogout"
