@@ -1,12 +1,17 @@
 // supabase/functions/telegram-auth/index.ts
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { hmac } from 'https://deno.land/x/hmac@v2.0.1/mod.ts'
-import { sha256 } from 'https://deno.land/x/sha256@v1.0.2/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+// Хелпер для перевода буфера в hex строку
+function toHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer))
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('')
 }
 
 serve(async (req) => {
@@ -17,47 +22,63 @@ serve(async (req) => {
   try {
     const { user: telegramUser } = await req.json()
 
-    // 1. Получаем секрет бота из переменных окружения (задать в Supabase Dashboard!)
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
     if (!botToken) throw new Error('BOT_TOKEN is missing')
 
-    // 2. Валидация данных от Telegram (Проверка Хэша)
+    // 1. Валидация данных (Native Web Crypto API)
     const { hash, ...data } = telegramUser
+
+    // Сортируем ключи по алфавиту и собираем строку (спецификация Telegram)
     const dataCheckString = Object.keys(data)
       .sort()
+      .filter((k) => data[k]) // Исключаем пустые поля
       .map((key) => `${key}=${data[key]}`)
       .join('\n')
 
-    // Создаем секретный ключ из токена бота
-    const secretKey = sha256(botToken, 'utf8', 'bytes')
-    // Считаем HMAC
-    const calculatedHash = hmac('sha256', secretKey, dataCheckString, 'utf8', 'hex')
+    const encoder = new TextEncoder()
+
+    // А) Создаем секретный ключ (SHA256 от токена бота)
+    const secretKeyData = await crypto.subtle.digest('SHA-256', encoder.encode(botToken))
+
+    // Б) Импортируем ключ для HMAC
+    const cryptoKey = await crypto.subtle.importKey(
+      'raw',
+      secretKeyData,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    )
+
+    // В) Подписываем строку проверки
+    const signature = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(dataCheckString))
+
+    const calculatedHash = toHex(signature)
 
     if (calculatedHash !== hash) {
-      throw new Error('Invalid Telegram Hash')
+      throw new Error(`Invalid Telegram Hash. Calc: ${calculatedHash}, Rec: ${hash}`)
     }
 
-    // 3. Если хэш верный — авторизуем пользователя в Supabase
-    // Создаем Supabase Admin Client (нужен SERVICE_ROLE_KEY)
+    // 2. Логика Supabase (Создание/Вход пользователя)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Генерируем email на основе Telegram ID (т.к. Telegram не дает email)
     const email = `${telegramUser.id}@telegram.fleeets.app`
-    const password = `tg_${telegramUser.id}_${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` // Случайный сложный пароль, пользователю он не нужен
+    // Пароль не важен, пользователь его не вводит
+    const password = `tg_${telegramUser.id}_${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
 
-    // Пытаемся получить пользователя или создать нового
-    // Сначала проверим, есть ли он
+    // Проверяем существование пользователя
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
-    let userId = existingUsers.users.find((u) => u.email === email)?.id
+    const existingUser = existingUsers.users.find((u) => u.email === email)
+
+    let userId = existingUser?.id
 
     if (!userId) {
       // Создаем нового
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
-        password, // Технический пароль
+        password,
         email_confirm: true,
         user_metadata: {
           telegram_id: telegramUser.id,
@@ -70,7 +91,7 @@ serve(async (req) => {
       userId = newUser.user.id
     }
 
-    // 4. Выдаем сессию (Sign In)
+    // Выдаем сессию
     const { data: sessionData, error: loginError } = await supabaseAdmin.auth.signInWithPassword({
       email,
       password,
@@ -82,10 +103,11 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
-  } catch (error) {
+  } catch (error: any) {
+    console.error('Auth Error:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400,
+      status: 400, // Возвращаем 400, чтобы фронтенд понял ошибку
     })
   }
 })
