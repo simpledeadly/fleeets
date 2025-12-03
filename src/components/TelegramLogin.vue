@@ -1,59 +1,58 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { supabase } from '../supabase'
+import { supabase } from '../supabase' // Импорт клиента
+import { Send } from 'lucide-vue-next'
 
 const emit = defineEmits(['login'])
 const isLoading = ref(false)
 const errorMessage = ref('')
 
-onMounted(() => {
-  // Очистка контейнера перед вставкой (на случай хот-релоада)
-  const container = document.getElementById('telegram-login-container')
-  if (container) container.innerHTML = ''
+// Имя вашего бота (для ссылки)
+const BOT_USERNAME = 'fleeets_app_bot'
 
-  const script = document.createElement('script')
-  script.async = true
-  script.src = 'https://telegram.org/js/telegram-widget.js?22'
+onMounted(async () => {
+  // Проверяем, вернулся ли пользователь по ссылке из Телеграма
+  // URL будет типа: /?id=123&first_name=Max&hash=...
+  const params = new URLSearchParams(window.location.search)
 
-  // ВАЖНО: Вставьте сюда НОВОГО бота
-  script.setAttribute('data-telegram-login', 'fleeets_app_bot')
-  script.setAttribute('data-size', 'large')
-  script.setAttribute('data-radius', '10')
-  script.setAttribute('data-userpic', 'false')
-
-  // Гибридный подход: если JS отвалится, сработает редирект
-  // Но мы перехватим событие через onauth
-  script.setAttribute('data-onauth', 'onTelegramAuth(user)')
-  script.setAttribute('data-request-access', 'write') // Можно вернуть для нового бота
-
-  container?.appendChild(script)
+  if (params.has('hash') && params.has('id')) {
+    await handleLoginFromUrl(params)
+  }
 })
 
-// @ts-ignore
-window.onTelegramAuth = async (telegramUser: any) => {
-  console.log('Telegram User received:', telegramUser) // Лог для отладки
+const handleLoginFromUrl = async (params: URLSearchParams) => {
   isLoading.value = true
-  errorMessage.value = ''
+  // Собираем объект user из параметров URL
+  const telegramUser: any = {}
+  params.forEach((value, key) => {
+    telegramUser[key] = value
+  })
+
+  // Чистим URL, чтобы параметры не висели
+  window.history.replaceState({}, document.title, window.location.pathname)
 
   try {
-    // Вызов Edge Function (которую мы писали ранее)
+    // ВЫЗЫВАЕМ ТУ ЖЕ ФУНКЦИЮ АВТОРИЗАЦИИ, ЧТО МЫ ПИСАЛИ В ПРОШЛЫЙ РАЗ
+    // (telegram-auth). Она проверит хэш и выдаст сессию.
     const { data, error } = await supabase.functions.invoke('telegram-auth', {
       body: { user: telegramUser },
     })
 
     if (error) throw error
-    if (!data?.session) throw new Error('Session creation failed')
+    if (!data.session) throw new Error('No session returned')
 
     const { error: sessionError } = await supabase.auth.setSession({
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token,
     })
+
     if (sessionError) throw sessionError
 
     emit('login', data.user)
+    console.log('Login success via Deep Link!')
   } catch (err: any) {
-    console.error(err)
-    errorMessage.value = 'Ошибка: ' + (err.message || 'Неизвестная ошибка')
+    console.error('Deep link login error:', err)
+    errorMessage.value = err.message
   } finally {
     isLoading.value = false
   }
@@ -61,44 +60,46 @@ window.onTelegramAuth = async (telegramUser: any) => {
 </script>
 
 <template>
-  <div class="login-wrapper">
+  <div class="flex flex-col items-center gap-4">
+    <!-- Кнопка вместо виджета -->
+    <a
+      :href="`https://t.me/${BOT_USERNAME}?start=login`"
+      class="telegram-btn"
+      target="_blank"
+    >
+      <Send class="w-5 h-5 mr-2" />
+      Войти через Telegram
+    </a>
+
     <div
-      id="telegram-login-container"
-      :class="{ disabled: isLoading }"
-    ></div>
-    <!-- Вывод ошибок на экран, чтобы не гадать -->
-    <p
+      v-if="isLoading"
+      class="text-sm text-gray-500"
+    >
+      Авторизация...
+    </div>
+    <div
       v-if="errorMessage"
-      class="error-text"
+      class="text-red-500 text-sm"
     >
       {{ errorMessage }}
-    </p>
-    <p
-      v-if="isLoading"
-      class="loading-text"
-    >
-      Входим...
-    </p>
+    </div>
   </div>
 </template>
 
 <style scoped>
-.login-wrapper {
+.telegram-btn {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  background-color: #24a1de;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.2s;
 }
-.disabled {
-  opacity: 0.5;
-  pointer-events: none;
-}
-.error-text {
-  color: #ff4444;
-  font-size: 14px;
-}
-.loading-text {
-  color: #666;
-  font-size: 14px;
+.telegram-btn:hover {
+  opacity: 0.9;
 }
 </style>
