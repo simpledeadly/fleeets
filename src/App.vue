@@ -96,8 +96,7 @@ const onLoginStart = async (tgUser: any) => {
       // === ВОТ ОНА, БЕСШОВНАЯ МАГИЯ ===
       // Мы тихо удаляем ?id=...&hash=... из адресной строки браузера.
       // Страница НЕ перезагружается.
-      const cleanUrl = window.location.pathname
-      window.history.replaceState({}, document.title, cleanUrl)
+      window.history.replaceState({}, document.title, '/')
 
       // 3. Подготавливаем интерфейс (скролл вниз)
       await nextTick()
