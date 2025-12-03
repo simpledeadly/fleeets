@@ -49,7 +49,7 @@ serve(async (req) => {
       }
 
       // 2. ВМЕСТО REALTIME -> ПИШЕМ В БАЗУ
-      const { error: dbError } = await supabaseAdmin.from('auth_sessions').insert({
+      const { error: dbError } = await supabaseAdmin.from('auth_sessions').upsert({
         id: sessionId,
         status: 'success',
         tokens: {
@@ -61,9 +61,9 @@ serve(async (req) => {
 
       if (dbError) {
         console.error(dbError)
-        await sendMessage(chatId, 'Ошибка базы данных.')
+        await sendMessage(chatId, 'Что-то пошло не так, попробуйте еще раз.')
       } else {
-        await sendMessage(chatId, `✅ Вход выполнен! Возвращайтесь в приложение.`)
+        await sendMessage(chatId, `✅ Вход выполнен!\nВернитесь в приложение.`)
       }
     }
     return new Response('OK')

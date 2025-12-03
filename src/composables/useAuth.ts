@@ -3,7 +3,6 @@ import { supabase } from '../supabase'
 import { useNotesStore } from '../stores/notes'
 
 const user = ref<any>(null)
-// URL вашего проекта Supabase
 const SUPABASE_PROJECT_URL = 'https://euarsaudarjevvhttwpv.supabase.co'
 
 export function useAuth() {
@@ -20,41 +19,40 @@ export function useAuth() {
     return false
   }
 
-  // === НОВЫЙ МЕТОД: POLL LOGIN (Работает везде) ===
   const startPollingAuth = async () => {
     let isStop = false
 
-    // 1. Проверяем, есть ли сохраненная сессия (чтобы пережить перезагрузку PWA)
+    // Получаем или создаем ID
     let sessionId = localStorage.getItem('tg_session_id')
-
-    // Если нет старой сессии, создаем новую
     if (!sessionId) {
       sessionId = crypto.randomUUID()
       localStorage.setItem('tg_session_id', sessionId!)
     }
 
-    // 2. Функция опроса
-    const poll = async () => {
-      if (isStop || user.value) return
+    // Функция проверки (вынесли отдельно, чтобы вызывать вручную)
+    const checkAuth = async () => {
+      if (user.value) return true
 
       try {
-        const response = await fetch(`${SUPABASE_PROJECT_URL}/functions/v1/telegram-auth-poll`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_KEY}`,
-          },
-          body: JSON.stringify({ session_id: sessionId }),
-        })
+        // Добавляем timestamp, чтобы iOS не кэшировал запрос
+        const ts = Date.now()
+        const response = await fetch(
+          `${SUPABASE_PROJECT_URL}/functions/v1/telegram-auth-poll?t=${ts}`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_KEY}`,
+            },
+            body: JSON.stringify({ session_id: sessionId }),
+          }
+        )
 
         if (response.ok) {
           const data = await response.json()
 
-          // ЕСЛИ УСПЕХ
           if (data.access_token) {
             console.log('✅ Вход выполнен!')
-
-            // Чистим хранилище, этот ID больше не нужен
             localStorage.removeItem('tg_session_id')
 
             await supabase.auth.setSession({
@@ -65,41 +63,44 @@ export function useAuth() {
             const { data: u } = await supabase.auth.getUser()
             user.value = u.user
             await notesStore.fetchNotes()
-            return
+            return true
           }
         }
       } catch (e) {
-        console.error('Poll error', e)
+        console.error('Check error', e)
       }
-
-      // Если не вышли и не остановили — повторяем
-      if (!isStop) setTimeout(poll, 2000)
+      return false
     }
 
-    // 3. Запускаем опрос
+    // Автоматический опрос
+    const poll = async () => {
+      if (isStop) return
+      const success = await checkAuth()
+      if (!success && !isStop) setTimeout(poll, 2000)
+    }
+
     poll()
 
-    // 4. ВАЖНО: Добавляем триггер "Проснуться"
-    // Как только юзер переключается обратно на вкладку/PWA — сразу проверяем базу
+    // Просыпание на iOS
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        console.log('👀 App woke up, checking auth immediately...')
-        poll()
+        // Небольшая задержка, чтобы сеть успела подняться на iOS
+        setTimeout(() => {
+          console.log('👀 Wake up check')
+          checkAuth()
+        }, 500)
       }
     }
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // Функция остановки (чистим слушатели)
     const stop = () => {
       isStop = true
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      // Если уходим со страницы входа руками — чистим ID, чтобы создать новый в след раз
-      if (!user.value) {
-        localStorage.removeItem('tg_session_id')
-      }
+      if (!user.value) localStorage.removeItem('tg_session_id')
     }
 
-    return { sessionId, stop }
+    // Экспортируем checkAuth наружу, чтобы повесить на кнопку
+    return { sessionId, stop, checkAuth }
   }
 
   // === ИСПРАВЛЕННЫЙ ВЫХОД (ЯДЕРНЫЙ) ===
