@@ -22,16 +22,22 @@ export function useAuth() {
 
   // === НОВЫЙ МЕТОД: POLL LOGIN (Работает везде) ===
   const startPollingAuth = async () => {
-    // 1. Генерируем UUID
-    const sessionId = crypto.randomUUID()
     let isStop = false
 
-    // 2. Функция опроса сервера
+    // 1. Проверяем, есть ли сохраненная сессия (чтобы пережить перезагрузку PWA)
+    let sessionId = localStorage.getItem('tg_session_id')
+
+    // Если нет старой сессии, создаем новую
+    if (!sessionId) {
+      sessionId = crypto.randomUUID()
+      localStorage.setItem('tg_session_id', sessionId!)
+    }
+
+    // 2. Функция опроса
     const poll = async () => {
       if (isStop || user.value) return
 
       try {
-        // Спрашиваем функцию: "Есть токены для этой сессии?"
         const response = await fetch(`${SUPABASE_PROJECT_URL}/functions/v1/telegram-auth-poll`, {
           method: 'POST',
           headers: {
@@ -44,9 +50,12 @@ export function useAuth() {
         if (response.ok) {
           const data = await response.json()
 
-          // ЕСЛИ ТОКЕНЫ ПРИШЛИ
+          // ЕСЛИ УСПЕХ
           if (data.access_token) {
-            console.log('✅ Токены получены через Polling!')
+            console.log('✅ Вход выполнен!')
+
+            // Чистим хранилище, этот ID больше не нужен
+            localStorage.removeItem('tg_session_id')
 
             await supabase.auth.setSession({
               access_token: data.access_token,
@@ -56,23 +65,38 @@ export function useAuth() {
             const { data: u } = await supabase.auth.getUser()
             user.value = u.user
             await notesStore.fetchNotes()
-            return // Успех
+            return
           }
         }
       } catch (e) {
         console.error('Poll error', e)
       }
 
-      // Если пока нет - повторяем через 2 секунды
+      // Если не вышли и не остановили — повторяем
       if (!isStop) setTimeout(poll, 2000)
     }
 
-    // Запускаем опрос
+    // 3. Запускаем опрос
     poll()
 
-    // Функция отмены (если юзер ушел со страницы)
+    // 4. ВАЖНО: Добавляем триггер "Проснуться"
+    // Как только юзер переключается обратно на вкладку/PWA — сразу проверяем базу
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('👀 App woke up, checking auth immediately...')
+        poll()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    // Функция остановки (чистим слушатели)
     const stop = () => {
       isStop = true
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      // Если уходим со страницы входа руками — чистим ID, чтобы создать новый в след раз
+      if (!user.value) {
+        localStorage.removeItem('tg_session_id')
+      }
     }
 
     return { sessionId, stop }
