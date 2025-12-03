@@ -15,7 +15,7 @@ import AppFooter from './components/layout/AppFooter.vue'
 import SettingsPanel from './components/layout/SettingsPanel.vue'
 
 const notesStore = useNotesStore()
-const { user, initSession, handleTelegramLogin } = useAuth()
+const { user, initSession } = useAuth()
 const {
   isTauri,
   appVersion,
@@ -34,7 +34,8 @@ const listRef = ref<InstanceType<typeof NoteList> | null>(null)
 
 const isTelegramBrowser = computed(() => {
   const ua = navigator.userAgent.toLowerCase()
-  return ua.includes('telegram') || ua.includes('tg/')
+  // Добавили проверку, чтобы не блокировать PWA и десктоп
+  return (ua.includes('telegram') || ua.includes('tg/')) && !isTauri
 })
 
 const triggerScroll = async () => {
@@ -42,46 +43,18 @@ const triggerScroll = async () => {
   listRef.value?.scrollToBottom()
 }
 
-const onLoginStart = async (tgUser: any) => {
-  if (isTelegramBrowser.value) {
-    alert('Вход через Telegram не поддерживается в браузере Telegram')
-    return
-  }
-  // 1. Мгновенно включаем сплеш-скрин.
-  // Интерфейс входа пропадает, пользователь видит красивый логотип.
+const onLoginStart = async () => {
   isBooting.value = true
 
-  try {
-    // 2. Ждем выполнения двух вещей параллельно:
-    // - Авторизации в Supabase
-    // - Минимальной задержки анимации (чтобы не моргнуло слишком быстро)
-    const minDelay = new Promise((resolve) => setTimeout(resolve, 1200))
-    const loginPromise = handleTelegramLogin(tgUser)
+  // Даем пользователю насладиться сплеш-скрином (и прогрузить данные)
+  await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    const [_, success] = await Promise.all([minDelay, loginPromise])
+  // Скроллим список к низу
+  await nextTick()
+  await triggerScroll()
 
-    if (success) {
-      // === ВОТ ОНА, БЕСШОВНАЯ МАГИЯ ===
-      // Мы тихо удаляем ?id=...&hash=... из адресной строки браузера.
-      // Страница НЕ перезагружается.
-      window.history.replaceState({}, document.title, '/')
-
-      // 3. Подготавливаем интерфейс (скролл вниз)
-      await nextTick()
-      await triggerScroll()
-    } else {
-      // Если вход не удался (например, поддельный хэш),
-      // можно показать алерт или просто вернуть пользователя на экран входа
-      console.error('Login returned false')
-    }
-  } catch (err) {
-    console.error('Login process error:', err)
-  } finally {
-    // 4. Плавно убираем шторку загрузки.
-    // Если вход успешен -> под шторкой уже NoteList (благодаря v-if="!user" в шаблоне)
-    // Если вход не удался -> под шторкой снова LoginView
-    isBooting.value = false
-  }
+  // Убираем заставку
+  isBooting.value = false
 }
 
 const onNoteSubmit = (payload: { content: string; file?: File }) => {
@@ -91,32 +64,27 @@ const onNoteSubmit = (payload: { content: string; file?: File }) => {
 }
 
 onMounted(async () => {
+  // Если это Telegram Webview — не грузимся дальше, ждем открытия в браузере
   if (isTelegramBrowser.value) {
     isBooting.value = false
     return
   }
 
   try {
-    // 1. Применяем настройки
     await initSettings()
 
-    // 2. Ждем загрузку (минимум 800мс или пока проверится сессия)
     const minLoadTime = new Promise((resolve) => setTimeout(resolve, 800))
     const sessionCheck = initSession()
 
     await Promise.all([minLoadTime, sessionCheck])
 
-    // 3. Если юзер есть — скроллим
     if (user.value) {
       await nextTick()
       await triggerScroll()
     }
   } catch (error) {
-    // Если произошла любая ошибка — выводим её в консоль
     console.error('CRITICAL BOOT ERROR:', error)
-    alert('Ошибка загрузки: ' + error) // Временно покажем алерт, чтобы ты увидел текст
   } finally {
-    // ГЛАВНОЕ: Убираем черный экран в любом случае!
     isBooting.value = false
   }
 
