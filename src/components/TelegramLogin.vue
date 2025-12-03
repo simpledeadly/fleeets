@@ -1,120 +1,104 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { FileQuestion } from 'lucide-vue-next'
 import { supabase } from '../supabase'
-
-// const props = defineProps<{
-//   botName: string
-// }>()
 
 const emit = defineEmits(['login'])
 const isLoading = ref(false)
 const errorMessage = ref('')
 
 onMounted(() => {
+  // Очистка контейнера перед вставкой (на случай хот-релоада)
+  const container = document.getElementById('telegram-login-container')
+  if (container) container.innerHTML = ''
+
   const script = document.createElement('script')
   script.async = true
   script.src = 'https://telegram.org/js/telegram-widget.js?22'
-  
-  script.setAttribute('data-telegram-login', 'fleeets_auth_bot') // Проверьте юзернейм!
-  script.setAttribute('data-size', 'large')
-  
-  // УДАЛИТЕ onauth
-  // script.setAttribute('data-onauth', 'onTelegramAuth(user)') 
-  
-  // ДОБАВЬТЕ auth-url (редирект на ту же страницу)
-  script.setAttribute('data-auth-url', 'https://fleeets.vercel.app') 
-  // (или просто https://fleeets.vercel.app, если у вас нет роута /callback)
 
-  document.getElementById('telegram-login-container')?.appendChild(script)
+  // ВАЖНО: Вставьте сюда НОВОГО бота
+  script.setAttribute('data-telegram-login', 'fleeets_app_bot')
+  script.setAttribute('data-size', 'large')
+  script.setAttribute('data-radius', '10')
+  script.setAttribute('data-userpic', 'false')
+
+  // Гибридный подход: если JS отвалится, сработает редирект
+  // Но мы перехватим событие через onauth
+  script.setAttribute('data-onauth', 'onTelegramAuth(user)')
+  script.setAttribute('data-request-access', 'write') // Можно вернуть для нового бота
+
+  container?.appendChild(script)
 })
 
-// Глобальная функция, чтобы Telegram мог до неё достучаться
 // @ts-ignore
 window.onTelegramAuth = async (telegramUser: any) => {
+  console.log('Telegram User received:', telegramUser) // Лог для отладки
   isLoading.value = true
   errorMessage.value = ''
 
   try {
-    // Вызываем нашу Edge Function
+    // Вызов Edge Function (которую мы писали ранее)
     const { data, error } = await supabase.functions.invoke('telegram-auth', {
       body: { user: telegramUser },
     })
 
     if (error) throw error
-    if (!data.session) throw new Error('No session returned')
+    if (!data?.session) throw new Error('Session creation failed')
 
-    // Устанавливаем сессию в локальный клиент Supabase
     const { error: sessionError } = await supabase.auth.setSession({
       access_token: data.session.access_token,
       refresh_token: data.session.refresh_token,
     })
-
     if (sessionError) throw sessionError
 
-    // Успех!
-    console.log('Logged in via Telegram', data.user)
     emit('login', data.user)
   } catch (err: any) {
-    console.error('Login failed', err)
-    errorMessage.value = 'Ошибка входа: ' + err.message
+    console.error(err)
+    errorMessage.value = 'Ошибка: ' + (err.message || 'Неизвестная ошибка')
   } finally {
     isLoading.value = false
   }
 }
-
-const devLogin = () => {
-  const fakeUser = {
-    id: 123456789,
-    first_name: 'DevUser',
-    username: 'developer',
-    auth_date: Math.floor(Date.now() / 1000),
-    hash: 'fake_hash_for_testing',
-  }
-  emit('login', fakeUser)
-}
 </script>
 
 <template>
-  <div
-    id="telegram-login-container"
-    class="login-wrapper"
-  ></div>
-  <div
-    v-if="isLoading"
-    class="text-sm text-gray-500"
-  >
-    Вход...
+  <div class="login-wrapper">
+    <div
+      id="telegram-login-container"
+      :class="{ disabled: isLoading }"
+    ></div>
+    <!-- Вывод ошибок на экран, чтобы не гадать -->
+    <p
+      v-if="errorMessage"
+      class="error-text"
+    >
+      {{ errorMessage }}
+    </p>
+    <p
+      v-if="isLoading"
+      class="loading-text"
+    >
+      Входим...
+    </p>
   </div>
-  <div
-    v-if="errorMessage"
-    class="text-sm text-red-500"
-  >
-    {{ errorMessage }}
-  </div>
-  <button
-    @click="devLogin"
-    class="dev-btn"
-  >
-    <FileQuestion class="w-8 h-8" />
-  </button>
 </template>
 
 <style scoped>
 .login-wrapper {
   display: flex;
-  justify-content: center;
-  /* margin-top: 20px; */
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
 }
-.dev-btn {
-  position: absolute;
-  top: 0;
-  right: 0;
-  /* background: #333; */
-  /* border: 1px dashed #555; */
-  /* padding: 5px 10px; */
-  color: #555;
-  border-radius: 12px;
-  cursor: pointer;
+.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.error-text {
+  color: #ff4444;
+  font-size: 14px;
+}
+.loading-text {
+  color: #666;
+  font-size: 14px;
 }
 </style>
