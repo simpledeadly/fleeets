@@ -12,19 +12,19 @@ const isLoading = ref(false)
 const errorMessage = ref('')
 
 onMounted(() => {
-  // Настраиваем скрипт виджета
   const script = document.createElement('script')
   script.async = true
   script.src = 'https://telegram.org/js/telegram-widget.js?22'
-
-  // Убедитесь, что имя бота совпадает с BotFather (без @)
-  // Лучше брать из env, но для теста можно хардкодом
-  script.setAttribute('data-telegram-login', 'fleeets_auth_bot')
+  
+  script.setAttribute('data-telegram-login', 'fleeets_auth_bot') // Проверьте юзернейм!
   script.setAttribute('data-size', 'large')
-  script.setAttribute('data-radius', '12')
-  script.setAttribute('data-request-access', 'write')
-  script.setAttribute('data-userpic', 'false')
-  script.setAttribute('data-onauth', 'onTelegramAuth(user)')
+  
+  // УДАЛИТЕ onauth
+  // script.setAttribute('data-onauth', 'onTelegramAuth(user)') 
+  
+  // ДОБАВЬТЕ auth-url (редирект на ту же страницу)
+  script.setAttribute('data-auth-url', 'https://fleeets.vercel.app') 
+  // (или просто https://fleeets.vercel.app, если у вас нет роута /callback)
 
   document.getElementById('telegram-login-container')?.appendChild(script)
 })
