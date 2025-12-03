@@ -7,7 +7,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Хелпер для перевода буфера в hex строку
 function toHex(buffer: ArrayBuffer): string {
   return Array.from(new Uint8Array(buffer))
     .map((b) => b.toString(16).padStart(2, '0'))
@@ -15,32 +14,49 @@ function toHex(buffer: ArrayBuffer): string {
 }
 
 serve(async (req) => {
+  // Обработка CORS preflight запроса
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { user: telegramUser } = await req.json()
+    const body = await req.json()
+    console.log('1. Received body:', JSON.stringify(body)) // ЛОГ 1
+
+    const telegramUser = body.user
+    if (!telegramUser) throw new Error('No user data provided')
 
     const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')
     if (!botToken) throw new Error('BOT_TOKEN is missing')
 
-    // 1. Валидация данных (Native Web Crypto API)
-    const { hash, ...data } = telegramUser
+    // --- ВАЛИДАЦИЯ ХЭША (СТРОГАЯ) ---
 
-    // Сортируем ключи по алфавиту и собираем строку (спецификация Telegram)
-    const dataCheckString = Object.keys(data)
-      .sort()
-      .filter((k) => data[k]) // Исключаем пустые поля
-      .map((key) => `${key}=${data[key]}`)
-      .join('\n')
+    // 1. Берем только те поля, которые использует Telegram.
+    // Фронтенд может прислать мусор (например, id сессии), он сломает хэш.
+    const ALLOWED_KEYS = ['id', 'first_name', 'last_name', 'username', 'photo_url', 'auth_date']
 
+    const dataCheckArr = []
+    for (const key of ALLOWED_KEYS) {
+      // Важно: проверяем именно наличие значения, и переводим в строку
+      if (
+        telegramUser[key] !== undefined &&
+        telegramUser[key] !== null &&
+        telegramUser[key] !== ''
+      ) {
+        // Telegram требует format: key=value
+        dataCheckArr.push(`${key}=${telegramUser[key]}`)
+      }
+    }
+
+    // 2. Сортируем алфавитно
+    dataCheckArr.sort()
+    const dataCheckString = dataCheckArr.join('\n')
+
+    console.log('2. Check String generated:', dataCheckString) // ЛОГ 2
+
+    // 3. Считаем хэш
     const encoder = new TextEncoder()
-
-    // А) Создаем секретный ключ (SHA256 от токена бота)
     const secretKeyData = await crypto.subtle.digest('SHA-256', encoder.encode(botToken))
-
-    // Б) Импортируем ключ для HMAC
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
       secretKeyData,
@@ -48,34 +64,32 @@ serve(async (req) => {
       false,
       ['sign']
     )
-
-    // В) Подписываем строку проверки
     const signature = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(dataCheckString))
-
     const calculatedHash = toHex(signature)
 
-    if (calculatedHash !== hash) {
-      throw new Error(`Invalid Telegram Hash. Calc: ${calculatedHash}, Rec: ${hash}`)
+    console.log(`3. Hashes: Rec [${telegramUser.hash}] vs Calc [${calculatedHash}]`) // ЛОГ 3
+
+    if (calculatedHash !== telegramUser.hash) {
+      throw new Error(`Invalid Hash. Check logs for comparison.`)
     }
 
-    // 2. Логика Supabase (Создание/Вход пользователя)
+    // --- РАБОТА С БД ---
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
     const email = `${telegramUser.id}@telegram.fleeets.app`
-    // Пароль не важен, пользователь его не вводит
     const password = `tg_${telegramUser.id}_${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`
 
-    // Проверяем существование пользователя
+    // Поиск юзера
     const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers()
     const existingUser = existingUsers.users.find((u) => u.email === email)
-
     let userId = existingUser?.id
 
     if (!userId) {
-      // Создаем нового
+      console.log('4. Creating new user...')
       const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
         email,
         password,
@@ -87,27 +101,33 @@ serve(async (req) => {
           avatar_url: telegramUser.photo_url,
         },
       })
-      if (createError) throw createError
+      if (createError) {
+        console.error('Create User Error:', createError)
+        throw createError
+      }
       userId = newUser.user.id
     }
 
-    // Выдаем сессию
+    console.log('5. Signing in...')
     const { data: sessionData, error: loginError } = await supabaseAdmin.auth.signInWithPassword({
       email,
       password,
     })
 
-    if (loginError) throw loginError
+    if (loginError) {
+      console.error('Login Error:', loginError)
+      throw loginError
+    }
 
     return new Response(JSON.stringify(sessionData), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
   } catch (error: any) {
-    console.error('Auth Error:', error)
+    console.error('CRITICAL ERROR:', error.message)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 400, // Возвращаем 400, чтобы фронтенд понял ошибку
+      status: 400,
     })
   }
 })
