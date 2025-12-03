@@ -25,92 +25,61 @@ function generateUUID() {
 export const useNotesStore = defineStore('notes', () => {
   const notes = ref<Note[]>([])
   const isSyncing = ref(false)
-
-  // Храним канал здесь
   let realtimeChannel: any = null
 
+  // 1. Загрузка + Старт подписки
   const fetchNotes = async () => {
     isSyncing.value = true
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('notes')
       .select('*')
       .order('created_at', { ascending: true })
 
-    if (error) console.error('Ошибка загрузки заметок:', error)
     if (data) notes.value = data
-
     isSyncing.value = false
 
-    // Запускаем подписку
     subscribeToRealtime()
   }
 
+  // 2. Подписка (Realtime)
   const subscribeToRealtime = async () => {
-    // 1. Проверяем пользователя
     const {
       data: { user },
     } = await supabase.auth.getUser()
-    if (!user) {
-      console.warn('⚠️ Realtime: Нет пользователя, подписка невозможна')
-      return
-    }
+    if (!user) return
 
-    // 2. Если канал уже есть — сначала отписываемся, чтобы не плодить дубли
-    if (realtimeChannel) {
-      console.log('🔄 Realtime: Переподключение...')
-      await supabase.removeChannel(realtimeChannel)
-    }
+    if (realtimeChannel) await supabase.removeChannel(realtimeChannel)
 
-    console.log(`🔌 Realtime: Подключение к каналу для user ${user.id}...`)
-
-    // 3. Создаем канал с явным фильтром
     realtimeChannel = supabase
-      .channel('notes_sync') // Уникальное имя канала
+      .channel('notes_sync')
       .on(
         'postgres_changes',
         {
-          event: '*', // Слушаем всё
+          event: '*',
           schema: 'public',
           table: 'notes',
-          filter: `user_id=eq.${user.id}`, // <-- ВАЖНО: Фильтр по UUID
+          filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
-          console.log('🔥 Realtime: ПРИШЛО СОБЫТИЕ!', payload) // ЛОГ СОБЫТИЯ
-          handleRealtimeEvent(payload as RealtimePostgresChangesPayload<Note>)
-        }
+        (payload) => handleRealtimeEvent(payload as RealtimePostgresChangesPayload<Note>)
       )
-      .subscribe((status) => {
-        // 4. ЛОГИРУЕМ СТАТУС ПОДКЛЮЧЕНИЯ
-        console.log(`📡 Realtime Status: ${status}`)
-
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Realtime: Успешно подписаны и слушаем изменения.')
-        }
-        if (status === 'CHANNEL_ERROR') {
-          console.error('❌ Realtime: Ошибка канала! Проверьте RLS и настройки репликации.')
-        }
-        if (status === 'TIMED_OUT') {
-          console.error('❌ Realtime: Таймаут подключения (плохой интернет?).')
-        }
-      })
+      .subscribe()
   }
 
+  // 3. Обработка событий
   const handleRealtimeEvent = (payload: RealtimePostgresChangesPayload<Note>) => {
     const { eventType, new: newRecord, old: oldRecord } = payload
 
-    // Дополнительная защита: убедимся, что пришел объект
     if (!newRecord && eventType !== 'DELETE') return
 
     switch (eventType) {
       case 'INSERT': {
         const note = newRecord as Note
-        // Проверяем, не дубликат ли (Optimistic UI)
+        // Проверяем дубликаты (Optimistic UI)
         const exists = notes.value.find((n) => n.id === note.id)
         if (!exists) {
-          console.log('➕ Realtime: Добавляю новую заметку в список')
           notes.value.push(note)
         } else {
-          console.log('🔄 Realtime: Заметка уже есть (обновляем данные)')
+          // Если заметка уже есть (мы её создали), обновляем её данные с сервера
           Object.assign(exists, note)
         }
         break
@@ -119,15 +88,13 @@ export const useNotesStore = defineStore('notes', () => {
         const note = newRecord as Note
         const index = notes.value.findIndex((n) => n.id === note.id)
         if (index !== -1) {
-          console.log('📝 Realtime: Обновляю заметку', note.id)
-          // Используем splice для реактивности
+          // Splice важен для реактивности Vue
           notes.value.splice(index, 1, note)
         }
         break
       }
       case 'DELETE': {
         if (oldRecord && oldRecord.id) {
-          console.log('🗑️ Realtime: Удаляю заметку', oldRecord.id)
           notes.value = notes.value.filter((n) => n.id !== oldRecord.id)
         }
         break
@@ -135,7 +102,7 @@ export const useNotesStore = defineStore('notes', () => {
     }
   }
 
-  // --- Методы CRUD (без изменений, кроме логов) ---
+  // --- CRUD (Optimistic UI) ---
   const addNote = (content: string, userId: string, file?: File) => {
     const tempId = generateUUID()
     let fileUrl = null
@@ -228,7 +195,6 @@ export const useNotesStore = defineStore('notes', () => {
   const clearNotes = () => {
     notes.value = []
     if (realtimeChannel) {
-      console.log('🛑 Realtime: Отключение')
       supabase.removeChannel(realtimeChannel)
       realtimeChannel = null
     }
