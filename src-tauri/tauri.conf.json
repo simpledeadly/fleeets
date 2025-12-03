@@ -13,6 +13,11 @@
     "macOSPrivateApi": true,
     "allowlist": {
       "all": false,
+      "shell": {
+        "all": false,
+        "open": true,
+        "execute": false
+      },
       "fs": {
         "all": true,
         "scope": ["$DOWNLOAD/*", "$DESKTOP/*", "$DOCUMENTS/*", "$APPCONFIG/*"]

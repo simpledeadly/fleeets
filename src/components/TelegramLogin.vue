@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref, watch } from 'vue'
-import { Send } from 'lucide-vue-next'
+import { RefreshCw, Send } from 'lucide-vue-next'
 import { useAuth } from '../composables/useAuth'
+import { useAppSettings } from '../composables/useAppSettings'
 
 // Мы просто сообщаем наверх: "Есть данные для входа"
 const emit = defineEmits(['login'])
 const { startPollingAuth, user } = useAuth()
+const { isTauri } = useAppSettings()
 
 const BOT_USERNAME = 'fleeets_app_bot'
 const loginUrl = ref('')
@@ -39,6 +41,20 @@ const onManualCheck = async () => {
     isChecking.value = false
   }, 500)
 }
+
+const handleLinkClick = async (e: Event) => {
+  if (isTauri) {
+    e.preventDefault() // Отменяем стандартный переход внутри окна
+    try {
+      // Динамический импорт, чтобы не ломать веб-версию
+      const { open } = await import('@tauri-apps/api/shell')
+      await open(loginUrl.value)
+    } catch (err) {
+      console.error('Tauri open error:', err)
+    }
+  }
+  // Если это веб — сработает стандартный href="..." target="_blank"
+}
 </script>
 
 <template>
@@ -46,6 +62,7 @@ const onManualCheck = async () => {
     <!-- Основная кнопка -->
     <a
       :href="loginUrl"
+      @click="handleLinkClick"
       class="telegram-btn group w-full max-w-[240px]"
       target="_blank"
     >
@@ -88,7 +105,7 @@ const onManualCheck = async () => {
   text-decoration: none;
   font-weight: 600;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(36, 161, 222, 0.25);
+  box-shadow: 0 4px 12px rgba(36, 161, 222, 0.1);
 }
 
 .telegram-btn:hover {
