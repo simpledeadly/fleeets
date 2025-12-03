@@ -113,6 +113,7 @@ export function useAuth() {
       // Принудительная зачистка всего, чтобы наверняка
       localStorage.clear()
       sessionStorage.clear()
+      notesStore.clearNotes()
       user.value = null
 
       // Жесткая перезагрузка страницы для очистки состояния Vue

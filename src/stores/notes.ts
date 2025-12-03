@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '../supabase'
+import { RealtimePostgresChangesPayload } from '@supabase/supabase-js'
 
 export interface Note {
   id: string
@@ -8,8 +9,9 @@ export interface Note {
   content: string
   file_url?: string
   file_type?: string
-  file_name?: string // Добавим имя файла для красоты
+  file_name?: string
   updated_at: string
+  created_at?: string // Добавил поле, чтобы сортировка работала корректно
 }
 
 // Утилита для генерации ID
@@ -25,27 +27,97 @@ export const useNotesStore = defineStore('notes', () => {
   const notes = ref<Note[]>([])
   const isSyncing = ref(false)
 
-  // 1. Загрузка (тут придется подождать, это инициализация)
+  // Храним подписку в переменной, чтобы не экспортировать её наружу
+  let realtimeChannel: any = null
+
+  // 1. Загрузка + Подписка
   const fetchNotes = async () => {
     isSyncing.value = true
+
+    // Сначала грузим статику
     const { data } = await supabase
       .from('notes')
       .select('*')
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: true }) // Старые сверху, новые снизу
 
     if (data) notes.value = data
     isSyncing.value = false
+
+    // Сразу включаем магию Realtime
+    subscribeToRealtime()
   }
 
-  // 2. МГНОВЕННОЕ Создание
+  // --- REALTIME MAGIC ---
+  const subscribeToRealtime = async () => {
+    // Если уже подписаны — выходим, чтобы не дублировать
+    if (realtimeChannel) return
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return
+
+    realtimeChannel = supabase
+      .channel('notes_sync')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Слушаем INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'notes',
+          filter: `user_id=eq.${user.id}`, // Только свои заметки
+        },
+        (payload) => handleRealtimeEvent(payload as RealtimePostgresChangesPayload<Note>)
+      )
+      .subscribe()
+
+    console.log('🔌 Realtime подключен')
+  }
+
+  const handleRealtimeEvent = (payload: RealtimePostgresChangesPayload<Note>) => {
+    const { eventType, new: newRecord, old: oldRecord } = payload
+
+    switch (eventType) {
+      case 'INSERT': {
+        const note = newRecord as Note
+        // Проверяем, есть ли эта заметка уже (Optimistic UI мог её добавить)
+        const existingIndex = notes.value.findIndex((n) => n.id === note.id)
+
+        if (existingIndex !== -1) {
+          // Если есть — обновляем её серверными данными (там правильный URL файла и даты)
+          notes.value[existingIndex] = note
+        } else {
+          // Если нет (пришло с другого устройства) — добавляем в конец
+          notes.value.push(note)
+        }
+        break
+      }
+      case 'UPDATE': {
+        const note = newRecord as Note
+        const index = notes.value.findIndex((n) => n.id === note.id)
+        if (index !== -1) {
+          notes.value[index] = note
+        }
+        break
+      }
+      case 'DELETE': {
+        // Удаляем, если пришло событие удаления
+        if (oldRecord && oldRecord.id) {
+          notes.value = notes.value.filter((n) => n.id !== oldRecord.id)
+        }
+        break
+      }
+    }
+  }
+  // ----------------------
+
+  // 2. МГНОВЕННОЕ Создание (Optimistic)
   const addNote = (content: string, userId: string, file?: File) => {
-    // Генерируем ID синхронно
     const tempId = generateUUID()
     let fileUrl = null
     let fileType = null
     let fileName = null
 
-    // Обработка файла для превью (синхронно)
     if (file) {
       fileType = file.type.startsWith('image/') ? 'image' : 'file'
       fileName = file.name
@@ -60,13 +132,13 @@ export const useNotesStore = defineStore('notes', () => {
       file_type: fileType || undefined,
       file_name: fileName || undefined,
       updated_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     }
 
-    // 1. БАМ! Добавляем в массив сразу же.
-    // Никаких await, никаких промисов перед этой строкой.
+    // Добавляем локально мгновенно
     notes.value.push(newNote)
 
-    // 2. А сохранение пусть крутится в фоне, нам плевать сколько оно займет
+    // Крутим сохранение в фоне
     processUploadAndSave(userId, tempId, content, file, newNote)
   }
 
@@ -94,24 +166,16 @@ export const useNotesStore = defineStore('notes', () => {
       }
 
       // Пишем в базу
-      const { data } = await supabase
-        .from('notes')
-        .insert({
-          id: noteId, // Используем наш сгенерированный ID
-          user_id: userId,
-          content: content,
-          file_url: serverFileUrl,
-          file_type: localNote.file_type,
-          file_name: localNote.file_name,
-        })
-        .select()
-        .single()
-
-      // Если все ок, обновляем ссылку в локальном сторе с Blob на реальный URL
-      if (data) {
-        const index = notes.value.findIndex((n) => n.id === noteId)
-        if (index !== -1) notes.value[index] = data
-      }
+      // (Ответ от базы нам по сути не нужен, так как Realtime пришлет событие INSERT,
+      // и мы обновим данные через handleRealtimeEvent, но select() тут не помешает для надежности)
+      await supabase.from('notes').insert({
+        id: noteId,
+        user_id: userId,
+        content: content,
+        file_url: serverFileUrl,
+        file_type: localNote.file_type,
+        file_name: localNote.file_name,
+      })
     } catch (e) {
       console.error('Ошибка фоновой синхронизации', e)
     } finally {
@@ -124,11 +188,9 @@ export const useNotesStore = defineStore('notes', () => {
     const note = notes.value.find((n) => n.id === id)
     if (!note) return
 
-    // Меняем локально
     note.content = content
-
-    // Шлем на сервер (не ждем)
     isSyncing.value = true
+
     supabase
       .from('notes')
       .update({ content })
@@ -140,11 +202,9 @@ export const useNotesStore = defineStore('notes', () => {
 
   // 4. МГНОВЕННОЕ Удаление
   const deleteNote = async (id: string) => {
-    // Удаляем из массива сразу
     notes.value = notes.value.filter((n) => n.id !== id)
-
-    // Шлем запрос на сервер
     isSyncing.value = true
+
     supabase
       .from('notes')
       .delete()
@@ -154,5 +214,22 @@ export const useNotesStore = defineStore('notes', () => {
       })
   }
 
-  return { notes, isSyncing, fetchNotes, addNote, updateNote, deleteNote }
+  // 5. Очистка при выходе
+  const clearNotes = () => {
+    notes.value = []
+    if (realtimeChannel) {
+      supabase.removeChannel(realtimeChannel)
+      realtimeChannel = null
+    }
+  }
+
+  return {
+    notes,
+    isSyncing,
+    fetchNotes,
+    addNote,
+    updateNote,
+    deleteNote,
+    clearNotes,
+  }
 })
