@@ -51,27 +51,42 @@ export const useInboxStore = defineStore('inbox', {
       if (!item) return
 
       if (action === 'accept') {
-        // 1. Создаем заметку в основной таблице
+        // 1. Получаем текущего юзера
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+
+        if (!user) {
+          console.error('Ошибка: Пользователь не авторизован')
+          return
+        }
+
+        // 2. Создаем заметку с явным указанием user_id
         const { error } = await supabase.from('notes').insert({
           content: item.content,
-          // user_id Supabase подставит сам, если включен RLS,
-          // но для надежности можно брать из useAuth().user.id
+          user_id: user.id, // <--- ВОТ ЭТО ВАЖНО
+          // Если у тебя есть колонка tags в notes, раскомментируй:
+          // tags: item.tags
         })
-        if (error) console.error('Ошибка создания заметки:', error)
+
+        if (error) {
+          console.error('Ошибка создания заметки:', error)
+          alert(`Не удалось сохранить: ${error.message}`) // Покажем ошибку явно
+          return // Не удаляем из очереди, если ошибка
+        }
       }
 
-      // 2. Убираем из UI
+      // 3. Убираем из UI (только если успех или реджект)
       const removedItem = this.queue.shift()
 
-      // 3. Если это был последний айтем из этой записи в БД -> обновляем статус в БД
-      // (Простая логика: если в очереди больше нет айтемов с таким _dbId)
+      // 4. Обновляем статус в inbox
+      // (Логика: проверяем, остались ли еще айтемы от этой записи)
       const hasMoreFromThisSource = this.queue.some((i) => i._dbId === removedItem._dbId)
 
       if (!hasMoreFromThisSource) {
         await supabase.from('inbox').update({ status: 'processed' }).eq('id', removedItem._dbId)
       }
 
-      // Обновляем индикатор
       this.hasNewItems = this.queue.length > 0
     },
   },
