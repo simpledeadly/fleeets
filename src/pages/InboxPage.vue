@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, computed, onUnmounted } from 'vue'
 import { useInboxStore } from '../stores/inbox'
+import { speakText } from '../utils/tts'
 
 const inbox = useInboxStore()
 const currentCard = computed(() => inbox.queue[0])
@@ -74,7 +75,13 @@ const handleResolve = (action: 'accept' | 'reject') => {
               : 'bg-purple-500/20 text-purple-400'
           "
         >
-          {{ currentCard.type === 'task' ? 'Задача' : currentCard.type === 'idea' ? 'Идея' : 'Заметка' }}
+          {{
+            currentCard.type === 'task'
+              ? 'Задача'
+              : currentCard.type === 'idea'
+              ? 'Идея'
+              : 'Заметка'
+          }}
         </div>
         <div
           v-if="currentCard.tags"
@@ -95,7 +102,9 @@ const handleResolve = (action: 'accept' | 'reject') => {
       </p>
 
       <!-- Действия -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-3 gap-4">
+        <button @click="speakText(currentCard.content)">🔊 Прослушать</button>
+
         <button
           @click="handleResolve('reject')"
           class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-900 text-gray-400 hover:bg-red-900/20 hover:text-red-400 transition group"
