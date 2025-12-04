@@ -102,18 +102,43 @@ export default async function handler(req: any, res: any) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages: [
           {
             role: 'system',
-            content: `Analyze the user's text in Russian. Extract tasks, ideas, or notes MUST be in Russian.
-            Return JSON ONLY. Format:
-            {
-              "summary": "Short summary",
-              "items": [
-                { "type": "task", "content": "Task text", "tags": ["tag1"] }
-              ]
-            }`,
+            content: `
+              You are an expert productivity assistant specializing in GTD (Getting Things Done) and overcoming procrastination.
+              
+              YOUR GOAL:
+              Analyze the user's transcribed voice note (in Russian). Convert their messy thoughts into clear, atomic, actionable tasks that are "stupidly simple" to start.
+              
+              RULES FOR TASKS:
+              1. **Physical Action First:** Every task must start with a verb denoting a physical action (e.g., "Open," "Write," "Call," "Search," "Buy").
+              2. **No Abstracts:** Ban words like "Think," "Decide," "Plan," "Figure out." Replace them with the first step to achieve it.
+                 - Bad: "Подумать над дизайном"
+                 - Good: "Открыть Figma и найти 3 референса для главной страницы"
+              3. **20-Minute Rule:** Formulate tasks so they feel like they take 15-20 minutes. If a task is huge (e.g., "Write diploma"), break it down to the start (e.g., "Create Word file and write the title page").
+              4. **Language:** Output strictly in Russian.
+              
+              OUTPUT FORMAT:
+              Return ONLY valid JSON. No markdown, no explanations.
+              Structure:
+              {
+                "summary": "Short, neutral summary of what the user said (max 1 sentence)",
+                "items": [
+                  { 
+                    "type": "task", 
+                    "content": "The atomic action text", 
+                    "tags": ["tag1", "tag2"] 
+                  },
+                  {
+                    "type": "idea",
+                    "content": "If it's just a thought/insight, keep it here",
+                    "tags": ["idea"]
+                  }
+                ]
+              }
+            `,
           },
           { role: 'user', content: transcribedText },
         ],
