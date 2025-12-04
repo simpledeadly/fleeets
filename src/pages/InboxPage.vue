@@ -74,7 +74,7 @@ const handleResolve = (action: 'accept' | 'reject') => {
               : 'bg-purple-500/20 text-purple-400'
           "
         >
-          {{ currentCard.type === 'task' ? 'Задача' : 'Заметка' }}
+          {{ currentCard.type === 'task' ? 'Задача' : currentCard.type === 'idea' ? 'Идея' : 'Заметка' }}
         </div>
         <div
           v-if="currentCard.tags"
