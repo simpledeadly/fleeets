@@ -1,40 +1,44 @@
 // api/tts.ts
-
-// ⚡️ МАГИЯ: Включаем Edge Runtime (мгновенный запуск)
 export const config = {
   runtime: 'edge',
 }
 
 export default async function handler(req: Request) {
-  // CORS заголовки
+  const url = new URL(req.url)
+
+  // CORS Headers
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
   }
 
-  // Preflight (OPTIONS)
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 200, headers: corsHeaders })
   }
 
-  if (req.method !== 'POST') {
+  let text = ''
+  let voice = 'onyx'
+
+  if (req.method === 'GET') {
+    text = url.searchParams.get('text') || ''
+    voice = url.searchParams.get('voice') || 'onyx'
+  } else if (req.method === 'POST') {
+    const body = await req.json()
+    text = body.text
+    voice = body.voice || 'onyx'
+  } else {
     return new Response('Method Not Allowed', { status: 405, headers: corsHeaders })
   }
 
+  if (!text) {
+    return new Response('Text is required', { status: 400, headers: corsHeaders })
+  }
+
+  const apiKey = process.env.VSEGPT_API_KEY || process.env.OPENAI_API_KEY
+  if (!apiKey) return new Response('API Key missing', { status: 500, headers: corsHeaders })
+
   try {
-    const { text, voice = 'onyx' } = await req.json()
-
-    if (!text) {
-      return new Response('Text is required', { status: 400, headers: corsHeaders })
-    }
-
-    const apiKey = process.env.VSEGPT_API_KEY || process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      return new Response('API Key missing', { status: 500, headers: corsHeaders })
-    }
-
-    // Запрос к VseGPT
     const response = await fetch('https://api.vsegpt.ru/v1/audio/speech', {
       method: 'POST',
       headers: {
@@ -54,18 +58,17 @@ export default async function handler(req: Request) {
       return new Response(`TTS Error: ${err}`, { status: response.status, headers: corsHeaders })
     }
 
-    // 🚀 СТРИМИНГ: Мы не ждем загрузки файла.
-    // Мы берем поток (readable stream) от OpenAI и сразу отдаем его клиенту.
     return new Response(response.body, {
       headers: {
         ...corsHeaders,
         'Content-Type': 'audio/mpeg',
+        'Cache-Control': 'public, max-age=3600, s-maxage=3600',
       },
     })
   } catch (error: any) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      headers: corsHeaders,
     })
   }
 }
