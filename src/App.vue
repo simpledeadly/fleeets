@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
-// import { invoke } from '@tauri-apps/api'
-// import { ask } from '@tauri-apps/api/dialog'
-// import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
-import { Zap, ExternalLink, LayoutGrid, Inbox } from 'lucide-vue-next'
+import { Zap, ExternalLink, LayoutGrid, Inbox, Settings, Cloud, CloudOff } from 'lucide-vue-next'
 import { useAuth } from './composables/useAuth'
 import { useAppSettings } from './composables/useAppSettings'
 import { useNotesStore } from './stores/notes'
@@ -11,7 +8,6 @@ import { useNotesStore } from './stores/notes'
 import LoginView from './components/auth/LoginView.vue'
 import NoteList from './components/notes/NoteList.vue'
 import NoteInput from './components/notes/NoteInput.vue'
-import AppFooter from './components/layout/AppFooter.vue'
 import SettingsPanel from './components/layout/SettingsPanel.vue'
 import InboxPage from './pages/InboxPage.vue'
 
@@ -29,15 +25,12 @@ const {
 } = useAppSettings()
 
 const isBooting = ref(true)
-
 const showSettings = ref(false)
 const listRef = ref<InstanceType<typeof NoteList> | null>(null)
-
 const currentView = ref<'notes' | 'inbox'>('notes')
 
 const isTelegramBrowser = computed(() => {
   const ua = navigator.userAgent.toLowerCase()
-  // Добавили проверку, чтобы не блокировать PWA и десктоп
   return (ua.includes('telegram') || ua.includes('tg/')) && !isTauri
 })
 
@@ -48,15 +41,9 @@ const triggerScroll = async () => {
 
 const onLoginStart = async () => {
   isBooting.value = true
-
-  // Даем пользователю насладиться сплеш-скрином (и прогрузить данные)
-  await new Promise((resolve) => setTimeout(resolve, 1000))
-
-  // Скроллим список к низу
+  await new Promise((resolve) => setTimeout(resolve, 800))
   await nextTick()
   await triggerScroll()
-
-  // Убираем заставку
   isBooting.value = false
 }
 
@@ -67,30 +54,24 @@ const onNoteSubmit = (payload: { content: string; file?: File }) => {
 }
 
 onMounted(async () => {
-  // Если это Telegram Webview — не грузимся дальше, ждем открытия в браузере
   if (isTelegramBrowser.value) {
     isBooting.value = false
     return
   }
-
   try {
     await initSettings()
-
-    const minLoadTime = new Promise((resolve) => setTimeout(resolve, 800))
+    const minLoadTime = new Promise((resolve) => setTimeout(resolve, 500))
     const sessionCheck = initSession()
-
     await Promise.all([minLoadTime, sessionCheck])
-
     if (user.value) {
       await nextTick()
       await triggerScroll()
     }
   } catch (error) {
-    console.error('CRITICAL BOOT ERROR:', error)
+    console.error('BOOT ERROR:', error)
   } finally {
     isBooting.value = false
   }
-
   window.addEventListener('resize', triggerScroll)
 })
 
@@ -102,55 +83,35 @@ onUnmounted(() => {
 
 <template>
   <div
-    class="h-[100dvh] w-screen overflow-hidden font-sans text-base text-[#ffffff] relative flex items-center justify-center bg-[#050505]"
+    class="h-[100dvh] w-screen overflow-hidden font-sans text-base text-white bg-[#050505] selection:bg-blue-500/30"
   >
-    <!-- 1. TELEGRAM WARNING -->
+    <div
+      class="absolute inset-0 z-0 bg-gradient-to-tr from-[#050505] via-[#050505] to-[#1a1a2e]/20 pointer-events-none"
+    ></div>
+    
     <div
       v-if="isTelegramBrowser"
       class="absolute inset-0 z-[200] bg-[#050505] flex flex-col items-center justify-center p-8 text-center"
     >
-      <div class="w-16 h-16 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6">
-        <ExternalLink class="w-8 h-8 text-blue-400" />
-      </div>
-      <h2 class="text-2xl font-bold mb-3">Откройте в браузере</h2>
-      <p class="text-gray-400 mb-8 leading-relaxed max-w-xs">
-        Чтобы войти в аккаунт и сохранить сессию, нажмите на
-        <span class="text-white font-bold">три точки</span> и выберите
-        <span class="text-white font-bold">«Открыть в браузере»</span>.
-      </p>
+      <ExternalLink class="w-12 h-12 text-blue-500 mb-4" />
+      <h2 class="text-xl font-bold mb-2">Откройте в браузере</h2>
+      <p class="text-gray-400 text-sm">Функции приложения ограничены внутри Telegram.</p>
     </div>
 
-    <!-- 2. MAIN APP -->
     <template v-else>
-      <div
-        v-if="!isTauri"
-        class="absolute inset-0 z-0 opacity-[0.03] pointer-events-none noise-bg"
-      ></div>
-
-      <!-- SPLASH SCREEN -->
-      <Transition name="fade-slow">
+      <Transition name="fade-fast">
         <div
           v-if="isBooting"
-          class="absolute inset-0 z-[100] bg-[#050505] flex flex-col items-center justify-center"
+          class="absolute inset-0 z-[100] bg-[#050505] flex items-center justify-center"
         >
-          <div class="relative flex items-center justify-center w-20 h-20 mb-4">
-            <div
-              class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 bg-yellow-500/10 blur-3xl rounded-full pointer-events-none animate-pulse-slow"
-            ></div>
-            <Zap class="w-10 h-10 text-yellow-400 relative z-10 animate-pulse" />
-          </div>
+          <Zap class="w-8 h-8 text-yellow-400 opacity-80 animate-pulse stroke-[1.6px]" />
         </div>
       </Transition>
 
-      <Transition name="scale-in">
+      <Transition name="fade-fast">
         <div
           v-if="!isBooting"
-          class="flex flex-col relative overflow-hidden transition-all duration-500 ease-out z-10"
-          :class="
-            isTauri
-              ? 'w-full h-full bg-[#0c0c0e]'
-              : 'w-full h-full bg-[#0c0c0e] md:w-[900px] md:h-[85vh] md:rounded-3xl md:border md:border-[#333]/60 md:shadow-2xl'
-          "
+          class="w-full h-full relative flex flex-col"
         >
           <LoginView
             v-if="!user"
@@ -159,116 +120,119 @@ onUnmounted(() => {
 
           <div
             v-else
-            class="flex-1 flex flex-col relative w-full h-full overflow-hidden"
+            class="flex-1 relative w-full h-full overflow-hidden"
           >
-            <div
-              v-if="isTauri"
-              data-tauri-drag-region
-              class="h-8 w-full shrink-0 bg-transparent z-50 absolute top-0 left-0"
-            ></div>
-
-            <!-- УЛУЧШЕННЫЙ ХЕДЕР (SEGMENTED CONTROL) -->
-            <header class="pt-6 pb-2 px-4 flex items-center justify-center shrink-0 z-20 gap-4">
-              <!-- Сеттингс слева (для баланса) -->
-              <div class="w-10 h-10 flex items-center justify-center">
-                <!-- Пустой блок или лого, если нужно -->
-              </div>
-
-              <!-- Переключатель -->
+            <!-- === HEADER === -->
+            <header class="absolute top-0 left-0 right-0 z-30 pt-safe-top">
+              <!-- Исправленный градиент: в цвет фона (#050505) и короче (h-24) -->
               <div
-                class="bg-[#1c1c1e] p-1 rounded-full flex items-center relative shadow-inner border border-white/5"
-              >
+                class="absolute inset-0 h-24 bg-gradient-to-b from-[#050505]/70 via-[#050505]/30 to-transparent pointer-events-none"
+              ></div>
+
+              <div class="relative px-5 py-3 flex items-center justify-between">
+                <!-- ИНДИКАТОР СИНХРОНИЗАЦИИ (Слева) -->
+                <div class="w-10 flex justify-start">
+                  <CloudOff
+                    v-if="isOffline"
+                    class="w-4 h-4 text-red-500 opacity-80"
+                  />
+                  <Cloud
+                    v-else
+                    class="w-4 h-4 text-gray-500/50"
+                  />
+                </div>
+
+                <!-- НАВИГАЦИЯ -->
                 <div
-                  class="absolute top-1 bottom-1 rounded-full bg-[#3a3a3c] shadow-md transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]"
-                  :class="
-                    currentView === 'notes'
-                      ? 'left-1 w-[calc(50%-4px)]'
-                      : 'left-[50%] w-[calc(50%-4px)]'
-                  "
-                ></div>
-
-                <button
-                  @click="currentView = 'notes'"
-                  class="relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200 flex items-center gap-2"
-                  :class="
-                    currentView === 'notes' ? 'text-white' : 'text-gray-400 hover:text-gray-200'
-                  "
+                  class="flex bg-[#1c1c1e]/80 backdrop-blur-md rounded-full p-1 border border-white/5 shadow-lg"
                 >
-                  <LayoutGrid class="w-4 h-4" />
-                  <span>Заметки</span>
-                </button>
+                  <button
+                    @click="currentView = 'notes'"
+                    class="px-5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center gap-2"
+                    :class="
+                      currentView === 'notes'
+                        ? 'bg-[#3a3a3c] text-white shadow-sm'
+                        : 'text-gray-400 hover:text-gray-200'
+                    "
+                  >
+                    <LayoutGrid class="w-3.5 h-3.5" />
+                    <span>Заметки</span>
+                  </button>
+                  <button
+                    @click="currentView = 'inbox'"
+                    class="px-5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 flex items-center gap-2"
+                    :class="
+                      currentView === 'inbox'
+                        ? 'bg-[#3a3a3c] text-white shadow-sm'
+                        : 'text-gray-400 hover:text-gray-200'
+                    "
+                  >
+                    <Inbox class="w-3.5 h-3.5" />
+                    <span>Входящие</span>
+                  </button>
+                </div>
 
+                <!-- НАСТРОЙКИ (Справа) -->
                 <button
-                  @click="currentView = 'inbox'"
-                  class="relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200 flex items-center gap-2"
-                  :class="
-                    currentView === 'inbox' ? 'text-white' : 'text-gray-400 hover:text-gray-200'
-                  "
+                  @click="showSettings = !showSettings"
+                  class="w-10 h-10 flex items-center justify-end text-gray-400 hover:text-white transition-colors"
                 >
-                  <Inbox class="w-4 h-4" />
-                  <span>Входящие</span>
+                  <Settings class="w-5 h-5" />
                 </button>
               </div>
-
-              <!-- Кнопка настроек справа -->
-              <button
-                @click="showSettings = !showSettings"
-                class="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
-              >
-                <Settings class="w-5 h-5" />
-              </button>
             </header>
 
-            <main class="flex-1 overflow-hidden relative flex flex-col">
+            <!-- === MAIN CONTENT === -->
+            <main class="w-full h-full relative">
               <Transition
-                name="fade-slide"
+                name="tab-switch"
                 mode="out-in"
               >
-                <!-- === FIX SCROLL === -->
-                <!-- Важно: flex-col h-full и overflow-hidden для контейнера -->
                 <div
                   v-if="currentView === 'notes'"
                   key="notes"
-                  class="h-full w-full flex flex-col overflow-hidden"
+                  class="h-full w-full relative"
                 >
-                  <!-- NoteList должен занимать все место (flex-1) и иметь min-h-0 чтобы скролл работал внутри него -->
                   <NoteList
                     ref="listRef"
-                    class="flex-1 min-h-0"
+                    class="h-full w-full pt-20 pb-28 px-4"
                     :is-comfort-mode="isComfortMode"
                   />
-                  <!-- Input не сжимается (shrink-0) -->
-                  <NoteInput
-                    class="shrink-0 z-20"
-                    :is-comfort-mode="isComfortMode"
-                    :is-tauri="isTauri"
-                    @submit="onNoteSubmit"
-                  />
+
+                  <!-- === INPUT AREA === -->
+                  <div class="absolute bottom-0 left-0 right-0 z-30 pb-safe-bottom">
+                    <!-- Исправленный градиент снизу -->
+                    <div
+                      class="absolute inset-0 -top-10 bg-gradient-to-t from-[#050505]/70 via-[#050505]/30 to-transparent pointer-events-none"
+                    ></div>
+
+                    <div class="relative px-4 pb-4 pt-2 max-w-3xl mx-auto w-full">
+                      <NoteInput
+                        :is-comfort-mode="isComfortMode"
+                        :is-tauri="isTauri"
+                        @submit="onNoteSubmit"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div
                   v-else-if="currentView === 'inbox'"
                   key="inbox"
-                  class="h-full w-full"
+                  class="h-full w-full pt-20 pb-4"
                 >
                   <InboxPage />
                 </div>
               </Transition>
             </main>
 
-            <AppFooter
-              class="shrink-0"
-              :is-offline="isOffline"
-              :settings-open="showSettings"
-              @toggle-settings="showSettings = !showSettings"
-            />
-
+            <!-- SETTINGS OVERLAY -->
             <div
               v-if="showSettings"
               @click="showSettings = false"
-              class="fixed inset-0 z-40 bg-black/50 md:bg-black/40 backdrop-blur-sm"
+              class="fixed inset-0 z-40 bg-black/20 backdrop-blur-sm transition-opacity duration-300"
             ></div>
-            <Transition name="fade-slide">
+            <Transition name="settings-slide">
               <SettingsPanel
                 v-if="showSettings"
                 v-model:uiScale="uiScale"
@@ -286,99 +250,47 @@ onUnmounted(() => {
 </template>
 
 <style>
-.noise-bg {
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  background-size: 100px;
-  opacity: 0.05;
+/* 1. БЫСТРОЕ ПЕРЕКЛЮЧЕНИЕ ТАБОВ (120ms) */
+.tab-switch-enter-active,
+.tab-switch-leave-active {
+  transition: all 30ms cubic-bezier(0.25, 1, 0.5, 0);
+}
+.tab-switch-enter-from {
+  opacity: 0;
+  transform: scale(0.98); /* Едва заметный скейл */
+  /* filter: blur(2px); */
+}
+.tab-switch-leave-to {
+  opacity: 0;
+  transform: scale(1);
+  /* filter: blur(0px); */
 }
 
-/* Splash Screen Fade Out - очень плавное исчезновение */
-.fade-slow-enter-active,
-.fade-slow-leave-active {
-  transition: opacity 100ms ease-in-out;
+/* 2. НАСТРОЙКИ: Плавное закрытие (400ms leave vs 300ms enter) */
+.settings-slide-enter-active {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.fade-slow-enter-from,
-.fade-slow-leave-to {
+.settings-slide-leave-active {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1); /* Чуть медленнее на выход */
+}
+.settings-slide-enter-from,
+.settings-slide-leave-to {
+  transform: translateX(100%);
+}
+
+.fade-fast-enter-active,
+.fade-fast-leave-active {
+  transition: opacity 0.15s ease-out;
+}
+.fade-fast-enter-from,
+.fade-fast-leave-to {
   opacity: 0;
 }
 
-/* App Scale In - приложение чуть "выезжает" при появлении */
-.scale-in-enter-active {
-  transition: opacity 50ms ease-out, transform 50ms ease-out;
+.pt-safe-top {
+  padding-top: env(safe-area-inset-top, 20px);
 }
-.scale-in-enter-from {
-  opacity: 0;
-  transform: scale(0.98);
-}
-
-/* Остальные анимации */
-.animate-enter-up {
-  animation: enterUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) both;
-  will-change: transform, opacity;
-}
-@keyframes enterUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-  will-change: transform;
-}
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-8px);
-  }
-}
-
-.animate-pulse-slow {
-  animation: pulseSlow 8s ease-in-out infinite;
-  will-change: opacity;
-}
-@keyframes pulseSlow {
-  0%,
-  100% {
-    opacity: 0.6;
-    transform: translate(-50%, -50%) scale(1);
-  }
-  50% {
-    opacity: 0.9;
-    transform: translate(-50%, -50%) scale(1.1);
-  }
-}
-
-/* Настройки анимации для SettingsPanel */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-/* DESKTOP: Выезд справа */
-@media (min-width: 768px) {
-  .fade-slide-enter-from,
-  .fade-slide-leave-to {
-    opacity: 0;
-    transform: translateX(20px); /* Слегка сдвигаем вправо */
-  }
-}
-
-/* MOBILE: Выезд снизу (шторка) */
-@media (max-width: 767px) {
-  .fade-slide-enter-from,
-  .fade-slide-leave-to {
-    opacity: 1; /* Не меняем прозрачность шторки */
-    transform: translateY(100%); /* Полностью уезжает вниз */
-  }
+.pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 20px);
 }
 </style>

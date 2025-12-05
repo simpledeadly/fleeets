@@ -203,7 +203,7 @@ const handleSpeak = async () => {
 <style scoped>
 .card-enter-active,
 .card-leave-active {
-  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+  transition: all 0.15s cubic-bezier(0.25, 1, 0.5, 1);
 }
 .card-enter-from {
   opacity: 0;
