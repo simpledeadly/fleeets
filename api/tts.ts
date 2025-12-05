@@ -30,8 +30,7 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: 'Text is required' })
   }
 
-  // Берем ключ (проверяем оба варианта имени переменной)
-  const apiKey = process.env.VSEGPT_API_KEY || process.env.OPENAI_API_KEY
+  const apiKey = process.env.OPENAI_API_KEY
 
   if (!apiKey) {
     return res.status(500).json({ error: 'Server config error: API Key missing' })
