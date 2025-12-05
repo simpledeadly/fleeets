@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { onMounted, computed, onUnmounted } from 'vue'
+import { onMounted, computed, onUnmounted, ref } from 'vue'
+import { Volume2, Loader2, Trash2, Check, Sparkles, RefreshCw } from 'lucide-vue-next'
 import { useInboxStore } from '../stores/inbox'
 import { speakText } from '../utils/tts'
 
 const inbox = useInboxStore()
 const currentCard = computed(() => inbox.queue[0])
+const isLoadingAudio = ref(false)
 
-// Хоткеи для десктопа
 const handleKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Enter') handleResolve('accept')
   if (e.key === 'Backspace' || e.key === 'Delete') handleResolve('reject')
@@ -22,115 +23,247 @@ onUnmounted(() => {
 })
 
 const handleResolve = (action: 'accept' | 'reject') => {
+  if (navigator.vibrate) navigator.vibrate(10) // Haptic feedback
   inbox.resolveCard(action)
+}
+
+const handleSpeak = async () => {
+  if (isLoadingAudio.value) return
+  isLoadingAudio.value = true
+  try {
+    await speakText(currentCard.value.content)
+  } catch (e) {
+    console.error(e)
+  } finally {
+    isLoadingAudio.value = false
+  }
 }
 </script>
 
 <template>
-  <div class="flex flex-col items-center justify-center h-full w-full p-6 relative">
-    <!-- Заголовок -->
-    <div class="absolute top-0 left-0 w-full p-4 flex justify-between items-center text-gray-500">
-      <h2 class="text-sm font-medium uppercase tracking-widest">Входящие (AI)</h2>
-      <span v-if="inbox.queue.length > 0">{{ inbox.queue.length }} шт.</span>
-    </div>
-
-    <!-- Состояние загрузки -->
-    <div
-      v-if="inbox.loading"
-      class="animate-pulse text-gray-500"
-    >
-      Анализируем мысли...
-    </div>
-
-    <!-- Пустой инбокс -->
-    <div
-      v-else-if="!currentCard"
-      class="text-center space-y-4"
-    >
-      <div class="text-6xl">🧘</div>
-      <h3 class="text-2xl font-bold text-white">Пустота и порядок</h3>
-      <p class="text-gray-400 max-w-xs mx-auto">
-        Отправь голосовое боту, чтобы здесь что-то появилось.
-      </p>
-      <button
-        @click="inbox.fetchInbox()"
-        class="text-sm text-blue-400 hover:underline mt-4"
+  <div class="flex flex-col h-full w-full relative">
+    <!-- HEADER -->
+    <div class="flex justify-between items-center px-6 py-4 text-gray-500 shrink-0 z-10">
+      <div class="flex items-center gap-2">
+        <Sparkles class="w-4 h-4 text-purple-400" />
+        <span class="text-xs font-bold uppercase tracking-widest opacity-70">AI Анализ</span>
+      </div>
+      <div
+        v-if="inbox.queue.length > 0"
+        class="bg-[#2c2c2e]/50 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-gray-300 border border-white/5"
       >
-        Проверить обновления
-      </button>
+        {{ inbox.queue.length }} left
+      </div>
     </div>
 
-    <!-- Карточка -->
-    <div
-      v-else
-      class="w-full max-w-md bg-[#1A1A1A] border border-gray-800 rounded-2xl p-8 shadow-2xl transform transition-all hover:scale-[1.01]"
-    >
-      <!-- Тип -->
-      <div class="flex items-center gap-2 mb-6">
-        <div
-          class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide"
-          :class="
-            currentCard.type === 'task'
-              ? 'bg-blue-500/20 text-blue-400'
-              : currentCard.type === 'idea'
-              ? 'bg-emerald-500/20 text-emerald-400'
-              : 'bg-purple-500/20 text-purple-400'
-          "
-        >
-          {{
-            currentCard.type === 'task'
-              ? 'Задача'
-              : currentCard.type === 'idea'
-              ? 'Идея'
-              : 'Заметка'
-          }}
+    <!-- MAIN CONTENT -->
+    <div class="flex-1 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      <!-- LOADING -->
+      <div
+        v-if="inbox.loading"
+        class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 gap-4"
+      >
+        <Loader2 class="w-8 h-8 animate-spin text-blue-500" />
+        <span class="text-sm font-medium opacity-60">Синхронизация мыслей...</span>
+      </div>
+
+      <!-- EMPTY STATE -->
+      <div
+        v-else-if="!currentCard"
+        class="text-center space-y-6 animate-enter-up z-10"
+      >
+        <div class="text-6xl animate-float filter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+          🧘
         </div>
-        <div
-          v-if="currentCard.tags"
-          class="flex gap-2"
+        <div class="space-y-2">
+          <h3 class="text-2xl font-bold text-white tracking-tight">Входящие разобраны</h3>
+          <p class="text-gray-400 max-w-[250px] mx-auto text-sm leading-relaxed">
+            Наслаждайся пустотой или отправь новое голосовое боту.
+          </p>
+        </div>
+        <button
+          @click="inbox.fetchInbox()"
+          class="group flex items-center gap-2 px-5 py-2.5 bg-[#1c1c1e] hover:bg-[#2c2c2e] border border-white/5 hover:border-white/10 rounded-full text-sm font-medium transition-all text-gray-300 hover:text-white"
         >
-          <span
-            v-for="tag in currentCard.tags"
-            :key="tag"
-            class="text-xs text-gray-500"
-            >#{{ tag }}</span
+          <RefreshCw class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+          <span>Проверить</span>
+        </button>
+      </div>
+
+      <!-- CARD INTERFACE -->
+      <Transition
+        name="card"
+        mode="out-in"
+      >
+        <div
+          v-if="currentCard"
+          :key="currentCard.content"
+          class="w-full max-w-sm flex flex-col h-full max-h-[550px] relative"
+        >
+          <!-- AMBIENT GLOW (Дышащий фон) -->
+          <div
+            class="absolute inset-4 rounded-full blur-[80px] opacity-20 animate-pulse-slow pointer-events-none"
+            :class="currentCard.type === 'task' ? 'bg-blue-500' : 'bg-purple-500'"
+          ></div>
+
+          <!-- THE CARD -->
+          <div
+            class="flex-1 bg-[#161618]/90 backdrop-blur-xl border border-white/10 rounded-[32px] p-6 shadow-2xl flex flex-col relative group overflow-hidden z-10"
           >
+            <!-- Card Header -->
+            <div class="flex justify-between items-start mb-6 shrink-0">
+              <div class="flex flex-wrap gap-2">
+                <!-- Type Badge -->
+                <span
+                  class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border"
+                  :class="
+                    currentCard.type === 'task'
+                      ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                      : 'bg-purple-500/10 text-purple-400 border-purple-500/20'
+                  "
+                >
+                  {{
+                    currentCard.type === 'task'
+                      ? 'Задача'
+                      : currentCard.type === 'idea'
+                      ? 'Идея'
+                      : 'Заметка'
+                  }}
+                </span>
+                <!-- Tags -->
+                <span
+                  v-for="tag in currentCard.tags"
+                  :key="tag"
+                  class="px-2 py-1 rounded-full bg-[#2c2c2e] text-[10px] font-medium text-gray-400 border border-white/5"
+                >
+                  #{{ tag }}
+                </span>
+              </div>
+
+              <!-- TTS Button -->
+              <button
+                @click="handleSpeak"
+                :disabled="isLoadingAudio"
+                class="w-9 h-9 flex items-center justify-center rounded-full bg-[#2c2c2e] text-gray-400 hover:text-white hover:bg-[#3a3a3c] transition-colors border border-white/5 disabled:opacity-50"
+              >
+                <Loader2
+                  v-if="isLoadingAudio"
+                  class="w-4 h-4 animate-spin text-blue-400"
+                />
+                <Volume2
+                  v-else
+                  class="w-4 h-4"
+                />
+              </button>
+            </div>
+
+            <!-- Card Content -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar pr-2">
+              <p class="text-[22px] text-white font-medium leading-relaxed tracking-tight">
+                {{ currentCard.content }}
+              </p>
+            </div>
+
+            <!-- Bottom Fade -->
+            <div
+              class="absolute bottom-0 left-0 w-full h-16 bg-gradient-to-t from-[#161618] to-transparent pointer-events-none"
+            ></div>
+          </div>
+
+          <!-- ACTIONS -->
+          <div class="grid grid-cols-2 gap-4 mt-6 shrink-0 z-10">
+            <button
+              @click="handleResolve('reject')"
+              class="group flex flex-col items-center justify-center p-4 rounded-3xl bg-[#1c1c1e] border border-white/5 text-gray-400 hover:bg-red-500/10 hover:border-red-500/20 hover:text-red-400 transition-all active:scale-95"
+            >
+              <Trash2 class="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" />
+              <span
+                class="text-xs font-bold uppercase tracking-wider opacity-60 group-hover:opacity-100"
+                >Удалить</span
+              >
+            </button>
+
+            <button
+              @click="handleResolve('accept')"
+              class="group flex flex-col items-center justify-center p-4 rounded-3xl bg-white text-black hover:bg-gray-100 transition-all active:scale-95 shadow-[0_0_30px_-5px_rgba(255,255,255,0.15)]"
+            >
+              <Check class="w-6 h-6 mb-1 group-hover:scale-110 transition-transform" />
+              <span
+                class="text-xs font-bold uppercase tracking-wider opacity-80 group-hover:opacity-100"
+                >Принять</span
+              >
+            </button>
+          </div>
         </div>
-      </div>
-
-      <!-- Текст -->
-      <p class="text-2xl text-white font-medium leading-normal mb-10">
-        {{ currentCard.content }}
-      </p>
-
-      <!-- Действия -->
-      <div class="grid grid-cols-3 gap-4">
-        <!-- Обновленная кнопка с загрузкой и стилями -->
-        <button
-          @click="speakText(currentCard.content)"
-          class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-900 text-gray-400 hover:bg-blue-900/20 hover:text-blue-400 transition group disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span class="text-[10px] opacity-50 mt-1">Озвучить</span>
-        </button>
-
-        <button
-          @click="handleResolve('reject')"
-          class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-900 text-gray-400 hover:bg-red-900/20 hover:text-red-400 transition group"
-        >
-          <span class="text-lg mb-1 group-hover:scale-110 transition">🗑</span>
-          <span class="text-xs font-bold">Удалить</span>
-          <span class="text-[10px] opacity-50 mt-1">Del</span>
-        </button>
-
-        <button
-          @click="handleResolve('accept')"
-          class="flex flex-col items-center justify-center p-4 rounded-xl bg-white text-black hover:bg-gray-200 transition group"
-        >
-          <span class="text-lg mb-1 group-hover:scale-110 transition">⚡️</span>
-          <span class="text-xs font-bold">Принять</span>
-          <span class="text-[10px] opacity-50 mt-1">Enter</span>
-        </button>
-      </div>
+      </Transition>
     </div>
   </div>
 </template>
+
+<style scoped>
+.card-enter-active,
+.card-leave-active {
+  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.card-enter-from {
+  opacity: 0;
+  transform: scale(0.95) translateY(20px);
+}
+.card-leave-to {
+  opacity: 0;
+  transform: scale(1.05) translateY(-20px);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #3a3a3c;
+  border-radius: 4px;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulseSlow 8s ease-in-out infinite;
+}
+@keyframes pulseSlow {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.3;
+    transform: scale(1.1);
+  }
+}
+
+.animate-enter-up {
+  animation: enterUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes enterUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>

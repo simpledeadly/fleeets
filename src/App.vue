@@ -3,7 +3,7 @@ import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 // import { invoke } from '@tauri-apps/api'
 // import { ask } from '@tauri-apps/api/dialog'
 // import { checkUpdate, installUpdate } from '@tauri-apps/api/updater'
-import { Zap, ExternalLink } from 'lucide-vue-next'
+import { Zap, ExternalLink, LayoutGrid, Inbox } from 'lucide-vue-next'
 import { useAuth } from './composables/useAuth'
 import { useAppSettings } from './composables/useAppSettings'
 import { useNotesStore } from './stores/notes'
@@ -104,7 +104,7 @@ onUnmounted(() => {
   <div
     class="h-[100dvh] w-screen overflow-hidden font-sans text-base text-[#ffffff] relative flex items-center justify-center bg-[#050505]"
   >
-    <!-- 1. ЭКРАН-ПРЕДУПРЕЖДЕНИЕ ДЛЯ TELEGRAM -->
+    <!-- 1. TELEGRAM WARNING -->
     <div
       v-if="isTelegramBrowser"
       class="absolute inset-0 z-[200] bg-[#050505] flex flex-col items-center justify-center p-8 text-center"
@@ -115,13 +115,12 @@ onUnmounted(() => {
       <h2 class="text-2xl font-bold mb-3">Откройте в браузере</h2>
       <p class="text-gray-400 mb-8 leading-relaxed max-w-xs">
         Чтобы войти в аккаунт и сохранить сессию, нажмите на
-        <span class="text-white font-bold">три точки</span> сверху и выберите
-        <span class="text-white font-bold">«Открыть в браузере»</span> (Safari или Chrome).
+        <span class="text-white font-bold">три точки</span> и выберите
+        <span class="text-white font-bold">«Открыть в браузере»</span>.
       </p>
-      <div class="text-sm text-gray-600">Авторизация внутри Telegram не сохранится.</div>
     </div>
 
-    <!-- 2. СТАНДАРТНЫЙ ИНТЕРФЕЙС (СКРЫВАЕМ ЕСЛИ TG) -->
+    <!-- 2. MAIN APP -->
     <template v-else>
       <div
         v-if="!isTauri"
@@ -143,7 +142,6 @@ onUnmounted(() => {
         </div>
       </Transition>
 
-      <!-- MAIN APP CONTENT -->
       <Transition name="scale-in">
         <div
           v-if="!isBooting"
@@ -151,7 +149,7 @@ onUnmounted(() => {
           :class="
             isTauri
               ? 'w-full h-full bg-[#0c0c0e]'
-              : 'w-full h-full border-0 shadow-none bg-[#0c0c0e] md:w-[900px] md:h-[85vh] md:rounded-3xl md:border md:border-[#333]/60 md:shadow-2xl'
+              : 'w-full h-full bg-[#0c0c0e] md:w-[900px] md:h-[85vh] md:rounded-3xl md:border md:border-[#333]/60 md:shadow-2xl'
           "
         >
           <LoginView
@@ -169,58 +167,93 @@ onUnmounted(() => {
               class="h-8 w-full shrink-0 bg-transparent z-50 absolute top-0 left-0"
             ></div>
 
-            <!-- Хедер / Навигация -->
-            <header class="p-4 border-b border-gray-800 flex items-center justify-center gap-2">
-              <button
-                @click="currentView = 'notes'"
-                class="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                :class="
-                  currentView === 'notes'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-500 hover:text-white'
-                "
-              >
-                Мои заметки
-              </button>
+            <!-- УЛУЧШЕННЫЙ ХЕДЕР (SEGMENTED CONTROL) -->
+            <header class="pt-6 pb-2 px-4 flex items-center justify-center shrink-0 z-20 gap-4">
+              <!-- Сеттингс слева (для баланса) -->
+              <div class="w-10 h-10 flex items-center justify-center">
+                <!-- Пустой блок или лого, если нужно -->
+              </div>
 
-              <button
-                @click="currentView = 'inbox'"
-                class="px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                :class="
-                  currentView === 'inbox'
-                    ? 'bg-gray-800 text-white'
-                    : 'text-gray-500 hover:text-white'
-                "
+              <!-- Переключатель -->
+              <div
+                class="bg-[#1c1c1e] p-1 rounded-full flex items-center relative shadow-inner border border-white/5"
               >
-                <span>Входящие (AI)</span>
-                <!-- Красная точка, если есть новые (можно привязать к стору) -->
-                <!-- <span v-if="inboxStore.hasNewItems" class="w-2 h-2 bg-red-500 rounded-full"></span> -->
+                <div
+                  class="absolute top-1 bottom-1 rounded-full bg-[#3a3a3c] shadow-md transition-all duration-300 ease-[cubic-bezier(0.25,1,0.5,1)]"
+                  :class="
+                    currentView === 'notes'
+                      ? 'left-1 w-[calc(50%-4px)]'
+                      : 'left-[50%] w-[calc(50%-4px)]'
+                  "
+                ></div>
+
+                <button
+                  @click="currentView = 'notes'"
+                  class="relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200 flex items-center gap-2"
+                  :class="
+                    currentView === 'notes' ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+                  "
+                >
+                  <LayoutGrid class="w-4 h-4" />
+                  <span>Заметки</span>
+                </button>
+
+                <button
+                  @click="currentView = 'inbox'"
+                  class="relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-200 flex items-center gap-2"
+                  :class="
+                    currentView === 'inbox' ? 'text-white' : 'text-gray-400 hover:text-gray-200'
+                  "
+                >
+                  <Inbox class="w-4 h-4" />
+                  <span>Входящие</span>
+                </button>
+              </div>
+
+              <!-- Кнопка настроек справа -->
+              <button
+                @click="showSettings = !showSettings"
+                class="w-10 h-10 flex items-center justify-center rounded-full text-gray-400 hover:text-white hover:bg-white/5 transition-colors"
+              >
+                <Settings class="w-5 h-5" />
               </button>
             </header>
 
-            <main class="flex-1 overflow-hidden relative">
-              <!-- Показываем либо заметки, либо инбокс -->
-              <div
-                v-if="currentView === 'notes'"
-                class="h-full"
+            <main class="flex-1 overflow-hidden relative flex flex-col">
+              <Transition
+                name="fade-slide"
+                mode="out-in"
               >
-                <NoteList
-                  ref="listRef"
-                  :is-comfort-mode="isComfortMode"
-                />
-                <NoteInput
-                  :is-comfort-mode="isComfortMode"
-                  :is-tauri="isTauri"
-                  @submit="onNoteSubmit"
-                />
-              </div>
+                <!-- === FIX SCROLL === -->
+                <!-- Важно: flex-col h-full и overflow-hidden для контейнера -->
+                <div
+                  v-if="currentView === 'notes'"
+                  key="notes"
+                  class="h-full w-full flex flex-col overflow-hidden"
+                >
+                  <!-- NoteList должен занимать все место (flex-1) и иметь min-h-0 чтобы скролл работал внутри него -->
+                  <NoteList
+                    ref="listRef"
+                    class="flex-1 min-h-0"
+                    :is-comfort-mode="isComfortMode"
+                  />
+                  <!-- Input не сжимается (shrink-0) -->
+                  <NoteInput
+                    class="shrink-0 z-20"
+                    :is-comfort-mode="isComfortMode"
+                    :is-tauri="isTauri"
+                    @submit="onNoteSubmit"
+                  />
+                </div>
 
-              <div
-                v-else-if="currentView === 'inbox'"
-                class="h-full"
-              >
-                <InboxPage />
-              </div>
+                <div
+                  v-else-if="currentView === 'inbox'"
+                  key="inbox"
+                  class="h-full w-full"
+                >
+                  <InboxPage />
+                </div>
+              </Transition>
             </main>
 
             <AppFooter
@@ -233,7 +266,7 @@ onUnmounted(() => {
             <div
               v-if="showSettings"
               @click="showSettings = false"
-              class="fixed inset-0 z-40 bg-black/50 md:bg-black/40"
+              class="fixed inset-0 z-40 bg-black/50 md:bg-black/40 backdrop-blur-sm"
             ></div>
             <Transition name="fade-slide">
               <SettingsPanel
@@ -325,23 +358,27 @@ onUnmounted(() => {
   }
 }
 
+/* Настройки анимации для SettingsPanel */
 .fade-slide-enter-active,
 .fade-slide-leave-active {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); /* Apple-like spring */
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.fade-slide-enter-from,
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(20px) scale(0.96);
-}
-
-/* На мобильных (экраны < 768px) делаем выезд снизу на 100% */
-@media (max-width: 768px) {
+/* DESKTOP: Выезд справа */
+@media (min-width: 768px) {
   .fade-slide-enter-from,
   .fade-slide-leave-to {
-    opacity: 1; /* opacity не меняем, чтобы не было просвечивания при выезде */
-    transform: translateY(100%);
+    opacity: 0;
+    transform: translateX(20px); /* Слегка сдвигаем вправо */
+  }
+}
+
+/* MOBILE: Выезд снизу (шторка) */
+@media (max-width: 767px) {
+  .fade-slide-enter-from,
+  .fade-slide-leave-to {
+    opacity: 1; /* Не меняем прозрачность шторки */
+    transform: translateY(100%); /* Полностью уезжает вниз */
   }
 }
 </style>
