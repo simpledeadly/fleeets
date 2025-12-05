@@ -1,47 +1,41 @@
 // api/tts.ts
 
+// ⚡️ МАГИЯ: Включаем Edge Runtime (мгновенный запуск)
 export const config = {
-  maxDuration: 30, // Генерация аудио может занять пару секунд
+  runtime: 'edge',
 }
 
-export default async function handler(req: any, res: any) {
-  // 1. CORS (чтобы фронтенд мог делать запросы)
-  res.setHeader('Access-Control-Allow-Credentials', true)
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT')
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  )
+export default async function handler(req: Request) {
+  // CORS заголовки
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  }
 
-  // Обработка preflight запроса (браузер спрашивает разрешения)
+  // Preflight (OPTIONS)
   if (req.method === 'OPTIONS') {
-    return res.status(200).end()
+    return new Response(null, { status: 200, headers: corsHeaders })
   }
 
-  // Проверка метода
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' })
-  }
-
-  const { text, voice = 'nova' } = req.body
-
-  if (!text) {
-    return res.status(400).json({ error: 'Text is required' })
-  }
-
-  const apiKey = process.env.OPENAI_API_KEY
-
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Server config error: API Key missing' })
+    return new Response('Method Not Allowed', { status: 405, headers: corsHeaders })
   }
 
   try {
-    // 2. Запрос к VseGPT
-    // URL взят из документации VseGPT (v1/audio/speech)
-    const vsegptUrl = 'https://api.vsegpt.ru/v1/audio/speech'
+    const { text, voice = 'onyx' } = await req.json()
 
-    const response = await fetch(vsegptUrl, {
+    if (!text) {
+      return new Response('Text is required', { status: 400, headers: corsHeaders })
+    }
+
+    const apiKey = process.env.VSEGPT_API_KEY || process.env.OPENAI_API_KEY
+    if (!apiKey) {
+      return new Response('API Key missing', { status: 500, headers: corsHeaders })
+    }
+
+    // Запрос к VseGPT
+    const response = await fetch('https://api.vsegpt.ru/v1/audio/speech', {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${apiKey}`,
@@ -56,20 +50,22 @@ export default async function handler(req: any, res: any) {
     })
 
     if (!response.ok) {
-      const errorText = await response.text()
-      console.error('VseGPT Error:', errorText)
-      throw new Error(`TTS Provider Error: ${response.status} ${errorText}`)
+      const err = await response.text()
+      return new Response(`TTS Error: ${err}`, { status: response.status, headers: corsHeaders })
     }
 
-    // 3. Отдаем аудиофайл обратно на фронтенд
-    const audioBuffer = await response.arrayBuffer()
-    const buffer = Buffer.from(audioBuffer)
-
-    res.setHeader('Content-Type', 'audio/mpeg')
-    res.setHeader('Content-Length', buffer.length)
-    res.status(200).send(buffer)
+    // 🚀 СТРИМИНГ: Мы не ждем загрузки файла.
+    // Мы берем поток (readable stream) от OpenAI и сразу отдаем его клиенту.
+    return new Response(response.body, {
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'audio/mpeg',
+      },
+    })
   } catch (error: any) {
-    console.error('Handler Error:', error)
-    res.status(500).json({ error: error.message || 'Error generating speech' })
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    })
   }
 }
