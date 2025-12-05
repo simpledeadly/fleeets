@@ -1,36 +1,37 @@
 // utils/tts.ts
 
-export async function speakText(text: string): Promise<void> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const response = await fetch('/api/tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      })
+export function speakText(text: string) {
+  // Проверяем поддержку браузером
+  if (!('speechSynthesis' in window)) {
+    console.warn('TTS не поддерживается в этом браузере')
+    return
+  }
 
-      if (!response.ok) throw new Error('Ошибка генерации озвучки')
+  // Останавливаем, если что-то уже говорится (чтобы не накладывалось)
+  window.speechSynthesis.cancel()
 
-      const blob = await response.blob()
-      const audioUrl = URL.createObjectURL(blob)
-      const audio = new Audio(audioUrl)
+  const utterance = new SpeechSynthesisUtterance(text)
 
-      audio.onplay = () => {
-        resolve()
-      }
+  // Настройки "человечности"
+  utterance.rate = 1.0 // Скорость (1.0 - норма)
+  utterance.pitch = 1.0 // Тон
+  utterance.volume = 1.0 // Громкость
 
-      audio.onerror = (e) => {
-        reject(e)
-      }
+  // Ищем русский голос
+  const voices = window.speechSynthesis.getVoices()
+  // Пытаемся найти Google Русский (на Chrome) или любой другой RU
+  const ruVoice = voices.find((v) => v.lang.includes('ru-RU') || v.lang.includes('ru'))
 
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl)
-      }
+  if (ruVoice) {
+    utterance.voice = ruVoice
+  }
 
-      await audio.play()
-    } catch (error) {
-      console.error('TTS Error:', error)
-      reject(error)
-    }
-  })
+  window.speechSynthesis.speak(utterance)
+}
+
+// ВАЖНО: Список голосов загружается асинхронно.
+// В Chrome иногда нужно повесить слушатель, чтобы голоса подгрузились:
+window.speechSynthesis.onvoiceschanged = () => {
+  // Просто триггер, чтобы браузер "проснулся" и увидел голоса
+  window.speechSynthesis.getVoices()
 }

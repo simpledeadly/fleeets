@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { onMounted, computed, onUnmounted, ref } from 'vue'
+import { onMounted, computed, onUnmounted } from 'vue'
 import { useInboxStore } from '../stores/inbox'
 import { speakText } from '../utils/tts'
 
 const inbox = useInboxStore()
 const currentCard = computed(() => inbox.queue[0])
-const isLoadingAudio = ref(false)
 
 // Хоткеи для десктопа
 const handleKeydown = (e: KeyboardEvent) => {
@@ -21,19 +20,6 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown)
 })
-
-const handleSpeak = async () => {
-  if (isLoadingAudio.value) return
-  isLoadingAudio.value = true
-
-  try {
-    await speakText(currentCard.value.content)
-  } catch (e) {
-    console.error(e)
-  } finally {
-    isLoadingAudio.value = false
-  }
-}
 
 const handleResolve = (action: 'accept' | 'reject') => {
   inbox.resolveCard(action)
@@ -86,6 +72,8 @@ const handleResolve = (action: 'accept' | 'reject') => {
           :class="
             currentCard.type === 'task'
               ? 'bg-blue-500/20 text-blue-400'
+              : currentCard.type === 'idea'
+              ? 'bg-emerald-500/20 text-emerald-400'
               : 'bg-purple-500/20 text-purple-400'
           "
         >
@@ -119,21 +107,12 @@ const handleResolve = (action: 'accept' | 'reject') => {
       <div class="grid grid-cols-3 gap-4">
         <!-- Обновленная кнопка с загрузкой и стилями -->
         <button
-          @click="handleSpeak"
-          :disabled="isLoadingAudio"
+          @click="speakText(currentCard.content)"
           class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-900 text-gray-400 hover:bg-blue-900/20 hover:text-blue-400 transition group disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <!-- Иконка меняется при загрузке -->
-          <span class="text-lg mb-1 group-hover:scale-110 transition">
-            {{ isLoadingAudio ? '⏳' : '🔊' }}
-          </span>
-          <span class="text-xs font-bold">
-            {{ isLoadingAudio ? 'Жди...' : 'Слушать' }}
-          </span>
-          <span class="text-[10px] opacity-50 mt-1">TTS</span>
+          <span class="text-[10px] opacity-50 mt-1">Озвучить</span>
         </button>
 
-        <!-- Кнопки Удалить и Принять (оставляем без изменений) -->
         <button
           @click="handleResolve('reject')"
           class="flex flex-col items-center justify-center p-4 rounded-xl bg-gray-900 text-gray-400 hover:bg-red-900/20 hover:text-red-400 transition group"
