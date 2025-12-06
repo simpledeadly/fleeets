@@ -94,7 +94,6 @@ export default async function handler(req: any, res: any) {
     }
 
     // 3. Llama (Structure)
-    // Я упростил промпт и добавил json_object, чтобы избежать ошибки
     const completionResponse = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -118,7 +117,8 @@ export default async function handler(req: any, res: any) {
                  - Bad: "Подумать над дизайном"
                  - Good: "Открыть Figma и найти 3 референса для главной страницы"
               3. **20-Minute Rule:** Formulate tasks so they feel like they take 15-20 minutes. If a task is huge (e.g., "Write diploma"), break it down to the start (e.g., "Create Word file and write the title page").
-              4. **Language:** Output strictly in Russian.
+              4. **Highlight Essence:** Merge similar intents into a single item. Do not create duplicates for the same topic.
+              5. **Language:** Output strictly in Russian.
               
               OUTPUT FORMAT:
               Return ONLY valid JSON. No markdown, no explanations.
