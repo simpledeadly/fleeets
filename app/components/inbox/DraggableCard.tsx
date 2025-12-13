@@ -1,11 +1,12 @@
+"use client"
+
 import { useState, useRef } from "react"
-import { motion, useMotionValue, useTransform, PanInfo } from "framer-motion"
+import { motion, useMotionValue, useTransform, PanInfo, MotionValue } from "framer-motion"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useStore, type Item } from "@/lib/store"
 import { CardFace } from "./CardFace"
 import { CardBack } from "./CardBack"
-import { SwipeFeedback } from "./SwipeFeedback"
 
 interface DraggableCardProps {
   task: Item
@@ -13,7 +14,7 @@ interface DraggableCardProps {
   isTop: boolean
 }
 
-export function DraggableCard({ task, onSwipe }: DraggableCardProps) {
+export function DraggableCard({ task, onSwipe, isTop }: DraggableCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isHeld, setIsHeld] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -25,16 +26,35 @@ export function DraggableCard({ task, onSwipe }: DraggableCardProps) {
 
   const x = useMotionValue(0)
   const y = useMotionValue(0)
+  const rotate = useTransform(x, [-300, 300], [-20, 20])
 
   const swipeThreshold = 100
   const holdThreshold = 400
 
-  const rotate = useTransform(x, [-300, 300], [-20, 20])
-  const background = useTransform(x, [-swipeThreshold, 0, swipeThreshold], ["rgba(239, 68, 68, 0.05)", "rgba(255, 255, 255, 0)", "rgba(34, 197, 94, 0.05)"])
-  const actionTextOpacity = useTransform(x, [-swipeThreshold, -swipeThreshold / 1.5, 0, swipeThreshold / 1.5, swipeThreshold], [1, 0.3, 0, 0.3, 1])
-  const actionTextLeft = useTransform(x, v => (v < -swipeThreshold + 1 ? "Удалить" : "") as string)
-  const actionTextRight = useTransform(x, v => (v > swipeThreshold - 1 ? (task.type === 'task' ? (isHeld ? "На сегодня" : "В план") : "В архив") : "") as string)
-  
+  // -- Логика для "Штампов" --
+  const stampOpacity = useTransform(x, [-swipeThreshold, -swipeThreshold / 2, 0, swipeThreshold / 2, swipeThreshold], [1, 0, 0, 0, 1])
+  const stampRotate = useTransform(x, [-swipeThreshold, swipeThreshold], [-15, 15])
+  const stampText = useTransform(x, v => {
+    if (v > swipeThreshold) {
+      return task.type === 'task' ? (isHeld ? "На сегодня" : "В план") : "В архив"
+    }
+    if (v < -swipeThreshold) {
+      return "Удалить"
+    }
+    return ""
+  }) as MotionValue<string> // <-- ИСПРАВЛЕНИЕ 1: Явное приведение типа
+
+  const stampColor = useTransform(x, v => {
+    if (v > swipeThreshold) {
+      return isHeld ? "text-blue-500 border-blue-500" : "text-green-500 border-green-500"
+    }
+    if (v < -swipeThreshold) {
+      return "text-red-500 border-red-500"
+    }
+    return ""
+  }) as MotionValue<string> // <-- ИСПРАВЛЕНИЕ 2: Явное приведение типа
+
+  // -- Обработчики жестов --
   const handleDrag = (_e: unknown, info: PanInfo) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
     if (task.type === 'task' && info.offset.x > swipeThreshold && info.velocity.x === 0 && !isHeld) {
@@ -51,15 +71,13 @@ export function DraggableCard({ task, onSwipe }: DraggableCardProps) {
   }
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    // Не запускаем таймер, если клик по кнопке
     if ((e.target as HTMLElement).closest('button')) return
-
     longPressTimer.current = setTimeout(() => {
-      if (x.get() === 0 && y.get() === 0) { setIsFlipped(true) }
+      if (x.get() === 0 && y.get() === 0) setIsFlipped(true)
     }, holdThreshold)
   }
 
-  const handlePointerUp = () => { if (longPressTimer.current) { clearTimeout(longPressTimer.current) } }
+  const handlePointerUp = () => { if (longPressTimer.current) clearTimeout(longPressTimer.current) }
 
   const handleFlip = (e: React.MouseEvent) => { e.stopPropagation(); setIsFlipped(!isFlipped) }
 
@@ -82,31 +100,44 @@ export function DraggableCard({ task, onSwipe }: DraggableCardProps) {
   return (
     <motion.div
       className="absolute w-full h-96"
-      style={{ perspective: 1000, zIndex: 100 }}
+      style={{ perspective: 1000, zIndex: isTop ? 100 : 1 }}
       initial={{ scale: 0.95, opacity: 0, y: 20 }}
       animate={{ scale: 1, opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 40 } }}
       exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
     >
-      <SwipeFeedback x={x} actionTextOpacity={actionTextOpacity} actionTextLeft={actionTextLeft} actionTextRight={actionTextRight} background={background} />
+      {/* ИСПРАВЛЕНИЕ СТРУКТУРЫ ДЛЯ FLIP-АНИМАЦИИ */}
       <motion.div
+        drag={isTop && !isFlipped}
+        dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+        dragElastic={0.2}
+        onDrag={handleDrag}
+        onDragEnd={handleDragEnd}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
         className="relative w-full h-full"
-        style={{ transformStyle: "preserve-3d" }}
-        animate={{ rotateY: isFlipped ? 180 : 0 }}
-        transition={{ duration: 0.5, type: "spring" }}
+        style={{ x, y, rotate, transformStyle: "preserve-3d" }}
       >
         <motion.div
           className="absolute w-full h-full"
-          style={{ x, y, rotate }}
-          drag={!isFlipped}
-          dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-          dragElastic={0.2}
-          onDrag={handleDrag}
-          onDragEnd={handleDragEnd}
-          onPointerDown={handlePointerDown}
-          onPointerUp={handlePointerUp}
+          style={{ transformStyle: "preserve-3d" }}
+          animate={{ rotateY: isFlipped ? 180 : 0 }}
+          transition={{ duration: 0.5, type: "spring" }}
         >
           <CardFace task={task} isProcessing={isProcessing} onToggleType={toggleType} onRefine={handleRefine} onFlip={handleFlip} />
           <CardBack task={task} onFlip={handleFlip} />
+        </motion.div>
+
+        {/* НОВЫЙ КОМПОНЕНТ "ШТАМП" */}
+        <motion.div
+          style={{ opacity: stampOpacity, rotate: stampRotate }}
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+        >
+          <motion.span
+            className={`px-8 py-3 rounded-xl border-4 font-extrabold text-4xl uppercase tracking-widest ${stampColor.get()}`}
+            style={{ color: stampColor, borderColor: stampColor }}
+          >
+            {stampText}
+          </motion.span>
         </motion.div>
       </motion.div>
     </motion.div>
