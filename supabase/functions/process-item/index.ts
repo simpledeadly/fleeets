@@ -35,25 +35,27 @@ serve(async (req) => {
             {
               role: 'system',
               content: `
-              Ты — профессиональный секретарь. Твоя задача — преобразовать сырой поток мыслей в четкую задачу.
-              
-              ВХОД: "${record.content}"
-              
-              ПРАВИЛА:
-              1. Title: Сделай заголовок кратким (до 5-7 слов), начинай с глагола (Купить, Сделать, Написать).
-              2. Priority: 'high', 'medium', 'low'.
-              3. Type: 'task' (действие), 'note' (информация), 'thought' (идея).
-              4. Is_Quick: true, если это займет меньше 5 минут.
-              
-              ОТВЕТ В ФОРМАТЕ JSON:
-              {
-                "title": "...",
-                "description": "...", 
-                "priority": "...",
-                "type": "...",
-                "is_quick": boolean
-              }
-            `,
+                  # ROLE & GOAL:
+                  You are a ZERO-TOLERANCE PARSER. Your only function is to extract distinct items from the user's text.
+
+                  # CRITICAL DIRECTIVES:
+                  1.  **NO SUMMARIZATION. NO GENERALIZATION. EVER.** If the input is "buy water, buy bread", you output two items. Outputting "buy groceries" is a catastrophic failure.
+                  2.  **EXTRACT VERBATIM.** Extract tasks as close to the original wording as possible. Do not "improve" or rephrase.
+                  3.  **SPLIT AGGRESSIVELY.** Use commas, conjunctions ("и", "а также"), and sentence breaks as separators for new items.
+                  4.  **CLASSIFY:** Use 'task' for actions, 'note' for data.
+
+                  # EXAMPLES:
+                  - INPUT: "купить воду, изучить сальсу и купить самсу"
+                  - OUTPUT JSON: { "items": [{ "content": "Купить воду", "type": "task" }, { "content": "Изучить сальсу", "type": "task" }, { "content": "Купить самсу", "type": "task" }] }
+                  - INPUT: "позвонить маме, ее номер 123-456"
+                  - OUTPUT JSON: { "items": [{ "content": "Позвонить маме", "type": "task" }, { "content": "Номер мамы: 123-456", "type": "note" }] }
+
+                  # CURRENT INPUT:
+                  "${record.content}"
+
+                  # REQUIRED OUTPUT FORMAT (JSON ONLY):
+                  { "items": [{ "content": "...", "type": "..." }] }
+                  `,
             },
             { role: 'user', content: record.content },
           ],
@@ -63,21 +65,30 @@ serve(async (req) => {
     )
 
     const aiJson = await response.json()
-    const content = JSON.parse(aiJson.choices[0].message.content)
+    const parsedData = JSON.parse(aiJson.choices[0].message.content)
 
-    // 3. Обновляем запись в базе
-    await supabase
-      .from('items')
-      .update({
-        content: content.title, // Заменяем сырой текст на красивый
-        description: record.content, // Сырой сохраняем в описание (чтобы не потерять)
-        raw_content: record.content,
-        priority: content.priority,
-        type: content.type,
-        is_quick: content.is_quick,
-        ai_tags: ['processed'], // Метка, чтобы не обрабатывать вечно
-      })
-      .eq('id', record.id)
+    if (parsedData.items && parsedData.items.length > 0) {
+      const newItems = parsedData.items.map((item: any) => ({
+        user_id: record.user_id,
+        content: item.content,
+        type: item.type || 'task',
+        status: 'inbox',
+        raw_content: record.content, // Сохраняем оригинал
+        ai_tags: ['processed-auto'],
+      }))
+
+      // Вставляем пачкой
+      await supabase.from('items').insert(newItems)
+
+      // Удаляем исходную "грязную" запись
+      await supabase.from('items').delete().eq('id', record.id)
+    } else {
+      // Если AI ничего не нашел - просто обновляем одну запись
+      await supabase
+        .from('items')
+        .update({ content: record.content, ai_tags: ['processed-auto'] })
+        .eq('id', record.id)
+    }
 
     return new Response('Success')
   } catch (error) {

@@ -1,11 +1,13 @@
+// app/layout.tsx
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { cn } from "@/lib/utils"
-import { Toaster } from "sonner" // <-- 1. Импорт
+import { Toaster } from "sonner"
+import BottomNav from "./components/BottomNav"
+import StoreInitializer from "./components/StoreInitializer"
 
 const fontSans = Inter({
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
   variable: "--font-sans",
 })
 
@@ -21,14 +23,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
-      <body
-        className={cn(
-          "min-h-screen bg-background font-sans antialiased",
-          fontSans.variable
-        )}
-      >
+      <body className={`min-h-screen bg-background font-sans antialiased ${fontSans.variable}`}>
+        <StoreInitializer initialItems={[]} />
         {children}
-        <Toaster position="bottom-center" /> {/* <-- 2. Вставка */}
+        <BottomNav />
+        <Toaster position="bottom-right" />
       </body>
     </html>
   )
