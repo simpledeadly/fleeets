@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
-import { motion, useMotionValue, useTransform, PanInfo, MotionValue } from "framer-motion"
+import { useState, useRef, useEffect } from "react"
+import { motion, useMotionValue, useTransform, PanInfo, animate, AnimatePresence } from "framer-motion"
 import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import { useStore, type Item } from "@/lib/store"
@@ -14,80 +14,92 @@ interface DraggableCardProps {
   isTop: boolean
 }
 
+type SwipeState = "idle" | "left" | "right" | "up"
+
 export function DraggableCard({ task, onSwipe, isTop }: DraggableCardProps) {
   const [isFlipped, setIsFlipped] = useState(false)
   const [isHeld, setIsHeld] = useState(false)
+  const [swipeState, setSwipeState] = useState<SwipeState>("idle")
   const [isProcessing, setIsProcessing] = useState(false)
 
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
+  const holdTimer = useRef<NodeJS.Timeout | null>(null)
 
   const supabase = createClient()
   const updateItemInStore = useStore((state) => state.updateItem)
 
   const x = useMotionValue(0)
   const y = useMotionValue(0)
-  const rotate = useTransform(x, [-300, 300], [-20, 20])
+  const rotate = useTransform(x, [-300, 300], [-15, 15])
 
-  const swipeThreshold = 100
+  const swipeThreshold = 120
   const holdThreshold = 400
 
-  // -- Логика для "Штампов" --
-  const xSwipeOpacity = useTransform(x, [-swipeThreshold, -swipeThreshold / 2, 0, swipeThreshold / 2, swipeThreshold], [1, 0, 0, 0, 1])
-  const ySwipeOpacity = useTransform(y, [-swipeThreshold, -swipeThreshold / 2, 0], [1, 0, 0])
-
-  // ИСПРАВЛЕНИЕ: Явно указываем типы для значений из массива
-  const stampOpacity = useTransform([xSwipeOpacity, ySwipeOpacity], ([latestX, latestY]) =>
-    Math.max(latestX as number, latestY as number)
-  )
-
-  const stampRotate = useTransform(x, [-swipeThreshold, swipeThreshold], [-5, 5])
-
-  const stampText = useTransform([x, y], ([latestX, latestY]) => {
-    // ИСПРАВЛЕНИЕ: Приводим unknown к number
-    const currentX = latestX as number
-    const currentY = latestY as number
-
-    if (currentY < -swipeThreshold) {
-      return "В архив"
+  // --- Новая логика "Штампов" ---
+  const getStampText = () => {
+    if (swipeState === 'up') return 'В архив'
+    if (swipeState === 'left') return 'Удалить'
+    if (swipeState === 'right') {
+      return task.type === 'task' ? (isHeld ? 'На сегодня' : 'В план') : 'В архив'
     }
-    if (currentX > swipeThreshold) {
-      return task.type === 'task' ? (isHeld ? "На сегодня" : "В план") : "В архив"
-    }
-    if (currentX < -swipeThreshold) {
-      return "Удалить"
-    }
-    return ""
-  }) as MotionValue<string>
+    return ''
+  }
 
-  const stampColor = useTransform([x, y], ([latestX, latestY]) => {
-    const currentX = latestX as number
-    const currentY = latestY as number
+  const getStampColor = () => {
+    if (swipeState === 'up') return 'text-orange-500 border-orange-500'
+    if (swipeState === 'left') return 'text-red-500 border-red-500'
+    if (swipeState === 'right') {
+      return isHeld ? 'text-blue-500 border-blue-500' : 'text-green-500 border-green-500'
+    }
+    return ''
+  }
 
-    if (currentY < -swipeThreshold) {
-      return "text-orange-500 border-orange-500"
-    }
-    if (currentX > swipeThreshold) {
-      return isHeld ? "text-blue-500 border-blue-500" : "text-green-500 border-green-500"
-    }
-    if (currentX < -swipeThreshold) {
-      return "text-red-500 border-red-500"
-    }
-    return "text-transparent border-transparent"
-  }) as MotionValue<string>
+  const getStampRotate = () => {
+    if (swipeState === 'right') return -5
+    if (swipeState === 'left') return 5
+    return 0
+  }
 
   // -- Обработчики жестов --
   const handleDrag = (_e: unknown, info: PanInfo) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
-    if (task.type === 'task' && info.offset.x > swipeThreshold && info.velocity.x === 0 && !isHeld) {
-      setIsHeld(true)
+
+    if (info.offset.x > swipeThreshold) setSwipeState("right")
+    else if (info.offset.x < -swipeThreshold) setSwipeState("left")
+    else if (info.offset.y < -swipeThreshold) setSwipeState("up")
+    else {
+      setSwipeState("idle")
+      setIsHeld(false)
+      if (holdTimer.current) clearTimeout(holdTimer.current)
     }
   }
 
+  useEffect(() => {
+    if (swipeState === 'right' && task.type === 'task' && !isHeld) {
+      holdTimer.current = setTimeout(() => setIsHeld(true), holdThreshold)
+    }
+    return () => {
+      if (holdTimer.current) clearTimeout(holdTimer.current)
+    }
+  }, [swipeState, isHeld, task.type])
+
   const handleDragEnd = (_e: unknown, info: PanInfo) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
-    if (info.offset.x > swipeThreshold) onSwipe(isHeld && task.type === 'task' ? "today" : "right")
-    else if (info.offset.x < -swipeThreshold) onSwipe("left")
-    else if (info.offset.y < -swipeThreshold) onSwipe("up")
+
+    if (swipeState !== "idle") {
+      const exitX = (info.offset.x > 0 ? 1 : -1) * 500
+      const exitY = info.offset.y < 0 ? -500 : 0
+
+      animate(x, exitX, { type: 'spring', stiffness: 300, damping: 30 })
+      animate(y, exitY, { type: 'spring', stiffness: 300, damping: 30 })
+
+      setTimeout(() => {
+        onSwipe(isHeld && task.type === 'task' ? "today" : swipeState)
+      }, 100)
+    } else {
+      animate(x, 0, { type: 'spring', stiffness: 400, damping: 40 })
+      animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 })
+    }
     setIsHeld(false)
   }
 
@@ -126,11 +138,10 @@ export function DraggableCard({ task, onSwipe, isTop }: DraggableCardProps) {
       animate={{ scale: 1, opacity: 1, y: 0, transition: { type: "spring", stiffness: 400, damping: 40 } }}
       exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
     >
-      {/* ИСПРАВЛЕНИЕ СТРУКТУРЫ ДЛЯ FLIP-АНИМАЦИИ */}
       <motion.div
         drag={isTop && !isFlipped}
         dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-        dragElastic={0.2}
+        dragElastic={0.1}
         onDrag={handleDrag}
         onDragEnd={handleDragEnd}
         onPointerDown={handlePointerDown}
@@ -148,21 +159,24 @@ export function DraggableCard({ task, onSwipe, isTop }: DraggableCardProps) {
           <CardBack task={task} onFlip={handleFlip} />
         </motion.div>
 
-        {/* НОВЫЙ КОМПОНЕНТ "ШТАМП" */}
-        <motion.div
-          style={{ opacity: stampOpacity, rotate: stampRotate }}
-          className="absolute inset-x-0 top-12 flex items-center justify-center pointer-events-none" // Располагаем сверху
-        >
-          <motion.span
-            className={`px-6 py-2 rounded-lg border-2 font-bold text-2xl uppercase tracking-wider ${stampColor.get()}`}
-            style={{
-              color: stampColor.get().split(' ')[0], // Берем только text-color
-              borderColor: stampColor.get().split(' ')[1] // Берем только border-color
-            }}
-          >
-            {stampText}
-          </motion.span>
-        </motion.div>
+        {/* НОВЫЙ "ШТАМП" */}
+        <AnimatePresence>
+          {swipeState !== 'idle' && (
+            <motion.div
+              initial={{ scale: 1.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } }}
+              exit={{ scale: 0.5, opacity: 0 }}
+              style={{ rotate: getStampRotate() }}
+              className="absolute inset-x-0 top-10 flex items-center justify-center pointer-events-none"
+            >
+              <span
+                className={`px-6 py-2 rounded-lg border-4 font-bold text-2xl uppercase tracking-wider ${getStampColor()}`}
+              >
+                {getStampText()}
+              </span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </motion.div>
   )
