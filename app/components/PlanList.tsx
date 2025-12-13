@@ -28,7 +28,7 @@ export default function PlanList() {
   }
 
   return (
-    <div className="w-full space-y-3 animate-in fade-in duration-300">
+    <div className="w-full space-y-3 animate-in fade-in duration-150">
       {tasks.map((task) => {
         const plannedDate = task.planned_at || task.created_at
         const hoursOld = plannedDate ? differenceInHours(new Date(), new Date(plannedDate)) : 0

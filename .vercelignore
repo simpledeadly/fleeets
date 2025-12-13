@@ -1,0 +1,18 @@
+# Зависимости (Vercel сам их поставит)
+node_modules
+
+# Сборка фронтенда
+dist
+
+# Сборка Tauri/Rust
+src-tauri/target
+
+# Гит
+.git
+
+# Локальные переменные и кэши
+.env
+.env.local
+.vercel
+.DS_Store
+.temp

@@ -24,20 +24,20 @@ export default function BottomNav() {
               onClick={() => setView(tab.view)}
               aria-label={tab.name}
               className={cn(
-                "relative flex flex-col items-center justify-center w-12 h-12 rounded-full transition-all duration-300",
+                "relative cursor-pointer flex flex-col items-center justify-center w-10 h-10 rounded-full transition-all duration-150",
                 isActive
                   ? "bg-black text-white shadow-md scale-110"
                   : "text-muted-foreground hover:bg-slate-100"
               )}
             >
-              <tab.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+              <tab.icon size={18} strokeWidth={isActive ? 2 : 1.8} />
             </button>
           )
         })}
 
         <div className="w-px h-6 bg-slate-200 mx-1" />
-        <button className="flex items-center justify-center w-12 h-12 rounded-full text-amber-500 hover:bg-amber-50 transition-colors" aria-label="Блиц-режим">
-          <Zap size={20} fill="currentColor" />
+        <button className="flex cursor-pointer items-center justify-center w-10 h-10 rounded-full text-amber-500 hover:bg-amber-50 transition-colors" aria-label="Блиц-режим">
+          <Zap size={18} fill="currentColor" />
         </button>
       </nav>
     </div>
