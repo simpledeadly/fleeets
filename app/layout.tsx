@@ -1,8 +1,8 @@
-// app/layout.tsx
 import type { Metadata } from "next"
-import { Inter } from "next/font/google" // Используем Inter как стандарт
+import { Inter } from "next/font/google"
 import "./globals.css"
-import { cn } from "@/lib/utils" // Утилита от Shadcn для склеивания классов
+import { cn } from "@/lib/utils"
+import { Toaster } from "sonner" // <-- 1. Импорт
 
 const fontSans = Inter({
   subsets: ["latin"],
@@ -28,6 +28,7 @@ export default function RootLayout({
         )}
       >
         {children}
+        <Toaster position="bottom-center" /> {/* <-- 2. Вставка */}
       </body>
     </html>
   )
