@@ -32,27 +32,48 @@ export function DraggableCard({ task, onSwipe, isTop }: DraggableCardProps) {
   const holdThreshold = 400
 
   // -- Логика для "Штампов" --
-  const stampOpacity = useTransform(x, [-swipeThreshold, -swipeThreshold / 2, 0, swipeThreshold / 2, swipeThreshold], [1, 0, 0, 0, 1])
-  const stampRotate = useTransform(x, [-swipeThreshold, swipeThreshold], [-15, 15])
-  const stampText = useTransform(x, v => {
-    if (v > swipeThreshold) {
+  const xSwipeOpacity = useTransform(x, [-swipeThreshold, -swipeThreshold / 2, 0, swipeThreshold / 2, swipeThreshold], [1, 0, 0, 0, 1])
+  const ySwipeOpacity = useTransform(y, [-swipeThreshold, -swipeThreshold / 2, 0], [1, 0, 0])
+
+  // ИСПРАВЛЕНИЕ: Явно указываем типы для значений из массива
+  const stampOpacity = useTransform([xSwipeOpacity, ySwipeOpacity], ([latestX, latestY]) =>
+    Math.max(latestX as number, latestY as number)
+  )
+
+  const stampRotate = useTransform(x, [-swipeThreshold, swipeThreshold], [-5, 5])
+
+  const stampText = useTransform([x, y], ([latestX, latestY]) => {
+    // ИСПРАВЛЕНИЕ: Приводим unknown к number
+    const currentX = latestX as number
+    const currentY = latestY as number
+
+    if (currentY < -swipeThreshold) {
+      return "В архив"
+    }
+    if (currentX > swipeThreshold) {
       return task.type === 'task' ? (isHeld ? "На сегодня" : "В план") : "В архив"
     }
-    if (v < -swipeThreshold) {
+    if (currentX < -swipeThreshold) {
       return "Удалить"
     }
     return ""
-  }) as MotionValue<string> // <-- ИСПРАВЛЕНИЕ 1: Явное приведение типа
+  }) as MotionValue<string>
 
-  const stampColor = useTransform(x, v => {
-    if (v > swipeThreshold) {
+  const stampColor = useTransform([x, y], ([latestX, latestY]) => {
+    const currentX = latestX as number
+    const currentY = latestY as number
+
+    if (currentY < -swipeThreshold) {
+      return "text-orange-500 border-orange-500"
+    }
+    if (currentX > swipeThreshold) {
       return isHeld ? "text-blue-500 border-blue-500" : "text-green-500 border-green-500"
     }
-    if (v < -swipeThreshold) {
+    if (currentX < -swipeThreshold) {
       return "text-red-500 border-red-500"
     }
-    return ""
-  }) as MotionValue<string> // <-- ИСПРАВЛЕНИЕ 2: Явное приведение типа
+    return "text-transparent border-transparent"
+  }) as MotionValue<string>
 
   // -- Обработчики жестов --
   const handleDrag = (_e: unknown, info: PanInfo) => {
@@ -130,11 +151,14 @@ export function DraggableCard({ task, onSwipe, isTop }: DraggableCardProps) {
         {/* НОВЫЙ КОМПОНЕНТ "ШТАМП" */}
         <motion.div
           style={{ opacity: stampOpacity, rotate: stampRotate }}
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          className="absolute inset-x-0 top-12 flex items-center justify-center pointer-events-none" // Располагаем сверху
         >
           <motion.span
-            className={`px-8 py-3 rounded-xl border-4 font-extrabold text-4xl uppercase tracking-widest ${stampColor.get()}`}
-            style={{ color: stampColor, borderColor: stampColor }}
+            className={`px-6 py-2 rounded-lg border-2 font-bold text-2xl uppercase tracking-wider ${stampColor.get()}`}
+            style={{
+              color: stampColor.get().split(' ')[0], // Берем только text-color
+              borderColor: stampColor.get().split(' ')[1] // Берем только border-color
+            }}
           >
             {stampText}
           </motion.span>
