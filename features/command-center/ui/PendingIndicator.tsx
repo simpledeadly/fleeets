@@ -16,7 +16,7 @@ export function PendingIndicator() {
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
           className="fixed bottom-0 left-0 right-0 flex justify-center mb-42"
         >
-          <div className="flex items-center gap-2 text-xs font-medium bg-white/80 dark:bg-black/80 backdrop-blur-md border border-white/20 shadow-lg px-3 py-1.5 rounded-full">
+          <div className="flex items-center gap-2 text-xs font-medium bg-card/80 backdrop-blur-md border border-white/20 shadow-lg px-3 py-1.5 rounded-full">
             <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
             <span className="text-muted-foreground">
               {count > 1 ? `Создание (${count})...` : 'Создание...'}
