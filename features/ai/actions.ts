@@ -31,6 +31,7 @@ export async function createItemWithAI(text: string) {
       .insert({
         user_id: user.id,
         content: text,
+        raw_content: text,
         type: 'note',
         status: 'inbox',
         embedding: embedding,
@@ -68,8 +69,8 @@ export async function findSimilarItems(itemId: string) {
 
   const { data: similarItems, error } = await supabase.rpc('match_items', {
     query_embedding: currentItem.embedding,
-    match_threshold: 0.5,
-    match_count: 5,
+    match_threshold: 0.4,
+    match_count: 10,
     user_id_input: (await supabase.auth.getUser()).data.user?.id,
   })
 

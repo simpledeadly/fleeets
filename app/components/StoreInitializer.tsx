@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { fetchActiveItems, fetchUserTier } from '@/lib/data'
 import { usePaywallStore } from '@/features/paywall'
 
-export default function StoreInitializer({ initialItems }: { initialItems: Item[] }) {
+export default function StoreInitializer() {
   const supabase = createClient()
   const { setItems, isInitialized, addItem, updateItem, removeItem } = useStore()
 
@@ -44,24 +44,32 @@ export default function StoreInitializer({ initialItems }: { initialItems: Item[
     if (isMounted.current) return
     isMounted.current = true
 
-    console.log("📡 Setting up realtime...")
-
     const channel = supabase
       .channel('items_realtime')
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'items' },
         (payload) => {
-          // console.log('Realtime:', payload) 
-          if (payload.eventType === 'INSERT') addItem(payload.new as Item)
-          if (payload.eventType === 'UPDATE') updateItem(payload.new as Item)
-          if (payload.eventType === 'DELETE') removeItem((payload.old as { id: string }).id)
+          const store = useStore.getState()
+
+          if (payload.eventType === 'INSERT') {
+            const realItem = payload.new as Item
+            const exists = store.items.some(item => item.id === realItem.id)
+            if (!exists) {
+              store.addItem(realItem)
+            }
+          }
+          if (payload.eventType === 'UPDATE') {
+            store.updateItem(payload.new as Item)
+          }
+          if (payload.eventType === 'DELETE') {
+            store.removeItem((payload.old as { id: string }).id)
+          }
         }
       )
       .subscribe()
 
     return () => {
-      console.log("🔕 Removing channel")
       supabase.removeChannel(channel)
       isMounted.current = false
     }

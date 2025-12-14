@@ -9,6 +9,7 @@ interface AppState {
   setItems: (items: Item[]) => void
   addItem: (item: Item) => void
   updateItem: (item: Item) => void
+  replaceItem: (tempId: string, realItem: Item) => void
   removeItem: (itemId: string) => void
   isLoading: boolean
   isInitialized: boolean
@@ -29,6 +30,10 @@ export const useStore = create<AppState>((set) => ({
       items: state.items.map((item) =>
         item.id === updatedItem.id ? { ...item, ...updatedItem } : item
       ),
+    })),
+  replaceItem: (tempId, realItem) =>
+    set((state) => ({
+      items: state.items.map((item) => (item.id === tempId ? realItem : item)),
     })),
   removeItem: (itemId) =>
     set((state) => ({

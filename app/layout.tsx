@@ -3,10 +3,10 @@ import type { Metadata } from "next"
 import "./globals.css"
 import { Inter } from "next/font/google"
 import { Toaster } from "sonner"
-import BottomNav from "./components/BottomNav"
 import StoreInitializer from "./components/StoreInitializer"
 import { PaywallModal } from "@/features/paywall"
 import { ThemeProvider } from './components/ThemeProvider'
+import { LayoutClient } from './components/LayoutClient'
 
 const fontSans = Inter({
   subsets: ["latin", "cyrillic"],
@@ -26,16 +26,16 @@ export default function RootLayout({
   return (
     <html lang="ru" suppressHydrationWarning>
       <body className={`min-h-screen bg-background font-sans antialiased ${fontSans.variable}`}>
-        {/* Оборачиваем всё в ThemeProvider */}
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <StoreInitializer initialItems={[]} />
-          {children}
-          <BottomNav />
+          <StoreInitializer />
+          <LayoutClient>
+            {children}
+          </LayoutClient>
           <PaywallModal />
           <Toaster position="bottom-right" />
         </ThemeProvider>
