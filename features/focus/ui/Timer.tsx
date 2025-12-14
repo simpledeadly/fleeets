@@ -2,33 +2,34 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Play, Square } from "lucide-react"
-import { logFocusSession, getItemTotalDuration } from "../model/actions"
+import { logFocusSession } from "../model/actions"
 import { cn } from "@/lib/utils"
 
-export function Timer({ itemId }: { itemId: string }) {
+export function Timer({ itemId, initialTotalSeconds, isLoading }: {
+  itemId: string,
+  initialTotalSeconds?: number | null,
+  isLoading: boolean
+}) {
   const [isRunning, setIsRunning] = useState(false)
   const [sessionSeconds, setSessionSeconds] = useState(0)
-  const [totalSeconds, setTotalSeconds] = useState(0)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [totalSeconds, setTotalSeconds] = useState(initialTotalSeconds)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    getItemTotalDuration(itemId).then(setTotalSeconds)
-  }, [itemId])
+    setTotalSeconds(initialTotalSeconds)
+  }, [initialTotalSeconds])
 
   const toggleTimer = async () => {
     if (isRunning) {
-      // STOP
       if (intervalRef.current) clearInterval(intervalRef.current)
       setIsRunning(false)
-
       if (sessionSeconds > 5) {
         await logFocusSession(itemId, sessionSeconds)
-        // Добавляем текущую сессию к общему времени, чтобы юзер сразу увидел обновление
-        setTotalSeconds(prev => prev + sessionSeconds)
+        setTotalSeconds(prev => (prev ?? 0) + sessionSeconds)
       }
-      setSessionSeconds(0) // Сбрасываем сессию
+      setSessionSeconds(0)
     } else {
-      // START
       setIsRunning(true)
       intervalRef.current = setInterval(() => {
         setSessionSeconds(s => s + 1)
@@ -37,9 +38,7 @@ export function Timer({ itemId }: { itemId: string }) {
   }
 
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
   }, [])
 
   // Хелпер
@@ -54,7 +53,8 @@ export function Timer({ itemId }: { itemId: string }) {
 
   // Хелпер для читаемого текста ("2ч 15м")
   const formatTotalHuman = (sec: number) => {
-    if (sec === 0) return "Нет записей"
+    if (isLoading) return <span className="inline-block h-2 w-20 bg-muted-foreground/10 rounded animate-pulse" />
+    if (sec === 0 || sec === null) return "Нет записей"
     const h = Math.floor(sec / 3600)
     const m = Math.floor((sec % 3600) / 60)
     if (h > 0) return `${h}ч ${m}м`
@@ -76,24 +76,31 @@ export function Timer({ itemId }: { itemId: string }) {
         {formatTime(sessionSeconds)}
       </div>
 
-      {/* Общее время (Метаданные) */}
-      <div className="mt-2 text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
-        <span>Всего: {formatTotalHuman(totalSeconds)}</span>
-        {isRunning && <span className="text-primary animate-pulse">● Rec</span>}
+      {/* Общее время */}
+      <div className="mt-2 h-4 flex flex-row justify-center items-center text-xs font-medium text-muted-foreground uppercase tracking-wider gap-2">
+        <span>Всего: {formatTotalHuman((initialTotalSeconds ?? 0))}</span>
+        {/* REC появляется, не двигая текст */}
+        <span className={`transition-opacity duration-150 ${isRunning ? 'opacity-100' : 'opacity-30'}`}>
+          <span className={`text-primary ${isRunning && 'animate-pulse'}`}>● Rec</span>
+        </span>
       </div>
 
       {/* Кнопка */}
       <button
         onClick={toggleTimer}
         className={cn(
-          "absolute bottom-3 right-3 flex items-center gap-2 px-4 py-1.5 rounded-full font-bold text-sm transition-all active:scale-96 shadow-sm cursor-pointer",
+          "absolute bottom-3 right-3 flex items-center justify-center gap-2 px-4 py-1.5 rounded-full font-bold text-sm duration-150 transition-all active:scale-96 shadow-sm cursor-pointer",
+          "w-24 h-7",
           isRunning
             ? "bg-red-500 text-white"
             : "bg-primary text-primary-foreground"
         )}
       >
-        {isRunning ? <Square size={10} fill="currentColor" /> : <Play size={10} fill="currentColor" />}
-        {isRunning ? "СТОП" : "СТАРТ"}
+        {isRunning ? (
+          <><Square size={10} fill="currentColor" /> СТОП</>
+        ) : (
+          <><Play size={10} fill="currentColor" /> СТАРТ</>
+        )}
       </button>
     </div>
   )

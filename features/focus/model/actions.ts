@@ -1,5 +1,6 @@
 'use server'
 
+import { findSimilarItems } from '@/features/ai'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -73,4 +74,12 @@ export async function completeItem(itemId: string) {
 
   revalidatePath('/') // Обновляем списки
   return { success: true }
+}
+
+export async function getFocusViewData(itemId: string) {
+  const [totalDuration, similarItems] = await Promise.all([
+    getItemTotalDuration(itemId),
+    findSimilarItems(itemId),
+  ])
+  return { totalDuration, similarItems }
 }
