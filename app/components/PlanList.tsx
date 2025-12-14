@@ -28,7 +28,7 @@ export default function PlanList() {
   }
 
   return (
-    <div className="w-full space-y-3 animate-in fade-in duration-150">
+    <div className="w-full space-y-3 animate-in fade-in duration-150 mb-30">
       {tasks.map((task) => {
         const plannedDate = task.planned_at || task.created_at
         const hoursOld = plannedDate ? differenceInHours(new Date(), new Date(plannedDate)) : 0
@@ -39,7 +39,7 @@ export default function PlanList() {
 
         if (hoursOld > 48) {
           opacityClass = "opacity-40 neutralscale-[0.8]"
-          rotIcon = <Ghost size={16} className="text-stone-500" />
+          rotIcon = <Ghost size={16} className="text-neutral-500" />
           rotStatus = "rotten"
         } else if (hoursOld > 24) {
           opacityClass = "opacity-75"
@@ -50,9 +50,9 @@ export default function PlanList() {
           <div
             key={task.id}
             className={cn(
-              "relative group flex flex-col gap-2 p-5 rounded-2xl border bg-white shadow-sm transition-all duration-500",
+              "relative group flex flex-col gap-2 p-4 rounded-2xl border bg-card shadow-sm transition-all duration-300",
               opacityClass,
-              rotStatus === "rotten" && "border-stone-200 bg-stone-50"
+              rotStatus === "rotten" && "border-muted bg-card"
             )}
           >
             <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
@@ -67,14 +67,14 @@ export default function PlanList() {
               </span>
             </div>
 
-            <div className="flex justify-between items-start gap-4 flex-col">
+            <div className="flex justify-between items-start gap-2 flex-col">
               <h3 className={cn(
                 "text-lg font-semibold leading-snug",
-                rotStatus === "rotten" && "line-through decoration-stone-300 decoration-2"
+                rotStatus === "rotten" && "line-through decoration-neutral-300 decoration-1.5"
               )}>
                 {task.content}
               </h3>
-              <p className="text-md font-medium leading-tight text-balance text-neutral-600">{task.description}</p>
+              <p className="text-md font-medium leading-tight text-balance text-muted-foreground">{task.description}</p>
             </div>
 
             <div className="flex items-center gap-2 mt-1">

@@ -29,7 +29,7 @@ export default function BottomNav() {
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <nav className="flex items-center gap-2 p-2 rounded-full bg-white/80 backdrop-blur-md border shadow-lg shadow-black/5">
+      <nav className="flex items-center gap-2 p-2 rounded-full bg-card/70 dark:bg-card/90 backdrop-blur-md border shadow-lg shadow-black/5">
         {tabs.map((tab) => {
           const isActive = currentView === tab.view
           return (
@@ -40,8 +40,8 @@ export default function BottomNav() {
               className={cn(
                 "relative cursor-pointer flex flex-col items-center justify-center w-10 h-10 rounded-full transition-all duration-150",
                 isActive
-                  ? "bg-black text-white shadow-md scale-110"
-                  : "text-muted-foreground hover:bg-slate-100"
+                  ? "bg-foreground text-background scale-110"
+                  : "text-muted-foreground hover:bg-foreground/5"
               )}
             >
               <tab.icon size={18} strokeWidth={isActive ? 2 : 1.8} />
@@ -49,11 +49,11 @@ export default function BottomNav() {
           )
         })}
 
-        <div className="w-px h-6 bg-slate-200 mx-1" />
+        <div className="w-px h-6 bg-muted mx-1" />
 
         <button
           onClick={handleBlitzClick}
-          className="group relative flex cursor-pointer items-center justify-center w-10 h-10 rounded-full text-amber-500 hover:bg-amber-50 transition-colors"
+          className="group relative flex cursor-pointer items-center justify-center w-10 h-10 rounded-full text-amber-500 hover:bg-amber-500/10 dark:hover:bg-amber-500/5 transition-colors"
           aria-label="Блиц-режим"
         >
           <Zap size={18} fill="currentColor" className="transition-transform group-active:scale-90" />

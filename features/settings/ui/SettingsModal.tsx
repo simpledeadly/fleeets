@@ -41,7 +41,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-95 p-0 overflow-hidden bg-background border-border gap-0">
+      <DialogContent className="sm:max-w-95 p-0 overflow-hidden bg-card border-border gap-0">
 
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-xl font-bold tracking-tight">Настройки</DialogTitle>

@@ -50,7 +50,7 @@ export default function InboxDeck() {
                 initial={{ scale: 0.9, y: 20, opacity: 0 }}
                 animate={{ scale: 1 - stackIndex * 0.05, y: stackIndex * 15, opacity: 1 - stackIndex * 0.3, zIndex: -stackIndex }}
                 exit={{ opacity: 0, scale: 0.9 }}
-                className="absolute w-full h-96 rounded-3xl border bg-white shadow-sm pointer-events-none"
+                className="absolute w-full h-96 rounded-3xl border bg-card shadow-sm pointer-events-none"
               />
             )
           }
