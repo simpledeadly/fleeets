@@ -18,8 +18,6 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl h-[85vh] p-0 gap-0 overflow-hidden bg-card flex flex-col sm:rounded-3xl border-border outline-none">
-
-        {/* 👇 ФИКС ОШИБКИ: Скрытый заголовок для доступности */}
         <DialogTitle className="sr-only">
           Режим фокуса: {item.content}
         </DialogTitle>
@@ -30,9 +28,6 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Focus Mode</span>
           </div>
-          <button onClick={onClose} className="p-2 -mr-2 hover:bg-secondary rounded-full transition-colors">
-            <X size={20} />
-          </button>
         </div>
 
         <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10">

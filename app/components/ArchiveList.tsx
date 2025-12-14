@@ -10,7 +10,7 @@ export default function ArchiveList() {
   const items = useStore((state) => state.items)
 
   const notes = items
-    .filter(item => item.status === 'archived' && (item.type === 'note' || item.type === 'thought'))
+    .filter(item => item.status === 'archived' && (item.type === 'note' || item.type === 'thought' || item.type === 'resource'))
     .sort((a, b) => {
       const dateA = new Date(a.planned_at || a.created_at || 0).getTime()
       const dateB = new Date(b.planned_at || b.created_at || 0).getTime()
