@@ -1,37 +1,40 @@
-// app/components/StoreInitializer.tsx
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useStore, type Item } from '@/lib/store'
 import { createClient } from '@/lib/supabase/client'
+import { fetchActiveItems } from '@/lib/data' // <--- Импорт новой функции
 
 export default function StoreInitializer({ initialItems }: { initialItems: Item[] }) {
   const supabase = createClient()
-  const { setItems, isInitialized } = useStore()
+  const { setItems, isInitialized, addItem, updateItem, removeItem } = useStore()
 
-  // 1. ЗАГРУЗКА ДАННЫХ ПРИ СТАРТЕ (КЛИЕНТ)
+  // Ref чтобы не подписываться дважды при React Strict Mode
+  const isMounted = useRef(false)
+
+  // 1. ЗАГРУЗКА ДАННЫХ
   useEffect(() => {
-    // Если уже инициализировано (например, при hot-reload) - выходим
     if (isInitialized) return
 
-    const fetchInitialData = async () => {
-      console.log("Fetching initial data...")
-      const { data: items } = await supabase
-        .from("items")
-        .select("*")
-        .in("status", ["inbox", "planned", "today"])
-
-      setItems(items || [])
-      console.log("Data fetched and set.")
+    const loadData = async () => {
+      try {
+        const items = await fetchActiveItems(supabase)
+        setItems(items)
+      } catch (e) {
+        console.error("Failed to load initial data", e)
+      }
     }
 
-    fetchInitialData()
+    loadData()
   }, [isInitialized, setItems, supabase])
 
 
-  // 2. ПОДПИСКА НА REALTIME (с логами для дебага)
+  // 2. REALTIME (Оставляем как было, код хороший)
   useEffect(() => {
-    console.log("Setting up realtime channel...")
+    if (isMounted.current) return
+    isMounted.current = true
+
+    console.log("📡 Setting up realtime...")
 
     const channel = supabase
       .channel('items_realtime')
@@ -39,28 +42,20 @@ export default function StoreInitializer({ initialItems }: { initialItems: Item[
         'postgres_changes',
         { event: '*', schema: 'public', table: 'items' },
         (payload) => {
-          console.log('Realtime payload received:', payload) // <-- ГЛАВНЫЙ ЛОГ
-          if (payload.eventType === 'INSERT') {
-            useStore.getState().addItem(payload.new as Item)
-          }
-          if (payload.eventType === 'UPDATE') {
-            useStore.getState().updateItem(payload.new as Item)
-          }
-          if (payload.eventType === 'DELETE') {
-            useStore.getState().removeItem((payload.old as { id: string }).id)
-          }
+          // console.log('Realtime:', payload) 
+          if (payload.eventType === 'INSERT') addItem(payload.new as Item)
+          if (payload.eventType === 'UPDATE') updateItem(payload.new as Item)
+          if (payload.eventType === 'DELETE') removeItem((payload.old as { id: string }).id)
         }
       )
-      .subscribe((status, err) => {
-        // Логируем статус подписки
-        console.log(`Realtime status: ${status}`, err || '')
-      })
+      .subscribe()
 
     return () => {
-      console.log("Removing realtime channel.")
+      console.log("🔕 Removing channel")
       supabase.removeChannel(channel)
+      isMounted.current = false
     }
-  }, [supabase])
+  }, [supabase, addItem, updateItem, removeItem])
 
   return null
 }
