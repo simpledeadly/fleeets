@@ -1,25 +1,29 @@
 "use client"
 
-import { useTheme } from "next-themes"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
-import { LogOut, Moon, Sun, Laptop } from "lucide-react"
+import { LogOut, CreditCard, Sparkles } from "lucide-react"
 import { usePaywall, paymentService } from "@/features/paywall"
 import { toast } from "sonner"
+import { ThemeSelector } from "./ThemeSelector"
 
-// Пропсы для открытия/закрытия (пока управляем из родителя, позже сделаем стор)
+// 👇 ИМПОРТЫ SHADCN
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
 interface SettingsModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { theme, setTheme } = useTheme()
   const router = useRouter()
   const supabase = createClient()
   const { isPro } = usePaywall()
-
-  if (!isOpen) return null
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -30,79 +34,79 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const handleCancelSub = async () => {
     const res = await paymentService.cancelSubscription()
     if (res.success) {
-      toast.success("Подписка отменена", { description: "Вы вернулись на Free тариф" })
-      onClose()
-    } else {
-      toast.error("Ошибка отмены")
+      toast.success("Тариф изменен на Free")
+      // Не закрываем модалку, чтобы юзер увидел изменение статуса
     }
   }
 
   return (
-    <div className="fixed inset-0 z-101 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-95 p-0 overflow-hidden bg-background border-border gap-0">
 
-      <div className="relative w-full max-w-sm overflow-hidden rounded-2xl bg-white dark:bg-[#1C1C1E] shadow-2xl animate-in zoom-in-95">
-        <div className="p-6 space-y-6">
-          <h2 className="text-xl font-bold dark:text-white">Настройки</h2>
+        <DialogHeader className="px-6 pt-6 pb-2">
+          <DialogTitle className="text-xl font-bold tracking-tight">Настройки</DialogTitle>
+        </DialogHeader>
 
-          {/* Тема */}
+        <div className="p-6 space-y-8">
+
+          {/* Block: Appearance */}
           <div className="space-y-3">
-            <p className="text-sm font-medium text-neutral-500 uppercase">Оформление</p>
-            <div className="grid grid-cols-3 gap-2 bg-neutral-100 dark:bg-neutral-800 p-1 rounded-xl">
-              <ThemeBtn active={theme === 'light'} onClick={() => setTheme('light')} icon={Sun} label="Светлая" />
-              <ThemeBtn active={theme === 'dark'} onClick={() => setTheme('dark')} icon={Moon} label="Тёмная" />
-              <ThemeBtn active={theme === 'system'} onClick={() => setTheme('system')} icon={Laptop} label="Системная" />
-            </div>
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Оформление</h3>
+            <ThemeSelector />
           </div>
 
-          {/* Подписка */}
+          {/* Block: Subscription */}
           <div className="space-y-3">
-            <p className="text-sm font-medium text-neutral-500 uppercase">Подписка</p>
-            <div className="p-4 rounded-xl border dark:border-neutral-700 flex items-center justify-between">
-              <div>
-                <div className="font-semibold dark:text-white">
-                  {isPro ? "Fleeets PRO" : "Бесплатный"}
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ваш план</h3>
+
+            <div className={`relative overflow-hidden rounded-2xl border p-5 transition-all duration-500 ${isPro ? 'bg-zinc-900 dark:bg-zinc-100 border-zinc-900' : 'bg-secondary/50 border-border'}`}>
+              {isPro && (
+                <div className="absolute -right-4 -top-4 opacity-10 animate-pulse">
+                  <Sparkles size={100} />
                 </div>
-                <div className="text-xs text-neutral-500">
-                  {isPro ? "Активна до 14.01.2026" : "Лимитированный доступ"}
+              )}
+
+              <div className="flex justify-between items-start relative z-10">
+                <div>
+                  <div className={`text-lg font-bold ${isPro ? 'text-white dark:text-black' : 'text-foreground'}`}>
+                    {isPro ? "Fleeets PRO" : "Free Plan"}
+                  </div>
+                  <div className={`text-xs mt-1 ${isPro ? 'text-zinc-400 dark:text-zinc-500' : 'text-muted-foreground'}`}>
+                    {isPro ? "Активна до 14.01.2026" : "Базовые лимиты"}
+                  </div>
                 </div>
+                {isPro ? (
+                  <div className="bg-white/20 dark:bg-black/10 px-2 py-1 rounded text-[10px] font-bold text-white dark:text-black uppercase">
+                    PRO
+                  </div>
+                ) : (
+                  <CreditCard size={20} className="text-muted-foreground" />
+                )}
               </div>
+
               {isPro && (
                 <button
                   onClick={handleCancelSub}
-                  className="text-xs text-red-500 hover:bg-red-50 px-2 py-1 rounded transition-colors"
+                  className="mt-4 text-[10px] text-zinc-400 hover:text-white dark:text-zinc-500 dark:hover:text-black underline underline-offset-2 transition-colors cursor-pointer"
                 >
-                  Отменить
+                  Управлять подпиской
                 </button>
               )}
             </div>
           </div>
 
-          {/* Выход */}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 p-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors font-medium"
-          >
-            <LogOut size={18} />
-            Выйти из аккаунта
-          </button>
+          {/* Footer Actions */}
+          <div className="pt-2 border-t border-border flex justify-center">
+            <button
+              onClick={handleLogout}
+              className="flex w-full justify-center items-center gap-2 px-4 py-2 text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-all cursor-pointer"
+            >
+              <LogOut size={14} />
+              Выйти из аккаунта
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
-  )
-}
-
-function ThemeBtn({ active, onClick, icon: Icon, label }: any) {
-  return (
-    <button
-      onClick={onClick}
-      className={`flex flex-col items-center justify-center gap-1 py-2 rounded-lg text-xs font-medium transition-all ${active
-          ? 'bg-white dark:bg-neutral-700 shadow-sm text-black dark:text-white'
-          : 'text-neutral-500 hover:bg-neutral-200 dark:hover:bg-neutral-700'
-        }`}
-    >
-      <Icon size={16} />
-      {label}
-    </button>
+      </DialogContent>
+    </Dialog>
   )
 }
