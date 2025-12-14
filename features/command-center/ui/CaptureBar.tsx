@@ -42,7 +42,7 @@ export function CaptureBar() {
     <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-40">
       <form
         onSubmit={handleCreate}
-        className="relative flex items-center gap-2 p-2 rounded-2xl bg-white/60 dark:bg-card/80 backdrop-blur-xl border border-white/20 shadow-lg"
+        className="relative flex items-center gap-2 p-2 rounded-full bg-white/60 dark:bg-card/80 backdrop-blur-xl border border-white/20 shadow-lg"
       >
         {/* Кнопка Плюс (будущий Cmd+K) */}
         <button
@@ -73,9 +73,9 @@ export function CaptureBar() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
                 onClick={() => alert("Voice input coming soon!")}
-                className="absolute inset-0 flex items-center justify-center p-2 text-muted-foreground cursor-pointer"
+                className="p-2 rounded-full text-muted-foreground hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
               >
-                <Mic size={18} />
+                <Mic size={18} strokeWidth={1.8} />
               </motion.button>
             ) : (
               <motion.button
@@ -84,9 +84,9 @@ export function CaptureBar() {
                 initial={{ opacity: 0, scale: 0.5 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.5 }}
-                className="absolute inset-0 flex items-center justify-center rounded-full transition-colors cursor-pointer"
+                className="bg-foreground text-background absolute inset-0 flex items-center  justify-center rounded-full transition-colors cursor-pointer"
               >
-                <ArrowUp size={16} />
+                <ArrowUp size={18} strokeWidth={2.4} />
               </motion.button>
             )}
           </AnimatePresence>
