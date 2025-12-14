@@ -15,6 +15,8 @@ interface AppState {
   isInitialized: boolean
   currentView: View
   setView: (view: View) => void
+  focusedItem: Item | null
+  setFocusedItem: (item: Item | null) => void
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -39,4 +41,6 @@ export const useStore = create<AppState>((set) => ({
     set((state) => ({
       items: state.items.filter((item) => item.id !== itemId),
     })),
+  focusedItem: null,
+  setFocusedItem: (item) => set({ focusedItem: item }),
 }))

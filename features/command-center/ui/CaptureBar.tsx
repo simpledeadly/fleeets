@@ -5,11 +5,11 @@ import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, Mic, ArrowUp } from "lucide-react"
 import { createItemWithAI } from "@/features/ai"
-import { usePendingStore } from '../model/store'
+import { useCommandCenterStore } from '../model/store'
 
 export function CaptureBar() {
   const [text, setText] = useState("")
-  const { increment, decrement } = usePendingStore()
+  const { increment, decrement, togglePalette } = useCommandCenterStore()
 
   const handleCreate = async (event?: React.FormEvent) => {
     event?.preventDefault()
@@ -47,7 +47,7 @@ export function CaptureBar() {
         {/* Кнопка Плюс (будущий Cmd+K) */}
         <button
           type="button"
-          onClick={() => alert("Command Palette coming soon!")}
+          onClick={() => togglePalette()}
           className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
         >
           <Plus size={18} className="text-muted-foreground" />

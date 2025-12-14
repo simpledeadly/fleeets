@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { type Item, useStore } from "@/lib/store"
+import { useStore } from "@/lib/store"
 import InboxDeck from "./components/InboxDeck"
 import PlanList from "./components/PlanList"
 import ArchiveList from './components/ArchiveList'
@@ -11,9 +11,8 @@ import { FocusModal } from '@/features/focus'
 import { Settings } from 'lucide-react'
 
 export default function Home() {
-  const { isLoading, currentView } = useStore()
+  const { isLoading, currentView, focusedItem, setFocusedItem } = useStore()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [focusedItem, setFocusedItem] = useState<Item | null>(null)
 
   if (isLoading) {
     return (
@@ -51,8 +50,8 @@ export default function Home() {
         </div>
 
         {currentView === 'inbox' && <InboxDeck />}
-        {currentView === 'focus' && <FocusList onItemClick={setFocusedItem} />}
-        {currentView === 'plan' && <PlanList onItemClick={setFocusedItem} />}
+        {currentView === 'focus' && <FocusList />}
+        {currentView === 'plan' && <PlanList />}
         {currentView === 'archive' && <ArchiveList />}
       </div>
     </main>

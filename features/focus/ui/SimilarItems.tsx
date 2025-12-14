@@ -10,23 +10,12 @@ import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { ru } from 'date-fns/locale'
 import { motion } from 'framer-motion'
+import { Item, useStore } from '@/lib/store'
 
-interface SimilarItemResult {
-  id: string
-  content: string
-  description: string | null
-  status: 'inbox' | 'planned' | 'today' | 'done' | 'archived' | 'deleted'
-  type: 'task' | 'note' | 'thought' | 'resource'
-  ai_tags: string[] | null
-  metadata: any
-  execution_log: string | null
-  created_at: string
-  completed_at: string | null
-  similarity: number
-}
+type SimilarItem = Item & { similarity: number }
 
 interface SimilarItemsProps {
-  items: SimilarItemResult[] | null
+  items: SimilarItem[] | null
   isLoading: boolean
 }
 
@@ -53,6 +42,8 @@ function SkeletonCard() {
 }
 
 export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
+  const { setFocusedItem } = useStore()
+
   return (
     <motion.div layout="position" className="space-y-3">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -84,6 +75,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
                 hidden: { opacity: 0, y: 0 },
                 visible: { opacity: 1, y: 0 }
               }}
+              onClick={() => setFocusedItem(item)}
               className="group relative p-3 rounded-xl bg-secondary/30 border border-border/50 hover:bg-secondary/60 transition-all cursor-pointer" // убираем animate-in, Framer Motion рулит
             >
               <div className="flex justify-between items-start gap-2">
@@ -103,21 +95,24 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
 
                   {/* ТИП ЭЛЕМЕНТА (Мини-бэйджик) */}
                   <div className="flex items-center gap-1.5">
-                    <div className="flex items-center gap-1 bg-background/50 px-1.5 py-0.5 rounded text-[10px] font-medium text-muted-foreground border border-border/50">
-                      <TypeIcon type={item.type} />
-                      <span className="capitalize">{item.type}</span>
-                    </div>
+                    {item.type && (
+                      <div className="flex items-center gap-1 bg-background/50 px-1.5 py-0.5 rounded text-[10px] font-medium text-muted-foreground border border-border/50">
+                        <TypeIcon type={item.type} />
+                        <span className="capitalize">{item.type}</span>
+                      </div>
+                    )}
 
                     {/* ТЕГИ И АССЕТЫ */}
                     <div className="flex flex-wrap gap-2 items-center">
 
                       {/* 1. Если это было голосовое (source: 'voice' или 'telegram') */}
-                      {(item.metadata?.source === 'voice' || item.metadata?.duration) && (
-                        <div className="flex items-center gap-1 text-[10px] bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded border border-blue-500/20">
-                          <Mic size={10} />
-                          <span>Voice</span>
-                        </div>
-                      )}
+                      {(typeof item.metadata === 'object' && item.metadata && ('source' in item.metadata || 'duration' in item.metadata)) && (
+                        ((item.metadata?.source === 'voice' || item.metadata?.duration) && (
+                          <div className="flex items-center gap-1 text-[10px] bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded border border-blue-500/20">
+                            <Mic size={10} />
+                            <span>Voice</span>
+                          </div>
+                        )))}
 
                       {/* 2. Теги (первые 2, чтобы не захламлять) */}
                       {item.ai_tags?.slice(0, 2).map((tag: string) => (
@@ -155,7 +150,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
                   <span>
                     {item.completed_at
                       ? `Завершено ${formatDistanceToNow(new Date(item.completed_at), { addSuffix: true, locale: ru })}`
-                      : formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ru })
+                      : item.created_at ? formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ru }) : ''
                     }
                   </span>
                 </div>

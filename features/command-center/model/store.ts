@@ -1,7 +1,25 @@
 import { create } from 'zustand'
 
-export const usePendingStore = create<{ count: number, increment: () => void, decrement: () => void }>((set) => ({
+interface CommandCenterState {
+  // Для "Pending" индикатора
+  count: number
+  increment: () => void
+  decrement: () => void
+
+  isPaletteOpen: boolean
+  openPalette: () => void
+  closePalette: () => void
+  togglePalette: () => void
+}
+
+export const useCommandCenterStore = create<CommandCenterState>((set) => ({
   count: 0,
   increment: () => set((state) => ({ count: state.count + 1 })),
   decrement: () => set((state) => ({ count: state.count - 1 })),
+
+  isPaletteOpen: false,
+  openPalette: () => set({ isPaletteOpen: true }),
+  closePalette: () => set({ isPaletteOpen: false }),
+  togglePalette: () =>
+    set((state) => ({ isPaletteOpen: !state.isPaletteOpen })),
 }))

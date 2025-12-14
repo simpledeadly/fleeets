@@ -1,13 +1,14 @@
 "use client"
 
-import { type Item, useStore } from "@/lib/store"
+import { useStore } from "@/lib/store"
 import { formatDistanceToNow, differenceInHours } from "date-fns"
 import { ru } from "date-fns/locale"
 import { Ghost, Mic, Zap, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export default function PlanList({ onItemClick }: { onItemClick?: (item: Item) => void }) {
+export default function PlanList() {
   const items = useStore((state) => state.items)
+  const { setFocusedItem } = useStore()
 
   const tasks = items
     .filter(item => item.status === 'planned' && item.type === 'task')
@@ -49,9 +50,9 @@ export default function PlanList({ onItemClick }: { onItemClick?: (item: Item) =
         return (
           <div
             key={task.id}
-            onClick={() => onItemClick?.(task)}
+            onClick={() => setFocusedItem(task)}
             className={cn(
-              "relative group flex flex-col gap-2 p-4 rounded-2xl border bg-card shadow-sm transition-all duration-300",
+              "relative group flex flex-col gap-2 p-4 rounded-2xl border border-border/60 hover:border-border active:scale-[0.98] bg-card shadow-sm transition-all duration-150 cursor-pointer",
               opacityClass,
               rotStatus === "rotten" && "border-muted bg-card"
             )}

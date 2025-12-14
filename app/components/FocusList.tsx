@@ -1,9 +1,9 @@
 "use client"
 
-import { type Item, useStore } from "@/lib/store"
+import { useStore } from "@/lib/store"
 
-export default function FocusList({ onItemClick }: { onItemClick?: (item: Item) => void }) {
-  const { items } = useStore()
+export default function FocusList() {
+  const { items, setFocusedItem } = useStore()
 
   // Фильтруем задачи (Today + Planned, например)
   const focusItems = items.filter(i => i.status === 'today' && !i.completed_at)
@@ -17,7 +17,7 @@ export default function FocusList({ onItemClick }: { onItemClick?: (item: Item) 
       {focusItems.map(item => (
         <div
           key={item.id}
-          onClick={() => onItemClick?.(item)}
+          onClick={() => setFocusedItem(item)}
           className="p-4 bg-card border border-border/60 rounded-xl hover:border-border cursor-pointer active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
         >
           <div className="font-medium">{item.content}</div>
