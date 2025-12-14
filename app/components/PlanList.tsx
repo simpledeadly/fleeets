@@ -1,12 +1,12 @@
 "use client"
 
-import { useStore } from "@/lib/store"
+import { type Item, useStore } from "@/lib/store"
 import { formatDistanceToNow, differenceInHours } from "date-fns"
 import { ru } from "date-fns/locale"
 import { Ghost, Mic, Zap, AlertCircle } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-export default function PlanList() {
+export default function PlanList({ onItemClick }: { onItemClick?: (item: Item) => void }) {
   const items = useStore((state) => state.items)
 
   const tasks = items
@@ -49,6 +49,7 @@ export default function PlanList() {
         return (
           <div
             key={task.id}
+            onClick={() => onItemClick?.(task)}
             className={cn(
               "relative group flex flex-col gap-2 p-4 rounded-2xl border bg-card shadow-sm transition-all duration-300",
               opacityClass,
