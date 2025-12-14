@@ -1,7 +1,7 @@
 "use client"
 
 import { useStore, type View } from "@/lib/store"
-import { Layers, ListTodo, Archive, Zap } from "lucide-react"
+import { Layers, ListTodo, Archive, Zap, Focus } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export default function BottomNav() {
@@ -9,8 +9,9 @@ export default function BottomNav() {
 
   const tabs: { name: string; view: View; icon: React.ElementType }[] = [
     { name: "Инбокс", view: "inbox", icon: Layers },
+    { name: "Фокус", view: "focus", icon: Focus },
     { name: "План", view: "plan", icon: ListTodo },
-    // { name: "Архив", view: "archive", icon: Archive },
+    { name: "Архив", view: "archive", icon: Archive },
   ]
 
   return (

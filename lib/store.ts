@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { type Database } from '@/types/supabase'
 
 export type Item = Database['public']['Tables']['items']['Row']
-export type View = 'inbox' | 'plan' | 'archive'
+export type View = 'inbox' | 'plan' | 'archive' | 'focus'
 
 interface AppState {
   items: Item[]

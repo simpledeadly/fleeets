@@ -3,6 +3,8 @@
 import { useStore } from "@/lib/store"
 import InboxDeck from "./components/InboxDeck"
 import PlanList from "./components/PlanList"
+import ArchiveList from './components/ArchiveList'
+import FocusList from './components/FocusList'
 
 export default function Home() {
   const { isLoading, currentView } = useStore()
@@ -28,6 +30,8 @@ export default function Home() {
 
         {currentView === 'inbox' && <InboxDeck />}
         {currentView === 'plan' && <PlanList />}
+        {currentView === 'archive' && <ArchiveList />}
+        {currentView === 'focus' && <FocusList />}
       </div>
     </main>
   )
