@@ -1,5 +1,6 @@
-import { type SupabaseClient } from '@supabase/supabase-js'
-import { type Item } from '@/lib/store'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import type { Item } from '@/lib/store'
+import { SubscriptionTier } from '@/features/paywall'
 
 export async function fetchActiveItems(supabase: SupabaseClient) {
   console.log('🚀 [API] Fetching items...')
@@ -17,4 +18,38 @@ export async function fetchActiveItems(supabase: SupabaseClient) {
   }
 
   return (data as Item[]) || []
+}
+
+export async function fetchUserTier(
+  supabase: SupabaseClient
+): Promise<SubscriptionTier> {
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    if (!user) return 'free'
+
+    // Проверяем таблицу subscriptions
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('status')
+      .eq('user_id', user.id)
+      .in('status', ['active', 'trialing'])
+      .maybeSingle() // Возвращает null, если записей нет (вместо ошибки)
+
+    if (error) {
+      console.error('Error fetching subscription:', error)
+      return 'free'
+    }
+
+    if (data) {
+      console.log('💎 User is PRO')
+      return 'pro'
+    }
+
+    return 'free'
+  } catch (e) {
+    console.error(e)
+    return 'free'
+  }
 }

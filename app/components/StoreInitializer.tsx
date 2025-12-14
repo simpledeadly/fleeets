@@ -3,7 +3,8 @@
 import { useEffect, useRef } from 'react'
 import { useStore, type Item } from '@/lib/store'
 import { createClient } from '@/lib/supabase/client'
-import { fetchActiveItems } from '@/lib/data' // <--- Импорт новой функции
+import { fetchActiveItems, fetchUserTier } from '@/lib/data'
+import { usePaywallStore } from '@/features/paywall'
 
 export default function StoreInitializer({ initialItems }: { initialItems: Item[] }) {
   const supabase = createClient()
@@ -18,8 +19,17 @@ export default function StoreInitializer({ initialItems }: { initialItems: Item[
 
     const loadData = async () => {
       try {
-        const items = await fetchActiveItems(supabase)
+        // Запускаем параллельно для скорости
+        const [items, tier] = await Promise.all([
+          fetchActiveItems(supabase),
+          fetchUserTier(supabase)
+        ])
+
         setItems(items)
+
+        // Устанавливаем тариф в стор пэйволла
+        usePaywallStore.getState().setTier(tier)
+
       } catch (e) {
         console.error("Failed to load initial data", e)
       }
@@ -29,7 +39,7 @@ export default function StoreInitializer({ initialItems }: { initialItems: Item[
   }, [isInitialized, setItems, supabase])
 
 
-  // 2. REALTIME (Оставляем как было, код хороший)
+  // 2. REALTIME
   useEffect(() => {
     if (isMounted.current) return
     isMounted.current = true
