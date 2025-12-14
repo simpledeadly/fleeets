@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Item } from '@/lib/store'
-import { SubscriptionTier } from '@/features/paywall'
+import type { SubscriptionTier } from '@/features/paywall'
 
 export async function fetchActiveItems(supabase: SupabaseClient) {
   console.log('🚀 [API] Fetching items...')
@@ -38,7 +38,7 @@ export async function fetchUserTier(
       .maybeSingle() // Возвращает null, если записей нет (вместо ошибки)
 
     if (error) {
-      console.error('Error fetching subscription:', error)
+      console.error('⚠️ Error fetching subscription:', error)
       return 'free'
     }
 
@@ -47,9 +47,10 @@ export async function fetchUserTier(
       return 'pro'
     }
 
+    console.log("👤 User is FREE")
     return 'free'
   } catch (e) {
-    console.error(e)
+    console.error("Critical error in fetchUserTier", e)
     return 'free'
   }
 }

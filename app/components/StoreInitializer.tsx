@@ -29,9 +29,9 @@ export default function StoreInitializer({ initialItems }: { initialItems: Item[
 
         // Устанавливаем тариф в стор пэйволла
         usePaywallStore.getState().setTier(tier)
-
+        console.log(`✅ Init complete. Items: ${items.length}, Tier: ${tier}`)
       } catch (e) {
-        console.error("Failed to load initial data", e)
+        console.error("❌ Failed to load initial data", e)
       }
     }
 
