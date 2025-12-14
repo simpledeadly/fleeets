@@ -92,17 +92,17 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
               <label className="text-xs font-semibold uppercase text-muted-foreground">Execution Log</label>
               {/* Индикатор сохранения */}
               {isSaving ? (
-                <span className={`text-[10px] transition-opacity duration-200 ${isSaving ? 'opacity-100 text-amber-500' : 'opacity-0'}`}>
+                <span className={`text-[10px] transition-opacity duration-150 ${isSaving ? 'opacity-100 text-amber-500' : 'opacity-0'}`}>
                   Сохранение...
                 </span>
-              ) : <X size={16} className='text-muted-foreground cursor-pointer' onClick={() => handleRemoveExecutionLog(item.id)} />
+              ) : logText.length !== 0 ? <X size={16} className='text-muted-foreground cursor-pointer' onClick={() => handleRemoveExecutionLog(item.id)} /> : ''
               }
             </div>
 
             <textarea
               value={logText}
               onChange={(e) => setLogText(e.target.value)}
-              className="w-full bg-secondary/30 rounded-xl p-4 min-h-37 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50"
+              className="caret-accented w-full bg-secondary/30 rounded-xl p-4 min-h-37 resize-none focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50"
               placeholder="Пиши сюда мысли, заметки, код... Это уйдет в базу знаний."
             />
           </div>
