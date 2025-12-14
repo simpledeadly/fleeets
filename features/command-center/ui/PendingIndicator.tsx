@@ -14,7 +14,7 @@ export function PendingIndicator() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           transition={{ type: "spring", stiffness: 300, damping: 25 }}
-          className="flex justify-center mb-2"
+          className="fixed bottom-0 left-0 right-0 flex justify-center mb-42"
         >
           <div className="flex items-center gap-2 text-xs font-medium bg-white/80 dark:bg-black/80 backdrop-blur-md border border-white/20 shadow-lg px-3 py-1.5 rounded-full">
             <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
