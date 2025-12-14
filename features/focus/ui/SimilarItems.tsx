@@ -49,12 +49,11 @@ export function SimilarItems({ itemId }: { itemId: string }) {
 
   if (loading) return <div className="p-4 flex justify-center"><Loader2 className="animate-spin text-muted-foreground w-4 h-4" /></div>
 
-  // 👇 ВРЕМЕННЫЙ ДЕБАГ: Показываем сообщение, если пусто
   if (items.length === 0) {
     return (
-      <div className="p-4 text-center border border-dashed border-border rounded-xl">
-        <p className="text-xs text-muted-foreground">AI Context пуст</p>
-        <p className="text-[10px] text-red-400 mt-1">Проверь консоль сервера</p>
+      <div className="p-4 text-center border border-dashed border-border rounded-xl flex flex-col gap-1">
+        <p className="text-sm text-muted-foreground font-medium">AI Context пуст</p>
+        <p className="text-sm text-muted-foreground/80">Нейросеть не нашла похожие элементы</p>
       </div>
     )
   }

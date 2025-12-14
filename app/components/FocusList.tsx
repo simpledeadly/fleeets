@@ -18,10 +18,10 @@ export default function FocusList({ onItemClick }: { onItemClick?: (item: Item) 
         <div
           key={item.id}
           onClick={() => onItemClick?.(item)}
-          className="p-4 bg-card border rounded-xl cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
+          className="p-4 bg-card border border-border/60 rounded-xl hover:border-border cursor-pointer active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
         >
           <div className="font-medium">{item.content}</div>
-          {item.description && <div className="text-xs text-muted-foreground mt-1 line-clamp-1">{item.description}</div>}
+          {item.description && <div className="text-sm text-muted-foreground mt-1 line-clamp-1">{item.description}</div>}
         </div>
       ))}
     </div>
