@@ -88,3 +88,39 @@ export async function findSimilarItems(itemId: string) {
   // Фильтруем саму себя
   return similarItems?.filter((i: any) => i.id !== itemId) || []
 }
+
+export async function transcribeAudio(audioBlob: Blob) {
+  const GROQ_API_KEY = process.env.GROQ_API_KEY
+
+  if (!GROQ_API_KEY) {
+    return { success: false, error: 'GROQ_API_KEY is not set.' }
+  }
+
+  try {
+    const formData = new FormData()
+    formData.append('file', audioBlob, 'audio.webm')
+    formData.append('model', 'whisper-large-v3')
+
+    const response = await fetch(
+      'https://api.groq.com/openai/v1/audio/transcriptions',
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${GROQ_API_KEY}`,
+        },
+        body: formData,
+      }
+    )
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error.message || 'Groq API error')
+    }
+
+    const data = await response.json()
+    return { success: true, text: data.text }
+  } catch (e: any) {
+    console.error('Transcription Error (Groq):', e)
+    return { success: false, error: e.message }
+  }
+}

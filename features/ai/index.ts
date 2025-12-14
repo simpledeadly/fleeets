@@ -1,2 +1,1 @@
-export { findSimilarItems } from './actions'
-export { createItemWithAI } from './actions'
+export { findSimilarItems, createItemWithAI, transcribeAudio } from './actions'
