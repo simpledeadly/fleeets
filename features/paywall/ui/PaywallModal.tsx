@@ -4,6 +4,8 @@ import { useEffect, useState } from "react"
 import { X, Check, Loader2 } from "lucide-react"
 import { usePaywallStore } from "../model/store"
 import { PAYWALL_CONFIG } from "../config"
+import { paymentService } from "../model/payment.service"
+import { toast } from "sonner"
 
 export function PaywallModal() {
   const { isOpen, triggeredBy, closePaywall } = usePaywallStore()
@@ -29,14 +31,30 @@ export function PaywallModal() {
 
   const handleUpgrade = async () => {
     setIsLoading(true)
-    // TODO: Здесь будет вызов Stripe/Prodamus
-    console.log("Redirecting to checkout...")
 
-    // Эмуляция задержки для UX
-    setTimeout(() => {
+    try {
+      // 👇 ВЫЗОВ СЕРВИСА
+      const result = await paymentService.checkout()
+
+      if (result.success) {
+        // Успех!
+        closePaywall()
+        toast.success("Подписка активирована! 🚀", {
+          description: "Добро пожаловать в элиту Fleeets.",
+          duration: 5000,
+        })
+        // Тут можно запустить конфетти 🎉
+      } else {
+        // Ошибка
+        toast.error("Ошибка оплаты", {
+          description: result.error
+        })
+      }
+    } catch (e) {
+      toast.error(`Что-то пошло не так: ${e}`)
+    } finally {
       setIsLoading(false)
-      alert("Здесь должна открыться платежная страница")
-    }, 1000)
+    }
   }
 
   return (
