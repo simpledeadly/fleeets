@@ -46,7 +46,7 @@ export default async function PlanPage() {
             let rotStatus = "fresh"
 
             if (hoursOld > 48) {
-              opacityClass = "opacity-40 grayscale-[0.8]" // Почти труп
+              opacityClass = "opacity-40 neutralscale-[0.8]" // Почти труп
               rotIcon = <Ghost size={16} className="text-stone-500" />
               rotStatus = "rotten"
             } else if (hoursOld > 24) {

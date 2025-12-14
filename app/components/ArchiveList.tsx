@@ -38,7 +38,7 @@ export default function ArchiveList() {
         let rotStatus = "fresh"
 
         if (hoursOld > 48) {
-          opacityClass = "opacity-40 grayscale-[0.8]"
+          opacityClass = "opacity-40 neutralscale-[0.8]"
           rotIcon = <Ghost size={16} className="text-stone-500" />
           rotStatus = "rotten"
         } else if (hoursOld > 24) {

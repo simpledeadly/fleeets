@@ -69,7 +69,7 @@ export function PaywallModal() {
       <div className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 animate-in zoom-in-95 duration-200">
 
         {/* Header Image / Gradient */}
-        <div className="h-32 bg-linear-to-br from-gray-900 via-gray-800 to-black p-6 flex flex-col justify-end text-white">
+        <div className="h-32 bg-linear-to-br from-neutral-900 via-neutral-800 to-black p-6 flex flex-col justify-end text-white">
           <h2 className="text-2xl font-bold tracking-tight">{content.title}</h2>
         </div>
 
@@ -81,7 +81,7 @@ export function PaywallModal() {
         </button>
 
         <div className="p-6 space-y-6">
-          <p className="text-gray-600 text-lg leading-relaxed">
+          <p className="text-neutral-600 text-lg leading-relaxed">
             {content.description}
           </p>
 
@@ -96,12 +96,12 @@ export function PaywallModal() {
           <button
             onClick={handleUpgrade}
             disabled={isLoading}
-            className="w-full rounded-xl bg-black py-4 text-white font-bold text-lg shadow-lg hover:bg-gray-800 active:scale-95 transition-all flex items-center justify-center gap-2"
+            className="w-full rounded-xl bg-black py-4 text-white font-bold text-lg shadow-lg hover:bg-neutral-800 active:scale-95 transition-all flex items-center justify-center gap-2"
           >
             {isLoading ? <Loader2 className="animate-spin" /> : "Попробовать бесплатно"}
           </button>
 
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-neutral-400">
             7 дней бесплатно, затем $4.99/мес. Отмена в любой момент.
           </p>
         </div>
@@ -112,7 +112,7 @@ export function PaywallModal() {
 
 function FeatureRow({ text }: { text: string }) {
   return (
-    <div className="flex items-center gap-3 text-sm font-medium text-gray-700">
+    <div className="flex items-center gap-3 text-sm font-medium text-neutral-700">
       <div className="flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-600">
         <Check size={12} strokeWidth={3} />
       </div>
