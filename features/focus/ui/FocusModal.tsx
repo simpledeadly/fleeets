@@ -1,10 +1,13 @@
 "use client"
 
-import { X, CheckCircle2 } from "lucide-react"
-// 👇 Добавляем DialogTitle в импорт
+import { useState, useEffect } from "react"
+import { CheckCircle2, X } from "lucide-react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { type Item } from "@/lib/store"
 import { SimilarItems } from "./SimilarItems"
+import { Timer as FocusTimer } from "./Timer"
+import { useDebounce } from "@/lib/hooks"
+import { updateExecutionLog } from "../model/actions"
 
 interface FocusModalProps {
   item: Item | null
@@ -13,6 +16,39 @@ interface FocusModalProps {
 }
 
 export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
+  const [logText, setLogText] = useState(item?.execution_log || "")
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Храним ID предыдущего элемента, чтобы отслеживать изменения
+  const [prevItemId, setPrevItemId] = useState(item?.id)
+
+  if (item?.id !== prevItemId) {
+    setPrevItemId(item?.id)
+    setLogText(item?.execution_log || "")
+  }
+
+  const debouncedLog = useDebounce(logText, 1000)
+
+  // Сохранение (только если текст реально изменился пользователем)
+  useEffect(() => {
+    if (!item) return
+    // Не сохраняем, если текст совпадает с исходным (мы его только что загрузили)
+    if (debouncedLog === (item.execution_log || "")) return
+
+    const save = async () => {
+      setIsSaving(true)
+      await updateExecutionLog(item.id, debouncedLog)
+      setIsSaving(false)
+    }
+    save()
+  }, [debouncedLog, item])
+
+  const handleRemoveExecutionLog = async (itemId: string) => {
+    if (!logText) return
+    setLogText('')
+    await updateExecutionLog(itemId, '')
+  }
+
   if (!item) return null
 
   return (
@@ -44,25 +80,40 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
             )}
           </div>
 
-          {/* Timer Placeholder */}
-          <div className="h-32 rounded-2xl bg-secondary/20 border border-dashed border-border flex items-center justify-center text-muted-foreground">
-            Таймер и Start/Stop будут здесь
-          </div>
+          {/* Timer */}
+          <FocusTimer itemId={item.id} />
 
           {/* AI MEMORY (RAG) */}
           <SimilarItems itemId={item.id} />
 
           {/* Execution Log (Input) */}
-          <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase text-muted-foreground">Execution Log</label>
+          <div className="space-y-2 relative">
+            <div className="flex justify-between items-center">
+              <label className="text-xs font-semibold uppercase text-muted-foreground">Execution Log</label>
+              {/* Индикатор сохранения */}
+              {isSaving ? (
+                <span className={`text-[10px] transition-opacity duration-200 ${isSaving ? 'opacity-100 text-amber-500' : 'opacity-0'}`}>
+                  Сохранение...
+                </span>
+              ) : <X size={16} className='text-muted-foreground cursor-pointer' onClick={() => handleRemoveExecutionLog(item.id)} />
+              }
+            </div>
+
             <textarea
+              value={logText}
+              onChange={(e) => setLogText(e.target.value)}
               className="w-full bg-secondary/30 rounded-xl p-4 min-h-37 resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50"
               placeholder="Пиши сюда мысли, заметки, код... Это уйдет в базу знаний."
             />
           </div>
 
-          {/* Отступ снизу, чтобы контент не перекрывался футером */}
-          <div className="h-24" />
+          <div className='flex flex-col gap-1'>
+            <p className="text-md text-muted-foreground font-medium">Исходный текст:</p>
+            <p className="text-sm text-muted-foreground/70">
+              {item.raw_content}
+            </p>
+          </div>
+          <div className="h-20" />
         </div>
 
         {/* Footer Actions */}

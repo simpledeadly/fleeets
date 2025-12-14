@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react"
 import {
-  Sparkles, ArrowRight, Loader2, CheckCircle2, CalendarDays,
+  Sparkles, Loader2, CheckCircle2, CalendarDays,
   StickyNote, Lightbulb, CheckSquare,
-  Mic, Image as ImageIcon, Hash, FileText
+  Mic, Hash, FileText
 } from "lucide-react"
 import { findSimilarItems } from "@/features/ai/actions"
 import { cn } from '@/lib/utils'
