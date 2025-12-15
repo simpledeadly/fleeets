@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils"
 import { usePaywall } from "@/features/paywall"
 
 export default function BottomNav() {
-  const { currentView, setView } = useStore()
+  const { currentView, setView, items } = useStore()
   const { check, isPro } = usePaywall()
+
+  const inboxCount = items.filter(i => i.status === 'inbox').length
 
   const tabs: { name: string; view: View; icon: React.ElementType }[] = [
     { name: "Инбокс", view: "inbox", icon: Layers },
@@ -45,6 +47,13 @@ export default function BottomNav() {
               )}
             >
               <tab.icon size={18} strokeWidth={isActive ? 2 : 1.8} />
+
+              {tab.view === 'inbox' && inboxCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white ring-1 ring-card animate-in zoom-in duration-150">
+                  {/* {inboxCount > 99 ? '99+' : inboxCount} */}
+                  {inboxCount}
+                </span>
+              )}
             </button>
           )
         })}

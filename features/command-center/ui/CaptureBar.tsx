@@ -12,6 +12,7 @@ import { Item, useStore } from '@/lib/store'
 import { useDebounce } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
 import { usePaywall } from '@/features/paywall'
+import { BrainResponse } from './BrainResponse'
 
 export function CaptureBar() {
   const [text, setText] = useState("")
@@ -187,29 +188,7 @@ export function CaptureBar() {
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             className="absolute bottom-full w-full mb-3 p-4 rounded-2xl bg-card/90 backdrop-blur-xl border border-amber-500/20 shadow-2xl text-foreground"
           >
-            {/* Ответ */}
-            <div className="flex gap-3">
-              <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-1" />
-              <div className="space-y-3">
-                <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                  {brainAnswer.answer}
-                </p>
-
-                {/* Источники */}
-                {brainAnswer.sources.length > 0 && (
-                  <div className="pt-2 border-t border-border">
-                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Источники</p>
-                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
-                      {brainAnswer.sources.slice(0, 3).map((src: Item) => (
-                        <div key={src.id} onClick={() => setFocusedItem(src)} className="shrink-0 max-w-30 py-1 px-2 rounded-lg bg-muted-foreground/10 border border-border/60 text-xs truncate hover:border-muted-foreground/30 duration-150 cursor-pointer">
-                          {src.content}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
+            <BrainResponse text={brainAnswer.answer} sources={brainAnswer.sources} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -223,7 +202,7 @@ export function CaptureBar() {
         )}
       >
         {/* Кнопка Плюс (будущий Cmd+K) */}
-        <button type="button" className="p-2 rounded-full transition-colors">
+        <button type="button" className="p-2 rounded-full transition-colors cursor-pointer">
           {/* Иконка меняется */}
           <AnimatePresence mode="popLayout">
             {brainMode ? (
@@ -231,7 +210,7 @@ export function CaptureBar() {
                 <Sparkles size={18} className="text-amber-400" />
               </motion.div>
             ) : (
-              <motion.div key="plus" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+              <motion.div key="plus" onClick={togglePalette} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
                 <Plus size={18} className="text-muted-foreground" />
               </motion.div>
             )}
