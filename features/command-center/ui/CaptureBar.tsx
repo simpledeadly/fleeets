@@ -10,6 +10,7 @@ import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
 import { Item, useStore } from '@/lib/store'
 import { useDebounce } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
+import { usePaywall } from '@/features/paywall'
 
 export function CaptureBar() {
   const [text, setText] = useState("")
@@ -19,6 +20,7 @@ export function CaptureBar() {
   const [isSearching, setIsSearching] = useState(false) // Локальный лоадер
   const debouncedText = useDebounce(text, 700)
   const { setFocusedItem } = useStore()
+  const { check, isPro, openPaywall } = usePaywall()
 
   // Подключаем хук записи
   const { status, audioBlob, startRecording, stopRecording } = useAudioRecorder()
@@ -44,10 +46,17 @@ export function CaptureBar() {
   useEffect(() => {
     const performSearch = async () => {
       if (debouncedText.length > 2) {
-        setIsSearching(true)
-        const results = await searchWithAI(debouncedText)
-        setSuggestions(results)
-        setIsSearching(false)
+        if (isPro) {
+          console.log("⚡️ Проактивный поиск активирован (доступно только для PRO)")
+          setIsSearching(true)
+          const results = await searchWithAI(debouncedText)
+          setSuggestions(results)
+          setIsSearching(false)
+        } else {
+          setSuggestions([{
+            content: 'Семантический поиск доступен в PRO'
+          }])
+        }
       } else {
         setSuggestions([])
       }
@@ -99,7 +108,7 @@ export function CaptureBar() {
   return (
     <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-100">
       <AnimatePresence>
-        {(suggestions.length > 0 || isSearching) && (
+        {((suggestions.length > 0 || isSearching) && isPro) ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -113,12 +122,12 @@ export function CaptureBar() {
                 className="w-full flex justify-between text-left p-2 text-sm bg-card/80 backdrop-blur-3xl border border-b-0 border-border first:rounded-t-xl shadow-md hover:bg-muted/80 transition-colors cursor-pointer"
               >
                 <div>
-                <p className="font-medium">
-                  {item.content}
-                </p>
-                <p className="text-muted-foreground">
-                  {item.description}
-                </p>
+                  <p className="font-medium">
+                    {item.content}
+                  </p>
+                  <p className="text-muted-foreground">
+                    {item.description}
+                  </p>
                 </div>
                 <p className="text-muted-foreground font-medium">
                   {item.status}
@@ -126,6 +135,20 @@ export function CaptureBar() {
               </button>
             ))}
           </motion.div>
+        ) : ((suggestions.length > 0 || isSearching) && !isPro) && (
+          <button
+            onClick={() => openPaywall('proactive_semantic_search')}
+            className="w-full flex justify-between text-left p-2 text-sm bg-card/80 backdrop-blur-3xl border border-b-0 border-border first:rounded-t-xl shadow-md hover:bg-muted/80 transition-colors cursor-pointer"
+          >
+            <div>
+              <p className="font-medium">
+                Семантический поиск доступен в PRO
+              </p>
+              <p className="text-muted-foreground">
+                Нажмите, чтобы узнать подробнее
+              </p>
+            </div>
+          </button>
         )}
       </AnimatePresence>
 

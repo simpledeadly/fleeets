@@ -24,6 +24,12 @@ export const PAYWALL_CONFIG = {
     description:
       'Блиц-режим ускоряет разбор входящих в 3 раза. Доступно в PRO.',
   },
+  proactive_semantic_search: {
+    tier: 'pro',
+    title: 'Узнай что ты уже добавил',
+    description:
+      'Получай информацию о похожих заметках прямо при вводе. Доступно в PRO.',
+  },
 
   // 2. Количественные лимиты
   active_items: {
