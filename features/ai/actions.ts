@@ -164,8 +164,8 @@ export async function searchWithAI(query: string): Promise<SearchResult[]> {
   // Вызываем нашу SQL-функцию
   const { data: semanticResults } = await supabase.rpc('match_items', {
     query_embedding: embedding,
-    match_threshold: 0.2, // Более низкий порог, т.к. мы потом отфильтруем
-    match_count: 5,
+    match_threshold: 0.3, // Более низкий порог, т.к. мы потом отфильтруем
+    match_count: 10,
     user_id_input: user.id,
   })
 

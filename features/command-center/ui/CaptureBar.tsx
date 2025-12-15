@@ -56,7 +56,7 @@ export function CaptureBar() {
   }, [debouncedText])
 
   const handleSuggestionClick = (item: Item) => {
-    setText("")
+    // setText("")
     setSuggestions([])
     setFocusedItem(item)
   }
@@ -110,12 +110,17 @@ export function CaptureBar() {
               <button
                 key={item.id}
                 onClick={() => handleSuggestionClick(item)}
-                className="w-full flex justify-between text-left p-2 text-sm bg-card/80 backdrop-blur-3xl border border-b-0 border-border first:rounded-t-2xl shadow-md hover:bg-muted/80 transition-colors cursor-pointer"
+                className="w-full flex justify-between text-left p-2 text-sm bg-card/80 backdrop-blur-3xl border border-b-0 border-border first:rounded-t-xl shadow-md hover:bg-muted/80 transition-colors cursor-pointer"
               >
-                <p>
+                <div>
+                <p className="font-medium">
                   {item.content}
                 </p>
-                <p>
+                <p className="text-muted-foreground">
+                  {item.description}
+                </p>
+                </div>
+                <p className="text-muted-foreground font-medium">
                   {item.status}
                 </p>
               </button>
@@ -143,7 +148,7 @@ export function CaptureBar() {
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={isRecording ? "Говорите..." : isTranscribing ? "Расшифровка..." : "Новая мысль..."}
-          className="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-muted-foreground/80"
+          className="flex-1 bg-transparent text-md focus:outline-none placeholder:text-muted-foreground/80"
           disabled={isRecording || isTranscribing}
         />
 
