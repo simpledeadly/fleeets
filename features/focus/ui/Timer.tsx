@@ -24,7 +24,7 @@ export function Timer({ itemId, initialTotalSeconds, isLoading }: {
     if (isRunning) {
       if (intervalRef.current) clearInterval(intervalRef.current)
       setIsRunning(false)
-      if (sessionSeconds > 5) {
+      if (sessionSeconds > 30) {
         await logFocusSession(itemId, sessionSeconds)
         setTotalSeconds(prev => (prev ?? 0) + sessionSeconds)
       }

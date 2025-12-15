@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import confetti from "canvas-confetti"
 import { CheckCircle2, Save, X } from "lucide-react"
 import { type Item } from "@/lib/store"
@@ -16,6 +16,8 @@ interface FocusModalProps {
   onClose: () => void
 }
 
+type FocusData = { totalDuration: number, similarItems: any[] }
+
 export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   const [logText, setLogText] = useState("")
@@ -24,11 +26,22 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
   // 🔥 ГЛАВНЫЙ ФИКС: isSaving возвращается в стейт
   const [isSaving, setIsSaving] = useState(false)
 
+  const dataCache = useRef<Record<string, FocusData>>({})
+
   useEffect(() => {
     const loadData = async () => {
       if (isOpen && item?.id) {
+        if (dataCache.current[item.id]) {
+          console.log("⚡️ Hit Cache for", item.id) // Для дебага
+          setViewData(dataCache.current[item.id])
+          setStatus('success')
+          return // ⛔️ ВЫХОДИМ, ЗАПРОС НЕ ДЕЛАЕМ
+        }
+
         setStatus('loading')
         const data = await getFocusViewData(item.id)
+
+        dataCache.current[item.id] = data
         setViewData(data)
         setStatus('success')
       } else {
