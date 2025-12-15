@@ -1,1 +1,8 @@
-export { findSimilarItems, createItemWithAI, transcribeAudio } from './actions'
+export {
+  findSimilarItems,
+  createItemWithAI,
+  transcribeAudio,
+  searchWithAI,
+  findSimilarItemsByQuery,
+  type SearchResult
+} from './actions'

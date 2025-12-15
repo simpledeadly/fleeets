@@ -4,26 +4,31 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, Mic, ArrowUp, Loader2, Square } from "lucide-react"
-import { createItemWithAI, transcribeAudio } from "@/features/ai"
+import { createItemWithAI, searchWithAI, transcribeAudio } from "@/features/ai"
 import { useCommandCenterStore } from '../model/store'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
+import { Item, useStore } from '@/lib/store'
+import { useDebounce } from '@/lib/hooks'
+import { cn } from '@/lib/utils'
 
 export function CaptureBar() {
   const [text, setText] = useState("")
   const { increment, decrement, togglePalette } = useCommandCenterStore()
   const [isTranscribing, setIsTranscribing] = useState(false)
+  const [suggestions, setSuggestions] = useState<Item[]>([])
+  const [isSearching, setIsSearching] = useState(false) // Локальный лоадер
+  const debouncedText = useDebounce(text, 700)
+  const { setFocusedItem } = useStore()
 
   // Подключаем хук записи
   const { status, audioBlob, startRecording, stopRecording } = useAudioRecorder()
   const isRecording = status === 'recording'
-
 
   useEffect(() => {
     const handleTranscription = async () => {
       if (audioBlob) {
         setIsTranscribing(true)
         const result = await transcribeAudio(audioBlob)
-
         if (result.success && result.text) {
           setText(prev => prev + result.text)
         } else {
@@ -32,9 +37,29 @@ export function CaptureBar() {
         setIsTranscribing(false)
       }
     }
-
     handleTranscription()
   }, [audioBlob])
+
+  // --- ПРОАКТИВНЫЙ ПОИСК ---
+  useEffect(() => {
+    const performSearch = async () => {
+      if (debouncedText.length > 2) {
+        setIsSearching(true)
+        const results = await searchWithAI(debouncedText)
+        setSuggestions(results)
+        setIsSearching(false)
+      } else {
+        setSuggestions([])
+      }
+    }
+    performSearch()
+  }, [debouncedText])
+
+  const handleSuggestionClick = (item: Item) => {
+    setText("")
+    setSuggestions([])
+    setFocusedItem(item)
+  }
 
   const handleCreate = async (event?: React.FormEvent) => {
     event?.preventDefault()
@@ -72,10 +97,36 @@ export function CaptureBar() {
   }
 
   return (
-    <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-40">
+    <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-100">
+      <AnimatePresence>
+        {(suggestions.length > 0 || isSearching) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="absolute bottom-full w-full space-y-0"
+          >
+            {suggestions.map(item => (
+              <button
+                key={item.id}
+                onClick={() => handleSuggestionClick(item)}
+                className="w-full flex justify-between text-left p-2 text-sm bg-card/80 backdrop-blur-3xl border border-b-0 border-border first:rounded-t-2xl shadow-md hover:bg-muted/80 transition-colors cursor-pointer"
+              >
+                <p>
+                  {item.content}
+                </p>
+                <p>
+                  {item.status}
+                </p>
+              </button>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <form
         onSubmit={handleCreate}
-        className="relative flex items-center gap-2 p-2 rounded-full bg-white/60 dark:bg-card/80 backdrop-blur-xl border border-white/20 shadow-lg"
+        className={cn("relative flex items-center gap-2 p-2 dark:bg-card/80 backdrop-blur-xl border border-border shadow-lg", suggestions.length > 0 ? "rounded-t-0 rounded-b-3xl" : "rounded-full")}
       >
         {/* Кнопка Плюс (будущий Cmd+K) */}
         <button

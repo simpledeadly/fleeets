@@ -1,5 +1,6 @@
 'use server'
 
+import { Item } from '@/lib/store'
 import { createClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
 
@@ -123,4 +124,93 @@ export async function transcribeAudio(audioBlob: Blob) {
     console.error('Transcription Error (Groq):', e)
     return { success: false, error: e.message }
   }
+}
+
+// Тип для результата поиска
+export type SearchResult = Item & {
+  similarity?: number
+  search_type: 'fts' | 'semantic'
+}
+
+export async function searchWithAI(query: string): Promise<SearchResult[]> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const ftsQuery = query.trim().split(' ').join(' & ') + ':*'
+
+  // --- 1. Быстрый текстовый поиск (FTS) ---
+  const { data: ftsResults } = await supabase
+    .from('items')
+    .select()
+    .textSearch('content', ftsQuery, { type: 'websearch', config: 'russian' })
+    .limit(10)
+
+  const ftsItems: SearchResult[] = (ftsResults || []).map((item) => ({
+    ...item,
+    search_type: 'fts',
+  }))
+
+  // --- 2. Глубокий семантический поиск (RAG) ---
+  // Генерируем вектор для запроса
+  const embeddingResponse = await openai.embeddings.create({
+    model: 'openai/text-embedding-3-small',
+    input: query,
+  })
+  const embedding = embeddingResponse.data[0].embedding
+
+  // Вызываем нашу SQL-функцию
+  const { data: semanticResults } = await supabase.rpc('match_items', {
+    query_embedding: embedding,
+    match_threshold: 0.2, // Более низкий порог, т.к. мы потом отфильтруем
+    match_count: 5,
+    user_id_input: user.id,
+  })
+
+  const semanticItems: SearchResult[] = (semanticResults || []).map(
+    (item: Item) => ({
+      ...item,
+      search_type: 'semantic',
+    })
+  )
+
+  // --- 3. Объединение и дедупликация ---
+  const allItems = [...ftsItems, ...semanticItems]
+  const uniqueItems = Array.from(
+    new Map(allItems.map((item) => [item.id, item])).values()
+  )
+
+  // Сортировка (сначала текстовые, потом семантические по убыванию похожести)
+  uniqueItems.sort((a, b) => {
+    if (a.search_type === 'fts' && b.search_type !== 'fts') return -1
+    if (b.search_type === 'fts' && a.search_type !== 'fts') return 1
+    return (b.similarity || 0) - (a.similarity || 0)
+  })
+
+  return uniqueItems
+}
+
+export async function findSimilarItemsByQuery(query: string): Promise<Item[]> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user || !query.trim()) return []
+
+  const embeddingResponse = await openai.embeddings.create({
+    model: 'openai/text-embedding-3-small',
+    input: query,
+  })
+  const embedding = embeddingResponse.data[0].embedding
+
+  const { data: similarItems } = await supabase.rpc('match_items', {
+    query_embedding: embedding,
+    match_threshold: 0.35, // Более строгий порог для подсказок
+    match_count: 4,
+    user_id_input: user.id,
+  })
+
+  return similarItems || []
 }
