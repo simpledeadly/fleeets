@@ -1,10 +1,11 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 "use client"
 
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Mic, ArrowUp, Loader2, Square } from "lucide-react"
-import { createItemWithAI, searchWithAI, transcribeAudio } from "@/features/ai"
+import { Plus, Mic, ArrowUp, Sparkles, Loader2, BookOpen, Square } from "lucide-react"
+import { createItemWithAI, searchWithAI, transcribeAudio, askBrain } from "@/features/ai"
 import { useCommandCenterStore } from '../model/store'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
 import { Item, useStore } from '@/lib/store'
@@ -21,6 +22,18 @@ export function CaptureBar() {
   const debouncedText = useDebounce(text, 700)
   const { setFocusedItem } = useStore()
   const { check, isPro, openPaywall } = usePaywall()
+  const [brainMode, setBrainMode] = useState(false)
+  const [brainAnswer, setBrainAnswer] = useState<{ answer: string, sources: any[] } | null>(null)
+  const [isThinking, setIsThinking] = useState(false)
+
+  useEffect(() => {
+    if (text.trim().startsWith("?")) {
+      setBrainMode(true)
+    } else if (text.trim() === "") {
+      setBrainMode(false)
+      setBrainAnswer(null) // Сбрасываем ответ при очистке
+    }
+  }, [text])
 
   // Подключаем хук записи
   const { status, audioBlob, startRecording, stopRecording } = useAudioRecorder()
@@ -45,7 +58,7 @@ export function CaptureBar() {
   // --- ПРОАКТИВНЫЙ ПОИСК ---
   useEffect(() => {
     const performSearch = async () => {
-      if (debouncedText.length > 2) {
+      if (debouncedText.length > 2 && !brainMode) {
         if (isPro) {
           console.log("⚡️ Проактивный поиск активирован (доступно только для PRO)")
           setIsSearching(true)
@@ -70,31 +83,47 @@ export function CaptureBar() {
     setFocusedItem(item)
   }
 
-  const handleCreate = async (event?: React.FormEvent) => {
-    event?.preventDefault()
+  const handleSubmit = async (e: React.FormEvent) => {
+    e?.preventDefault()
     const content = text.trim()
     if (!content) return
 
-    // 1. Мгновенно обновляем UI
-    increment()
-    setText("")
+    if (brainMode) {
+      // --- ЛОГИКА МОЗГА ---
+      setIsThinking(true)
+      setBrainAnswer(null) // Очищаем старый
+      const query = text.replace("?", "").trim()
 
-    // 2. Отправляем запрос в фоне
-    createItemWithAI(content)
-      .then((result) => {
-        // 3. Обрабатываем результат, когда он придет
-        if (result.error) {
-          toast.error("Ошибка создания", {
-            description: "Задача не была сохранена.",
-          })
-          setText(content)
-        }
-        toast.success("Задача в Inbox!")
-      })
-      .finally(() => {
-        // 4. Уменьшаем счетчик в любом случае
-        decrement()
-      })
+      const result = await askBrain(query)
+
+      setIsThinking(false)
+      if (result.answer) {
+        setBrainAnswer({ answer: result.answer, sources: result.sources || [] })
+      } else {
+        toast.error("Мозг не ответил")
+      }
+    } else {
+      // 1. Мгновенно обновляем UI
+      increment()
+      setText("")
+
+      // 2. Отправляем запрос в фоне
+      createItemWithAI(content)
+        .then((result) => {
+          // 3. Обрабатываем результат, когда он придет
+          if (result.error) {
+            toast.error("Ошибка создания", {
+              description: "Задача не была сохранена.",
+            })
+            setText(content)
+          }
+          toast.success("Задача в Inbox!")
+        })
+        .finally(() => {
+          // 4. Уменьшаем счетчик в любом случае
+          decrement()
+        })
+    }
   }
 
   const handleMicClick = () => {
@@ -108,7 +137,7 @@ export function CaptureBar() {
   return (
     <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-100">
       <AnimatePresence>
-        {((suggestions.length > 0 || isSearching) && isPro) ? (
+        {(!brainMode && (suggestions.length > 0 || isSearching) && isPro) ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -135,7 +164,7 @@ export function CaptureBar() {
               </button>
             ))}
           </motion.div>
-        ) : ((suggestions.length > 0 || isSearching) && !isPro) && (
+        ) : (!brainMode && (suggestions.length > 0 || isSearching) && !isPro) && (
           <button
             onClick={() => openPaywall('proactive_semantic_search')}
             className="w-full flex justify-between text-left p-2 text-sm bg-card/80 backdrop-blur-3xl border border-b-0 border-border first:rounded-t-xl shadow-md hover:bg-muted/80 transition-colors cursor-pointer"
@@ -150,36 +179,81 @@ export function CaptureBar() {
             </div>
           </button>
         )}
+
+        {brainAnswer && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.95 }}
+            className="absolute bottom-full w-full mb-3 p-4 rounded-2xl bg-card/90 backdrop-blur-xl border border-amber-500/20 shadow-2xl text-foreground"
+          >
+            {/* Ответ */}
+            <div className="flex gap-3">
+              <Sparkles className="w-5 h-5 text-amber-400 shrink-0 mt-1" />
+              <div className="space-y-3">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">
+                  {brainAnswer.answer}
+                </p>
+
+                {/* Источники */}
+                {brainAnswer.sources.length > 0 && (
+                  <div className="pt-2 border-t border-border">
+                    <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Источники</p>
+                    <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                      {brainAnswer.sources.slice(0, 3).map((src: Item) => (
+                        <div key={src.id} onClick={() => setFocusedItem(src)} className="shrink-0 max-w-30 py-1 px-2 rounded-lg bg-muted-foreground/10 border border-border/60 text-xs truncate hover:border-muted-foreground/30 duration-150 cursor-pointer">
+                          {src.content}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
       <form
-        onSubmit={handleCreate}
-        className={cn("relative flex items-center gap-2 p-2 dark:bg-card/80 backdrop-blur-xl border border-border shadow-lg", suggestions.length > 0 ? "rounded-t-0 rounded-b-3xl" : "rounded-full")}
+        onSubmit={handleSubmit}
+        className={cn("relative flex items-center gap-2 p-2 backdrop-blur-xl border shadow-lg", suggestions.length > 0 ? "rounded-t-0 rounded-b-3xl" : "rounded-full",
+          brainMode
+            ? "bg-card/90 border-amber-500/50 shadow-amber-500/10" // Стиль Мозга
+            : "dark:bg-card/80 border-border" // Обычный стиль
+        )}
       >
         {/* Кнопка Плюс (будущий Cmd+K) */}
-        <button
-          type="button"
-          onClick={() => togglePalette()}
-          className="p-2 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
-        >
-          <Plus size={18} className="text-muted-foreground" />
+        <button type="button" className="p-2 rounded-full transition-colors">
+          {/* Иконка меняется */}
+          <AnimatePresence mode="popLayout">
+            {brainMode ? (
+              <motion.div key="brain" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                <Sparkles size={18} className="text-amber-400" />
+              </motion.div>
+            ) : (
+              <motion.div key="plus" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
+                <Plus size={18} className="text-muted-foreground" />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </button>
 
         {/* Инпут */}
         <input
-          type="text"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder={isRecording ? "Говорите..." : isTranscribing ? "Расшифровка..." : "Новая мысль..."}
-          className="flex-1 bg-transparent text-md focus:outline-none placeholder:text-muted-foreground/80"
-          disabled={isRecording || isTranscribing}
+          placeholder={brainMode ? "Спроси базу знаний..." : "Новая мысль..."}
+          className={cn(
+            "flex-1 bg-transparent text-md focus:outline-none transition-colors",
+            brainMode ? "text-foreground placeholder:text-secondary" : "placeholder:text-muted-foreground/80"
+          )}
         />
 
         {/* Правые кнопки (Микрофон / Отправить) */}
         <div className="relative w-8 h-8 flex items-center justify-center">
           <AnimatePresence>
             {/* 1. Кнопка "Отправить" (если есть текст) */}
-            {text.trim() && !isRecording && !isTranscribing && (
+            {text.trim() && !isRecording && !isTranscribing && !isThinking ? (
               <motion.button
                 key="send"
                 type="submit"
@@ -189,6 +263,8 @@ export function CaptureBar() {
                 className="bg-foreground text-background absolute inset-0 flex items-center  justify-center rounded-full transition-colors cursor-pointer">
                 <ArrowUp size={18} strokeWidth={2.4} />
               </motion.button>
+            ) : (
+              <Loader2 className="animate-spin text-amber-400" size={18} />
             )}
 
             {/* 2. Кнопка "Микрофон / Стоп" (если текста нет) */}

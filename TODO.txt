@@ -5,3 +5,4 @@
 
 3. StoreInitializer: Это "бутстрап" приложения. Ему положено знать обо всем.
 
+http://localhost:3001/api/admin/vectorize

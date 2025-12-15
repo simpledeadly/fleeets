@@ -164,7 +164,7 @@ export async function searchWithAI(query: string): Promise<SearchResult[]> {
   // Вызываем нашу SQL-функцию
   const { data: semanticResults } = await supabase.rpc('match_items', {
     query_embedding: embedding,
-    match_threshold: 0.3, // Более низкий порог, т.к. мы потом отфильтруем
+    match_threshold: 0.35, // Более низкий порог, т.к. мы потом отфильтруем
     match_count: 10,
     user_id_input: user.id,
   })
@@ -182,11 +182,10 @@ export async function searchWithAI(query: string): Promise<SearchResult[]> {
     new Map(allItems.map((item) => [item.id, item])).values()
   )
 
-  // Сортировка (сначала текстовые, потом семантические по убыванию похожести)
   uniqueItems.sort((a, b) => {
     if (a.search_type === 'fts' && b.search_type !== 'fts') return -1
     if (b.search_type === 'fts' && a.search_type !== 'fts') return 1
-    return (b.similarity || 0) - (a.similarity || 0)
+    return (a.similarity || 0) - (b.similarity || 0)
   })
 
   return uniqueItems
@@ -213,4 +212,72 @@ export async function findSimilarItemsByQuery(query: string): Promise<Item[]> {
   })
 
   return similarItems || []
+}
+
+export async function askBrain(question: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Auth required' }
+
+  // 1. Поиск контекста (RAG)
+  // Генерим вектор вопроса
+  const embeddingResp = await openai.embeddings.create({
+    model: 'openai/text-embedding-3-small',
+    input: question,
+  })
+  const vector = embeddingResp.data[0].embedding
+
+  const { data: contextItems } = await supabase.rpc('match_items', {
+    query_embedding: vector,
+    match_threshold: 0.2,
+    match_count: 20,
+    user_id_input: user.id,
+  })
+
+  if (!contextItems || contextItems.length === 0) {
+    return { answer: 'Я не нашел ничего похожего в твоей базе.' }
+  }
+
+  // 2. Сборка промпта
+  const contextString = contextItems
+    .map(
+      (item: any) =>
+        `--- [${item.created_at}] ${item.content}\n${item.description || ''}`
+    )
+    .join('\n\n')
+
+  const systemPrompt = `
+    Ты — Второй Мозг пользователя. Отвечай на вопрос, используя ТОЛЬКО предоставленный ниже контекст.
+    Если информации нет, так и скажи. Не выдумывай.
+    Отвечай кратко, по делу, в стиле самого пользователя.
+    
+    КОНТЕКСТ ИЗ БАЗЫ ЗНАНИЙ:
+    ${contextString}
+  `
+
+  // 3. Генерация ответа (через Groq Llama-3 для скорости)
+  const groq = new OpenAI({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: 'https://api.groq.com/openai/v1',
+  })
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: question },
+      ],
+      model: 'llama-3.3-70b-versatile',
+      temperature: 0.5,
+    })
+
+    return {
+      answer: completion.choices[0].message.content,
+      sources: contextItems, // Возвращаем источники, чтобы показать юзеру "На основе..."
+    }
+  } catch (e: any) {
+    return { error: e.message }
+  }
 }

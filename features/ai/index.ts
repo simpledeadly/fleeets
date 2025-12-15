@@ -4,5 +4,6 @@ export {
   transcribeAudio,
   searchWithAI,
   findSimilarItemsByQuery,
+  askBrain,
   type SearchResult
 } from './actions'
