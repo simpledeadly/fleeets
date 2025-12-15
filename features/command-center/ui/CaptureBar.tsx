@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Mic, ArrowUp, Sparkles, Loader2, BookOpen, Square } from "lucide-react"
+import { Plus, Mic, ArrowUp, BrainCircuit, Loader2, BookOpen, Square } from "lucide-react"
 import { createItemWithAI, searchWithAI, transcribeAudio, askBrain } from "@/features/ai"
 import { useCommandCenterStore } from '../model/store'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
@@ -207,7 +207,7 @@ export function CaptureBar() {
           <AnimatePresence mode="popLayout">
             {brainMode ? (
               <motion.div key="brain" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>
-                <Sparkles size={18} className="text-amber-400" />
+                <BrainCircuit size={18} className="text-amber-400" />
               </motion.div>
             ) : (
               <motion.div key="plus" onClick={togglePalette} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}>

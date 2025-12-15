@@ -231,8 +231,8 @@ export async function askBrain(question: string) {
 
   const { data: contextItems } = await supabase.rpc('match_items', {
     query_embedding: vector,
-    match_threshold: 0.2,
-    match_count: 20,
+    match_threshold: 0.3,
+    match_count: 50,
     user_id_input: user.id,
   })
 
@@ -270,7 +270,7 @@ export async function askBrain(question: string) {
         { role: 'user', content: question },
       ],
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.5,
+      temperature: 0.6,
     })
 
     return {
