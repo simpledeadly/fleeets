@@ -11,7 +11,7 @@ export default function LoginPage() {
   // Инициализируем null, генерируем только на клиенте
   const [sessionId, setSessionId] = useState<string | null>(null)
 
-  const [status, setStatus] = useState<"loading" | "waiting" | "success">("waiting")
+  const [status, setStatus] = useState<"loading" | "waiting" | "success" | "timeout">("waiting")
   const router = useRouter()
   const supabase = createClient()
   const setItems = useStore((state) => state.setItems) // Прямой доступ к экшену
@@ -26,7 +26,16 @@ export default function LoginPage() {
   useEffect(() => {
     if (!sessionId) return
 
+    const startTime = Date.now()
+    const MAX_POLLING_TIME = 1000 * 60 * 5 // 5 минут макс
+
     const interval = setInterval(async () => {
+      if (Date.now() - startTime > MAX_POLLING_TIME) {
+        clearInterval(interval)
+        setStatus("timeout") // Можно добавить такое состояние в UI
+        return
+      }
+
       try {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/telegram-auth-poll`,
@@ -99,6 +108,11 @@ export default function LoginPage() {
         {status === "success" ? (
           <div className="text-green-500 font-bold animate-pulse flex flex-col items-center gap-2">
             <span>Успех! Синхронизация...</span>
+            {/* Можно добавить маленький спиннер здесь */}
+          </div>
+        ) : status === "timeout" ? (
+          <div className="text-red-500 font-bold animate-pulse flex flex-col items-center gap-2">
+            <span>Timeout</span>
             {/* Можно добавить маленький спиннер здесь */}
           </div>
         ) : (

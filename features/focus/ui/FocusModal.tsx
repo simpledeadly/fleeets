@@ -25,12 +25,9 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
-    // Асинхронная функция ВНУТРИ эффекта
     const loadData = async () => {
-      if (isOpen && item) {
+      if (isOpen && item?.id) {
         setStatus('loading')
-        setLogText(item.execution_log || "")
-
         const data = await getFocusViewData(item.id)
         setViewData(data)
         setStatus('success')
@@ -40,7 +37,14 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
       }
     }
     loadData()
-  }, [item, isOpen])
+  }, [item?.id, isOpen])
+
+  useEffect(() => {
+    if (isOpen && item) {
+      // Обновляем, только если текст реально отличается
+      setLogText(prev => item.execution_log !== prev ? (item.execution_log || "") : prev)
+    }
+  }, [item?.execution_log, isOpen])
 
   const debouncedLog = useDebounce(logText, 1000)
   useEffect(() => {
