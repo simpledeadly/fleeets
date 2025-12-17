@@ -52,6 +52,8 @@ export function useOmniFilter() {
       result = result.filter(
         (i) =>
           i.content.toLowerCase().includes(lower) ||
+          (i.description && i.description.toLowerCase().includes(lower)) ||
+          (i.raw_content && i.raw_content.toLowerCase().includes(lower)) ||
           i.ai_tags?.some((t) => t.toLowerCase().includes(lower))
       )
     }

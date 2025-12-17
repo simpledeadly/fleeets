@@ -3,9 +3,10 @@
 import { useState, useEffect, useRef } from "react"
 import { Command, CommandInput, CommandList } from "@/components/ui/command"
 import { Loader2, BrainCircuit } from "lucide-react"
-import { askBrain } from "@/features/ai/actions" // Твой рабочий серверный экшен
+import { askBrain } from "@/features/ai/actions"
 import { toast } from "sonner"
 import { BrainResponse } from './BrainResponse'
+import { GenDecompose } from '@/features/gen-ui'
 
 export function OmniChat({ initialQuery }: { initialQuery: string }) {
   // Сразу чистим запрос от "?"
@@ -15,6 +16,8 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
   const [brainData, setBrainData] = useState<{ answer: string, sources: any[] } | null>(null)
   const [isThinking, setIsThinking] = useState(false)
 
+  const [genUIData, setGenUIData] = useState<{ type: string, data: any } | null>(null)
+
   // Чтобы не делать запрос дважды при маунте
   const hasFetched = useRef(false)
 
@@ -23,13 +26,17 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
 
     setIsThinking(true)
     setBrainData(null) // Сброс старого ответа
+    setGenUIData(null) // Сброс
 
     // Прямой вызов твоей рабочей функции
     const result = await askBrain(textToAsk)
 
     setIsThinking(false)
 
-    if (result.answer) {
+    if (result.genUI) {
+      setGenUIData(result.genUI)
+      setBrainData({ answer: "Вот план действий:", sources: result.sources || [] }) // Опционально
+    } else if (result.answer) {
       setBrainData({ answer: result.answer, sources: result.sources || [] })
     } else if (result.error) {
       toast.error("Ошибка AI: " + result.error)
@@ -54,25 +61,16 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
 
   return (
     <Command shouldFilter={false} className="h-full">
-      <div className="relative">
-        <div className="absolute left-4 top-3.5 z-10">
-          {isThinking ? (
-            <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
-          ) : (
-            <BrainCircuit className="h-5 w-5 text-amber-500" />
-          )}
-        </div>
-        <CommandInput
-          value={query}
-          onValueChange={setQuery}
-          onKeyDown={handleKeyDown}
-          className="pl-12 text-amber-500 placeholder:text-amber-500/50"
-          placeholder="Вопрос к базе знаний..."
-          autoFocus
-        />
-      </div>
+      <CommandInput
+        value={query}
+        onValueChange={setQuery}
+        onKeyDown={handleKeyDown}
+        className="text-sm text-foreground placeholder:text-muted-foreground/50"
+        placeholder="Вопрос к базе знаний..."
+        autoFocus
+      />
 
-      <CommandList className="max-h-150 p-6 overflow-y-auto">
+      <CommandList className="max-h-150 p-4 overflow-y-auto">
 
         {/* Индикатор загрузки текстом (опционально) */}
         {isThinking && !brainData && (
@@ -81,8 +79,15 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
           </div>
         )}
 
+        {/* Рендер GenUI */}
+        {genUIData?.type === 'decomposition' && (
+          <div className="mb-6">
+            <GenDecompose initialTasks={genUIData.data} />
+          </div>
+        )}
+
         {/* Вывод ответа через твой компонент */}
-        {brainData && (
+        {!genUIData && brainData && (
           <BrainResponse
             text={brainData.answer}
             sources={brainData.sources}

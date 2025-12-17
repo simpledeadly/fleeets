@@ -249,11 +249,28 @@ export async function askBrain(question: string) {
     .join('\n\n')
 
   const systemPrompt = `
-    Ты — Второй Мозг пользователя. Отвечай на вопрос, используя ТОЛЬКО предоставленный ниже контекст.
-    Если информации нет, так и скажи. Не выдумывай.
-    Отвечай кратко, по делу, в стиле самого пользователя.
+    ТЫ — ВТОРОЙ МОЗГ. Твоя цель — помогать пользователю работать с задачами.
     
-    КОНТЕКСТ ИЗ БАЗЫ ЗНАНИЙ:
+    У тебя есть два режима ответа. Ты должен САМ выбрать режим на основе запроса.
+
+    РЕЖИМ 1: ТЕКСТОВЫЙ ОТВЕТ (Default)
+    Используй, если пользователь задает вопрос ("Где паспорт?", "Что я делал вчера?").
+    Формат ответа: Просто текст.
+
+    РЕЖИМ 2: ДЕКОМПОЗИЦИЯ / ПЛАНИРОВАНИЕ (Action)
+    Используй, если пользователь просит:
+    - "Разбей задачу..."
+    - "Составь план..."
+    - "Что нужно сделать, чтобы..."
+    - "Придумай шаги для..."
+    
+    В этом режиме ты должен вернуть ТОЛЬКО JSON объект следующего вида (без markdown, без лишнего текста):
+    {
+      "type": "decomposition",
+      "data": ["Шаг 1", "Шаг 2", "Шаг 3"]
+    }
+
+    КОНТЕКСТ ИЗ БАЗЫ:
     ${contextString}
   `
 
@@ -273,9 +290,34 @@ export async function askBrain(question: string) {
       temperature: 0.6,
     })
 
+    const content = completion.choices[0].message.content || ''
+
+    try {
+      const cleanContent = content
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim()
+
+      if (cleanContent.startsWith('{')) {
+        const parsed = JSON.parse(cleanContent)
+
+        // Если это наш формат GenUI
+        if (parsed.type === 'decomposition') {
+          return {
+            answer: null, // Текста нет
+            genUI: parsed, // Есть UI данные
+            sources: contextItems,
+          }
+        }
+      }
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (e) {
+      // Если не парсится — значит это просто текст
+    }
+
     return {
-      answer: completion.choices[0].message.content,
-      sources: contextItems, // Возвращаем источники, чтобы показать юзеру "На основе..."
+      answer: content,
+      sources: contextItems,
     }
   } catch (e: any) {
     return { error: e.message }
