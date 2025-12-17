@@ -249,18 +249,19 @@ export async function askBrain(question: string) {
     )
     .join('\n\n')
 
-  const toolsPrompt = getSystemPromptTools()
-
   const systemPrompt = `
-    ТЫ — ВТОРОЙ МОЗГ.
+    ТЫ — ВТОРОЙ МОЗГ И АССИСТЕНТ.
     
-    У тебя есть набор визуальных инструментов. Выбери подходящий или ответь текстом.
+    Твоя цель — помогать пользователю.
+    
+    ИНСТРУМЕНТЫ (GenUI):
+    ${getSystemPromptTools()}
 
-    ИНСТРУМЕНТЫ:
-    ${toolsPrompt}
-
-    ЕСЛИ НУЖЕН ИНСТРУМЕНТ: Верни ТОЛЬКО JSON объект.
-    ЕСЛИ НЕТ ПОДХОДЯЩЕГО: Отвечай обычным текстом, без markdown.
+    ПРАВИЛА:
+    1. Если пользователь задает ВОПРОС о своих записях — отвечай строго по КОНТЕКСТУ.
+    2. Если пользователь просит СОЗДАТЬ, ПРИДУМАТЬ или СОСТАВИТЬ план (которого нет в базе) — ты МОЖЕШЬ использовать свои общие знания и креативность.
+    3. Если нужен инструмент (например, decomposition) — верни ТОЛЬКО валидный JSON.
+    4. Массив данных в JSON НЕ ДОЛЖЕН быть пустым. Если данных нет — придумай их или ответь текстом.
 
     КОНТЕКСТ ИЗ БАЗЫ:
     ${contextString}
@@ -279,22 +280,26 @@ export async function askBrain(question: string) {
         { role: 'user', content: question },
       ],
       model: 'llama-3.3-70b-versatile',
-      temperature: 0.6,
+      temperature: 0.7,
     })
 
     const content = completion.choices[0].message.content || ''
+    console.log('🤖 Raw AI Answer:', content)
 
     try {
-      const cleanContent = content
-        .replace(/```json/g, '')
-        .replace(/```/g, '')
-        .trim()
+      const firstBrace = content.indexOf('{')
+      const lastBrace = content.lastIndexOf('}')
 
-      if (cleanContent.startsWith('{')) {
-        const parsed = JSON.parse(cleanContent)
+      if (firstBrace !== -1 && lastBrace !== -1) {
+        const jsonString = content.substring(firstBrace, lastBrace + 1)
+        const parsed = JSON.parse(jsonString)
 
-        // Если это наш формат GenUI
-        if (parsed.type && parsed.data) {
+        // Проверяем, что это наш формат и там есть данные
+        if (
+          parsed.type &&
+          Array.isArray(parsed.data) &&
+          parsed.data.length > 0
+        ) {
           return {
             answer: null,
             genUI: parsed,
@@ -302,9 +307,8 @@ export async function askBrain(question: string) {
           }
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
-      // Если не парсится — значит это просто текст
+      console.error('JSON Parse Error:', e)
     }
 
     return {

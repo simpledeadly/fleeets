@@ -10,7 +10,7 @@ export interface ToolDefinition {
   type: GenUIToolType
   description: string
   jsonSchema: string
-  component: React.ComponentType<any>
+  component: React.ComponentType<{ data: any }>
 }
 
 export const GEN_UI_REGISTRY: Record<GenUIToolType, ToolDefinition> = {

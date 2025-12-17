@@ -28,7 +28,7 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
 
     if (result.genUI) {
       setGenUIData(result.genUI)
-      setBrainData({ answer: "Сгенерировал интерфейс:", sources: result.sources || [] })
+      // setBrainData({ answer: "Сгенерировал интерфейс:", sources: result.sources || [] })
     } else if (result.answer) {
       setBrainData({ answer: result.answer, sources: result.sources || [] })
     } else {
@@ -81,7 +81,7 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
         {/* 1. РЕНДЕР ГЕНЕРАТИВНОГО КОМПОНЕНТА */}
         {ToolComponent && genUIData && (
           <div className="mb-6 animate-in fade-in zoom-in-95 duration-150">
-            <ToolComponent initialTasks={genUIData.data} />
+            <ToolComponent data={genUIData.data} />
           </div>
         )}
 
@@ -92,7 +92,6 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
             sources={brainData.sources}
           />
         )}
-
       </CommandList>
     </Command>
   )
