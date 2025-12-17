@@ -1,9 +1,10 @@
 "use client"
 
 import { useStore, type View } from "@/lib/store"
-import { Layers, ListTodo, Archive, Zap, Focus, Lock } from "lucide-react"
+import { Layers, ListTodo, Archive, Zap, Focus, Lock, ShieldUser } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { usePaywall } from "@/features/paywall"
+import { redirect } from 'next/navigation'
 
 export default function BottomNav() {
   const { currentView, setView, items } = useStore()
@@ -27,6 +28,10 @@ export default function BottomNav() {
     // TODO: Здесь будет логика включения блиц-режима
     console.log("⚡️ Блиц-режим активирован (доступно только для PRO)")
     alert("Блиц-режим включен!")
+  }
+
+  const handleRedirectToAdminDashboard = () => {
+    redirect('/admin')
   }
 
   return (
@@ -73,6 +78,20 @@ export default function BottomNav() {
             </span>
           )}
         </button>
+
+        {isPro && (
+          <>
+            <div className="w-px h-6 bg-muted mx-1" />
+
+            <button
+              onClick={handleRedirectToAdminDashboard}
+              className="group relative flex cursor-pointer items-center justify-center w-10 h-10 rounded-full text-amber-500 hover:bg-amber-500/10 dark:hover:bg-amber-500/5 transition-colors"
+              aria-label="Админ-дашборд"
+            >
+              <ShieldUser size={18} fill="currentColor" className="transition-transform group-active:scale-90" />
+            </button>
+          </>
+        )}
       </nav>
     </div>
   )

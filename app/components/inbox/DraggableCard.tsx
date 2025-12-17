@@ -87,8 +87,8 @@ export function DraggableCard({ task, onSwipe, isTop }: DraggableCardProps) {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
 
     if (swipeState !== "idle") {
-      const exitX = (info.offset.x > 0 ? 1 : -1) * 500
-      const exitY = info.offset.y < 0 ? -500 : 0
+      const exitX = (info.offset.x > 0 ? 1 : -1) * 300
+      const exitY = info.offset.y < 0 ? -300 : 0
 
       animate(x, exitX, { type: 'spring', stiffness: 300, damping: 30 })
       animate(y, exitY, { type: 'spring', stiffness: 300, damping: 30 })

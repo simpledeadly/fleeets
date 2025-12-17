@@ -4,6 +4,7 @@ import OpenAI from 'openai'
 import { Item } from '@/lib/store'
 import { createClient } from '@/lib/supabase/server'
 import { getSystemPromptTools } from '@/features/gen-ui'
+import { logTokenUsage } from './analytics'
 
 // Настраиваем клиента на OpenRouter
 const openai = new OpenAI({
@@ -20,12 +21,24 @@ export async function createItemWithAI(text: string) {
   if (!user) return { error: 'Unauthorized' }
 
   try {
+    const embeddingModel = 'openai/text-embedding-3-small'
     // 1. Генерируем вектор
     const embeddingResponse = await openai.embeddings.create({
-      model: 'openai/text-embedding-3-small',
+      model: embeddingModel,
       input: text.replace(/\n/g, ' '),
     })
     const embedding = embeddingResponse.data[0].embedding
+
+    // 📊 ЛОГ
+    if (embeddingResponse.usage) {
+      logTokenUsage({
+        userId: user.id,
+        model: embeddingModel,
+        action: 'create_item',
+        inputTokens: embeddingResponse.usage.prompt_tokens,
+        outputTokens: 0,
+      })
+    }
 
     // 2. Сохраняем в БД
     const { data, error } = await supabase
@@ -98,10 +111,16 @@ export async function transcribeAudio(audioBlob: Blob) {
     return { success: false, error: 'GROQ_API_KEY is not set.' }
   }
 
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   try {
     const formData = new FormData()
     formData.append('file', audioBlob, 'audio.webm')
     formData.append('model', 'whisper-large-v3')
+    formData.append('response_format', 'verbose_json')
 
     const response = await fetch(
       'https://api.groq.com/openai/v1/audio/transcriptions',
@@ -120,7 +139,20 @@ export async function transcribeAudio(audioBlob: Blob) {
     }
 
     const data = await response.json()
-    return { success: true, text: data.text }
+    const text = data.text
+    const duration = data.duration || 0 // Groq возвращает duration в секундах
+
+    // 📊 ЛОГ
+    if (user) {
+      logTokenUsage({
+        userId: user.id,
+        model: 'whisper-large-v3',
+        action: 'transcription',
+        seconds: duration, // Передаем секунды!
+      })
+    }
+
+    return { success: true, text }
   } catch (e: any) {
     console.error('Transcription Error (Groq):', e)
     return { success: false, error: e.message }
@@ -223,12 +255,27 @@ export async function askBrain(question: string) {
   if (!user) return { error: 'Auth required' }
 
   // 1. Поиск контекста (RAG)
+  const embeddingModel = 'openai/text-embedding-3-small'
+
+  // 1. Поиск контекста (RAG)
   // Генерим вектор вопроса
   const embeddingResp = await openai.embeddings.create({
-    model: 'openai/text-embedding-3-small',
+    model: embeddingModel,
     input: question,
   })
   const vector = embeddingResp.data[0].embedding
+
+  // 📊 ЛОГ 1: Эмбеддинг
+  // У OpenAI usage находится в embeddingResp.usage
+  if (embeddingResp.usage) {
+    logTokenUsage({
+      userId: user.id,
+      model: embeddingModel,
+      action: 'embedding',
+      inputTokens: embeddingResp.usage.prompt_tokens,
+      outputTokens: 0,
+    })
+  }
 
   const { data: contextItems } = await supabase.rpc('match_items', {
     query_embedding: vector,
@@ -360,15 +407,28 @@ export async function askBrain(question: string) {
     baseURL: 'https://api.groq.com/openai/v1',
   })
 
+  const llmModel = 'llama-3.1-8b-instant'
+
   try {
     const completion = await groq.chat.completions.create({
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: question },
       ],
-      model: 'llama-3.1-8b-instant',
+      model: llmModel,
       temperature: 0.7,
     })
+
+    // 📊 ЛОГ 2: Генерация текста
+    if (completion.usage) {
+      logTokenUsage({
+        userId: user.id,
+        model: llmModel,
+        action: 'rag_query',
+        inputTokens: completion.usage.prompt_tokens,
+        outputTokens: completion.usage.completion_tokens,
+      })
+    }
 
     const content = completion.choices[0].message.content || ''
     console.log('🤖 [Brain] Ответ:', content)
