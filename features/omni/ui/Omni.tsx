@@ -51,7 +51,7 @@ export function Omni() {
 
               <FilterBar {...filter} />
 
-              <CommandList className="max-h-150">
+              <CommandList className="max-h-100">
                 <CommandEmpty>Ничего не найдено.</CommandEmpty>
 
                 {/* Навигация (только в пустом состоянии) */}

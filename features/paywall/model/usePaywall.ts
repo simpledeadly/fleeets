@@ -4,6 +4,7 @@ import { PAYWALL_CONFIG, type FeatureKey, type FeatureConfig } from '../config'
 export function usePaywall() {
   const { tier, openPaywall } = usePaywallStore()
   const isPro = tier === 'pro'
+  const isPremium = tier === 'premium'
 
   /**
    * Проверка доступа к функции.
@@ -16,8 +17,8 @@ export function usePaywall() {
     // Приводим к общему интерфейсу FeatureConfig, чтобы TS не ругался на отсутствие полей
     const config = PAYWALL_CONFIG[feature] as FeatureConfig
 
-    // Если фича требует PRO, а у нас Free
-    if (config.tier === 'pro') {
+    // Если фича требует PRO или PREMIUM, а у нас Free
+    if (config.tier === 'pro' || config.tier === 'premium') {
       openPaywall(feature)
       return false
     }
@@ -47,6 +48,7 @@ export function usePaywall() {
 
   return {
     isPro, // Просто факт для отрисовки UI (замочки, бэйджики)
+    isPremium,
     check, // Основной гард (с открытием модалки)
     checkLimit, // Гард лимитов (с открытием модалки)
     openPaywall, // Ручное открытие (для кнопки "Купить PRO")

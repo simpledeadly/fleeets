@@ -1,4 +1,4 @@
-export type SubscriptionTier = 'free' | 'pro'
+export type SubscriptionTier = 'free' | 'pro' | 'premium'
 
 export interface FeatureConfig {
   tier: SubscriptionTier // Минимальный тариф для доступа
@@ -25,7 +25,7 @@ export const PAYWALL_CONFIG = {
       'Блиц-режим ускоряет разбор входящих в 3 раза. Доступно в PRO.',
   },
   proactive_semantic_search: {
-    tier: 'pro',
+    tier: 'premium',
     title: 'Узнай что ты уже добавил',
     description:
       'Получай информацию о похожих заметках прямо при вводе. Доступно в PRO.',

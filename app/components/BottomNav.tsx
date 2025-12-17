@@ -14,8 +14,8 @@ export default function BottomNav() {
   const tabs: { name: string; view: View; icon: React.ElementType }[] = [
     { name: "Инбокс", view: "inbox", icon: Layers },
     { name: "Фокус", view: "focus", icon: Focus },
-    { name: "План", view: "plan", icon: ListTodo },
-    { name: "Архив", view: "archive", icon: Archive },
+    // { name: "План", view: "plan", icon: ListTodo },
+    // { name: "Архив", view: "archive", icon: Archive },
   ]
 
   const handleBlitzClick = () => {
@@ -69,7 +69,6 @@ export default function BottomNav() {
 
           {!isPro && (
             <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-transparent">
-              {/* Можно иконку замка, но пока просто точка или пусто */}
               <Lock strokeWidth={2.4} className="text-muted-foreground" />
             </span>
           )}
