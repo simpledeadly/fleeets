@@ -8,7 +8,7 @@ export async function fetchActiveItems(supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from('items')
     .select('*')
-    .in('status', ['inbox', 'planned', 'archived', 'today'])
+    .in('status', ['inbox', 'planned', 'archived', 'today', 'done'])
     // Можно добавить сортировку, чтобы порядок был стабильным
     .order('created_at', { ascending: false })
 

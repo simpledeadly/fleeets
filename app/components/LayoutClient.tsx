@@ -1,10 +1,7 @@
 "use client"
 
 import { useHotkeys } from "@/lib/hooks"
-import { useCommandCenterStore } from "@/features/command-center/model/store"
-import { CommandPalette } from "@/features/command-center/ui/CommandPalette"
-import { CaptureBar } from "@/features/command-center/ui/CaptureBar"
-import { PendingIndicator } from "@/features/command-center/ui/PendingIndicator"
+import { useCommandCenterStore, PendingIndicator, Omni, CaptureBar } from "@/features/omni"
 import BottomNav from "./BottomNav"
 import { AnimatePresence, motion } from "framer-motion"
 
@@ -17,7 +14,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
-      <CommandPalette />
+      <Omni />
 
       {/* Обертка для анимации */}
       <AnimatePresence>
