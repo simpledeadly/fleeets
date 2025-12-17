@@ -22,7 +22,7 @@ export function CaptureBar() {
   const [isSearching, setIsSearching] = useState(false)
   const debouncedText = useDebounce(text, 700)
   const { setFocusedItem } = useStore()
-  const { isPremium, openPaywall } = usePaywall()
+  const { isPro, openPaywall } = usePaywall()
   const [brainMode, setBrainMode] = useState(false)
   const [brainAnswer, setBrainAnswer] = useState<{ answer: string, sources: any[] } | null>(null)
   const [isThinking, setIsThinking] = useState(false)
@@ -60,15 +60,15 @@ export function CaptureBar() {
   useEffect(() => {
     const performSearch = async () => {
       if (debouncedText.length > 2 && !brainMode) {
-        if (isPremium) {
-          console.log("⚡️ Проактивный поиск активирован (доступно только для PREMIUM)")
+        if (isPro) {
+          console.log("⚡️ Проактивный поиск активирован (доступно только для PRO)")
           setIsSearching(true)
           const results = await searchWithAI(debouncedText)
           setSuggestions(results)
           setIsSearching(false)
         } else {
           setSuggestions([{
-            content: 'Семантический поиск доступен в PREMIUM'
+            content: 'Семантический поиск доступен в PRO'
           }] as any)
         }
       } else {
@@ -138,7 +138,7 @@ export function CaptureBar() {
   return (
     <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-100">
       <AnimatePresence>
-        {(!brainMode && (suggestions.length > 0 || isSearching) && isPremium) ? (
+        {(!brainMode && (suggestions.length > 0 || isSearching) && isPro) ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -165,7 +165,7 @@ export function CaptureBar() {
               </button>
             ))}
           </motion.div>
-        ) : (!brainMode && (suggestions.length > 0 || isSearching) && !isPremium) && (
+        ) : (!brainMode && (suggestions.length > 0 || isSearching) && !isPro) && (
           <button
             onClick={() => openPaywall('proactive_semantic_search')}
             className="w-full flex justify-between text-left p-2 text-sm bg-card/80 backdrop-blur-3xl border border-b-0 border-border first:rounded-t-xl shadow-md hover:bg-muted/80 transition-colors cursor-pointer"

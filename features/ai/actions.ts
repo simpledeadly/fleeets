@@ -208,7 +208,7 @@ export async function findSimilarItemsByQuery(query: string): Promise<Item[]> {
   const { data: similarItems } = await supabase.rpc('match_items', {
     query_embedding: embedding,
     match_threshold: 0.35, // Более строгий порог для подсказок
-    match_count: 4,
+    match_count: 5,
     user_id_input: user.id,
   })
 
@@ -232,8 +232,8 @@ export async function askBrain(question: string) {
 
   const { data: contextItems } = await supabase.rpc('match_items', {
     query_embedding: vector,
-    match_threshold: 0.3,
-    match_count: 50,
+    match_threshold: 0.35,
+    match_count: 10,
     user_id_input: user.id,
   })
 
@@ -241,16 +241,103 @@ export async function askBrain(question: string) {
     return { answer: 'Я не нашел ничего похожего в твоей базе.' }
   }
 
+  const dateOptions: Intl.DateTimeFormatOptions = {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  }
+
   // 2. Сборка промпта
   const contextString = contextItems
-    .map(
-      (item: any) =>
-        `--- [${item.created_at}] ${item.content}\n${item.description || ''}`
-    )
+    .map((item: any) => {
+      const created = new Date(item.created_at).toLocaleDateString('ru-RU')
+
+      // --- ЛОГИКА СТАТУСОВ ---
+      let statusText = 'Неизвестный статус'
+
+      switch (item.status) {
+        case 'inbox':
+          statusText = '📥 [Входящее/Неообработанное]'
+          break
+        case 'today':
+          statusText = '🔥 [В ФОКУСЕ / Делать сегодня]'
+          break
+        case 'done':
+          // Добавляем дату завершения, если есть
+          const completedDate = item.completed_at
+            ? new Date(item.completed_at).toLocaleDateString('ru-RU')
+            : ''
+          statusText = `✅ [ВЫПОЛНЕНО: ${completedDate}]`
+          break
+        case 'archived':
+          statusText = '🗄 [Архив / Справочная инфа]'
+          break
+        case 'deleted':
+          statusText = '🗑 [В корзине]'
+          break
+        case 'planned':
+          // Добавляем дату планирования
+          const planDate = item.planned_at
+            ? new Date(item.planned_at).toLocaleDateString('ru-RU')
+            : 'без даты'
+          statusText = `📅 [ЗАПЛАНИРОВАНО на: ${planDate}]`
+          break
+      }
+
+      const typeText =
+        item.type === 'note'
+          ? 'Заметка'
+          : item.type === 'thought'
+          ? 'Мысль'
+          : 'Задача'
+      const quickTag = item.is_quick ? '⚡️[БЛИЦ/Быстрое]' : ''
+      const aiTags =
+        item.ai_tags && item.ai_tags.length > 0
+          ? `Теги: ${item.ai_tags.join(', ')}`
+          : ''
+
+      const priority =
+        item.priority && item.priority === 'high'
+          ? '❗️ ВЫСОКИЙ ПРИОРИТЕТ'
+          : item.priority === 'low'
+          ? '🔽 Низкий приоритет'
+          : ''
+
+      const log = item.execution_log
+        ? `\n📝 ЗАМЕТКИ В ПРОЦЕССЕ ВЫПОЛНЕНИЯ:\n"${item.execution_log}"`
+        : ''
+
+      // Собираем всё в один блок
+      return `
+        === ЭЛЕМЕНТ БАЗЫ ЗНАНИЙ ===
+        ID: ${item.id}
+        Тип: ${typeText} | Статус: ${statusText} ${quickTag}
+        Создано: ${created}
+        ${priority}
+        ${aiTags}
+
+        ЗАГОЛОВОК: "${item.content}"
+
+        ПОДРОБНОСТИ:
+        ${item.description || 'Нет описания'}
+        ${log}
+        ===========================`.trim()
+    })
     .join('\n\n')
+
+  console.log(contextString)
+
+  // 3. Системный промпт с ОРИЕНТАЦИЕЙ ВО ВРЕМЕНИ
+  const now = new Date()
+  const currentDateStr = now.toLocaleDateString('ru-RU', dateOptions)
 
   const systemPrompt = `
     ТЫ — ВТОРОЙ МОЗГ И АССИСТЕНТ.
+    
+    СЕГОДНЯ: ${currentDateStr}
     
     Твоя цель — помогать пользователю.
     
@@ -279,12 +366,12 @@ export async function askBrain(question: string) {
         { role: 'system', content: systemPrompt },
         { role: 'user', content: question },
       ],
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant',
       temperature: 0.7,
     })
 
     const content = completion.choices[0].message.content || ''
-    console.log('🤖 Raw AI Answer:', content)
+    console.log('🤖 [Brain] Ответ:', content)
 
     try {
       const firstBrace = content.indexOf('{')
@@ -316,6 +403,7 @@ export async function askBrain(question: string) {
       sources: contextItems,
     }
   } catch (e: any) {
+    console.error('🔥 [Brain] Error:', e)
     return { error: e.message }
   }
 }

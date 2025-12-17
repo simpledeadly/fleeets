@@ -35,6 +35,8 @@ export async function fetchUserTier(
       .select('status')
       .eq('user_id', user.id)
       .in('status', ['active', 'trialing'])
+      .order('created_at', { ascending: false }) // Берем самую свежую
+      .limit(1) // Только одну
       .maybeSingle() // Возвращает null, если записей нет (вместо ошибки)
 
     if (error) {
@@ -47,10 +49,10 @@ export async function fetchUserTier(
       return 'pro'
     }
 
-    console.log("👤 User is FREE")
+    console.log('👤 User is FREE')
     return 'free'
   } catch (e) {
-    console.error("Critical error in fetchUserTier", e)
+    console.error('Critical error in fetchUserTier', e)
     return 'free'
   }
 }

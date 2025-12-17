@@ -1,6 +1,5 @@
 'use server'
 
-import { findSimilarItems } from '@/features/ai'
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
@@ -106,7 +105,7 @@ export async function getFocusViewData(itemId: string) {
     // 2.2 Ищем похожие
     const { data } = await supabase.rpc('match_items', {
       query_embedding: currentItem.embedding,
-      match_threshold: 0.4,
+      match_threshold: 0.5,
       match_count: 10,
       user_id_input: user.id,
     })
