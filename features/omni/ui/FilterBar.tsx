@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge"
-import { Layers, ListTodo, Focus, Check, Archive, Tag } from "lucide-react"
+import { Layers, ListTodo, Focus, CheckCircle2, Archive, Tag } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface FilterBarProps {
@@ -18,7 +18,7 @@ export function FilterBar({ activeStatus, setActiveStatus, activeTags, toggleTag
         <FilterChip label="Inbox" icon={<Layers size={12} />} active={activeStatus === 'inbox'} onClick={() => setActiveStatus(activeStatus === 'inbox' ? null : 'inbox')} />
         <FilterChip label="Focus" icon={<Focus size={12} />} active={activeStatus === 'today'} onClick={() => setActiveStatus(activeStatus === 'today' ? null : 'today')} />
         <FilterChip label="Plan" icon={<ListTodo size={12} />} active={activeStatus === 'planned'} onClick={() => setActiveStatus(activeStatus === 'planned' ? null : 'planned')} />
-        <FilterChip label="Done" icon={<Check size={12} />} active={activeStatus === 'done'} onClick={() => setActiveStatus(activeStatus === 'done' ? null : 'done')} />
+        <FilterChip label="Done" icon={<CheckCircle2 size={12} />} active={activeStatus === 'done'} onClick={() => setActiveStatus(activeStatus === 'done' ? null : 'done')} />
         <FilterChip label="Archived" icon={<Archive size={12} />} active={activeStatus === 'archived'} onClick={() => setActiveStatus(activeStatus === 'archived' ? null : 'archived')} />
       </div>
 

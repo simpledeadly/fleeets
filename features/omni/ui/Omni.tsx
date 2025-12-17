@@ -1,6 +1,5 @@
 "use client"
 
-import * as React from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
 import { useStore } from "@/lib/store"
@@ -33,7 +32,6 @@ export function Omni() {
     <Command shouldFilter={false} className="h-full">
       <Dialog open={isPaletteOpen} onOpenChange={closePalette}>
         <DialogContent className="overflow-hidden p-0 shadow-2xl max-w-200 sm:rounded-2xl border-border/60 bg-background/95 backdrop-blur-xl">
-
           <VisuallyHidden>
             <DialogTitle>Командный центр</DialogTitle>
           </VisuallyHidden>
@@ -60,9 +58,9 @@ export function Omni() {
                 {filter.isDefaultView && (
                   <>
                     <CommandGroup heading="Быстрый переход">
-                      <CommandItem onSelect={() => run(() => setView('inbox'))}><Layers className="mr-2 h-4 w-4" /> Инбокс</CommandItem>
-                      <CommandItem onSelect={() => run(() => setView('focus'))}><Focus className="mr-2 h-4 w-4" /> Фокус</CommandItem>
-                      <CommandItem onSelect={() => run(() => setView('plan'))}><ListTodo className="mr-2 h-4 w-4" /> План</CommandItem>
+                      <CommandItem onSelect={() => run(() => setView('inbox'))}><Layers className="h-4 w-4" /> Инбокс</CommandItem>
+                      <CommandItem onSelect={() => run(() => setView('focus'))}><Focus className="h-4 w-4" /> Фокус</CommandItem>
+                      <CommandItem onSelect={() => run(() => setView('plan'))}><ListTodo className="h-4 w-4" /> План</CommandItem>
                     </CommandGroup>
                     <CommandSeparator />
                   </>
@@ -104,9 +102,8 @@ export function Omni() {
               </CommandList>
             </Command>
           )}
-
         </DialogContent>
       </Dialog>
-    </Command>
+    </Command >
   )
 }

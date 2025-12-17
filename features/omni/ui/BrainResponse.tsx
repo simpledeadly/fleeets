@@ -1,6 +1,7 @@
 import { motion } from "framer-motion"
 import { useTypewriter } from '@/lib/hooks/useTypewriter'
 import { useStore } from '@/lib/store'
+import { MarkdownRenderer } from '@/app/components/ui/MarkdownRenderer'
 
 export function BrainResponse({ text, sources }: { text: string, sources: any[] }) {
   const { setFocusedItem } = useStore()
@@ -10,13 +11,14 @@ export function BrainResponse({ text, sources }: { text: string, sources: any[] 
     <div className="flex flex-col gap-1">
       <p className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">Ответ AI</p>
       <div className="space-y-3 w-full">
-        <p className="text-sm leading-relaxed whitespace-pre-wrap">
+        <div className="text-sm leading-relaxed whitespace-pre-wrap">
+          {/* <MarkdownRenderer content={text} /> */}
           {text}
           {/* Курсор, пока печатает */}
           {text.length < text.length && (
             <span className="inline-block w-1.5 h-4 ml-1 align-middle bg-amber-400 animate-pulse" />
           )}
-        </p>
+        </div>
 
         {sources.length > 0 && (
           <motion.div

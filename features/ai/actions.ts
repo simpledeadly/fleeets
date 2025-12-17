@@ -1,8 +1,9 @@
 'use server'
 
+import OpenAI from 'openai'
 import { Item } from '@/lib/store'
 import { createClient } from '@/lib/supabase/server'
-import OpenAI from 'openai'
+import { getSystemPromptTools } from '@/features/gen-ui'
 
 // Настраиваем клиента на OpenRouter
 const openai = new OpenAI({
@@ -248,27 +249,18 @@ export async function askBrain(question: string) {
     )
     .join('\n\n')
 
+  const toolsPrompt = getSystemPromptTools()
+
   const systemPrompt = `
-    ТЫ — ВТОРОЙ МОЗГ. Твоя цель — помогать пользователю работать с задачами.
+    ТЫ — ВТОРОЙ МОЗГ.
     
-    У тебя есть два режима ответа. Ты должен САМ выбрать режим на основе запроса.
+    У тебя есть набор визуальных инструментов. Выбери подходящий или ответь текстом.
 
-    РЕЖИМ 1: ТЕКСТОВЫЙ ОТВЕТ (Default)
-    Используй, если пользователь задает вопрос ("Где паспорт?", "Что я делал вчера?").
-    Формат ответа: Просто текст.
+    ИНСТРУМЕНТЫ:
+    ${toolsPrompt}
 
-    РЕЖИМ 2: ДЕКОМПОЗИЦИЯ / ПЛАНИРОВАНИЕ (Action)
-    Используй, если пользователь просит:
-    - "Разбей задачу..."
-    - "Составь план..."
-    - "Что нужно сделать, чтобы..."
-    - "Придумай шаги для..."
-    
-    В этом режиме ты должен вернуть ТОЛЬКО JSON объект следующего вида (без markdown, без лишнего текста):
-    {
-      "type": "decomposition",
-      "data": ["Шаг 1", "Шаг 2", "Шаг 3"]
-    }
+    ЕСЛИ НУЖЕН ИНСТРУМЕНТ: Верни ТОЛЬКО JSON объект.
+    ЕСЛИ НЕТ ПОДХОДЯЩЕГО: Отвечай обычным текстом, без markdown.
 
     КОНТЕКСТ ИЗ БАЗЫ:
     ${contextString}
@@ -302,15 +294,15 @@ export async function askBrain(question: string) {
         const parsed = JSON.parse(cleanContent)
 
         // Если это наш формат GenUI
-        if (parsed.type === 'decomposition') {
+        if (parsed.type && parsed.data) {
           return {
-            answer: null, // Текста нет
-            genUI: parsed, // Есть UI данные
+            answer: null,
+            genUI: parsed,
             sources: contextItems,
           }
         }
       }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       // Если не парсится — значит это просто текст
     }

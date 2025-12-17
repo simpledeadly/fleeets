@@ -6,8 +6,8 @@ import { createItemWithAI } from "@/features/ai/actions"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
 
-export function GenDecompose({ initialTasks }: { initialTasks: string[] }) {
-  const [tasks, setTasks] = useState(initialTasks)
+export function GenDecompose({ data }: { data: string[] }) {
+  const [tasks, setTasks] = useState(data)
   const [isSaving, setIsSaving] = useState(false)
   const [isDone, setIsDone] = useState(false)
 

@@ -4,7 +4,7 @@
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus, Mic, ArrowUp, BrainCircuit, Loader2, BookOpen, Square } from "lucide-react"
+import { Plus, Mic, ArrowUp, BrainCircuit, Loader2, Square } from "lucide-react"
 import { createItemWithAI, searchWithAI, transcribeAudio, askBrain } from "@/features/ai"
 import { useCommandCenterStore } from '../model/store'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
@@ -19,10 +19,10 @@ export function CaptureBar() {
   const { increment, decrement, togglePalette } = useCommandCenterStore()
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [suggestions, setSuggestions] = useState<Item[]>([])
-  const [isSearching, setIsSearching] = useState(false) // Локальный лоадер
+  const [isSearching, setIsSearching] = useState(false)
   const debouncedText = useDebounce(text, 700)
   const { setFocusedItem } = useStore()
-  const { check, isPro, openPaywall } = usePaywall()
+  const { isPro, openPaywall } = usePaywall()
   const [brainMode, setBrainMode] = useState(false)
   const [brainAnswer, setBrainAnswer] = useState<{ answer: string, sources: any[] } | null>(null)
   const [isThinking, setIsThinking] = useState(false)
@@ -69,7 +69,7 @@ export function CaptureBar() {
         } else {
           setSuggestions([{
             content: 'Семантический поиск доступен в PRO'
-          }])
+          }] as any)
         }
       } else {
         setSuggestions([])
@@ -186,7 +186,7 @@ export function CaptureBar() {
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute bottom-full w-full mb-3 p-4 rounded-2xl bg-card/90 backdrop-blur-xl border border-amber-500/20 shadow-2xl text-foreground"
+            className="absolute bottom-full w-full mb-3 p-4 rounded-2xl bg-amber-500/10 backdrop-blur-xl border border-amber-500/50 shadow-2xl text-white max-h-[60vh] overflow-y-auto no-scrollbar"
           >
             <BrainResponse text={brainAnswer.answer} sources={brainAnswer.sources} />
           </motion.div>
@@ -195,10 +195,10 @@ export function CaptureBar() {
 
       <form
         onSubmit={handleSubmit}
-        className={cn("relative flex items-center gap-2 p-2 backdrop-blur-xl border shadow-lg", suggestions.length > 0 ? "rounded-t-0 rounded-b-3xl" : "rounded-full",
+        className={cn("relative flex items-center gap-1 p-1 bg-card/80 backdrop-blur-xl border shadow-lg transition-colors duration-150", suggestions.length > 0 ? "rounded-t-0 rounded-b-3xl" : "rounded-full",
           brainMode
-            ? "bg-card/90 border-amber-500/50 shadow-amber-500/10" // Стиль Мозга
-            : "dark:bg-card/80 border-border" // Обычный стиль
+            ? "border-amber-500/30 bg-amber-500/10" // Стиль Мозга
+            : "border-border" // Обычный стиль
         )}
       >
         {/* Кнопка Плюс (будущий Cmd+K) */}

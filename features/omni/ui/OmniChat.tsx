@@ -2,70 +2,69 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Command, CommandInput, CommandList } from "@/components/ui/command"
-import { Loader2, BrainCircuit } from "lucide-react"
 import { askBrain } from "@/features/ai/actions"
 import { toast } from "sonner"
 import { BrainResponse } from './BrainResponse'
-import { GenDecompose } from '@/features/gen-ui'
+import { GEN_UI_REGISTRY, isGenUITool } from '@/features/gen-ui'
 
 export function OmniChat({ initialQuery }: { initialQuery: string }) {
-  // Сразу чистим запрос от "?"
   const [query, setQuery] = useState(initialQuery.replace(/^\?/, "").trim())
 
-  // Стейт для данных (как в CaptureBar)
+  // Стейт теперь хранит или обычный ответ, или GenUI данные
   const [brainData, setBrainData] = useState<{ answer: string, sources: any[] } | null>(null)
-  const [isThinking, setIsThinking] = useState(false)
-
   const [genUIData, setGenUIData] = useState<{ type: string, data: any } | null>(null)
 
-  // Чтобы не делать запрос дважды при маунте
+  const [isThinking, setIsThinking] = useState(false)
   const hasFetched = useRef(false)
 
-  const handleSearch = async (textToAsk: string) => {
-    if (!textToAsk.trim()) return
-
+  const performSearch = async (text: string) => {
     setIsThinking(true)
-    setBrainData(null) // Сброс старого ответа
-    setGenUIData(null) // Сброс
+    setBrainData(null)
+    setGenUIData(null)
 
-    // Прямой вызов твоей рабочей функции
-    const result = await askBrain(textToAsk)
+    const result = await askBrain(text)
 
     setIsThinking(false)
 
     if (result.genUI) {
       setGenUIData(result.genUI)
-      setBrainData({ answer: "Вот план действий:", sources: result.sources || [] }) // Опционально
+      setBrainData({ answer: "Сгенерировал интерфейс:", sources: result.sources || [] })
     } else if (result.answer) {
       setBrainData({ answer: result.answer, sources: result.sources || [] })
-    } else if (result.error) {
-      toast.error("Ошибка AI: " + result.error)
     } else {
       toast.error("Мозг не ответил")
     }
   }
 
-  // Авто-старт при открытии (если уже что-то ввел)
   useEffect(() => {
-    if (!hasFetched.current && query.length > 0) {
+    if (!hasFetched.current && initialQuery.trim().length > 0) {
       hasFetched.current = true
-      handleSearch(query)
+
+      const t = setTimeout(() => {
+        performSearch(initialQuery.replace(/^\?/, "").trim())
+      }, 0)
+
+      return () => clearTimeout(t)
     }
   }, [])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !isThinking) {
-      handleSearch(query)
+      performSearch(query)
     }
   }
 
+  const ToolComponent = genUIData && isGenUITool(genUIData.type)
+    ? GEN_UI_REGISTRY[genUIData.type].component
+    : null
+
   return (
-    <Command shouldFilter={false} className="h-full">
+    <Command shouldFilter={false}>
       <CommandInput
         value={query}
         onValueChange={setQuery}
         onKeyDown={handleKeyDown}
-        className="text-sm text-foreground placeholder:text-muted-foreground/50"
+        className="text-md text-foreground placeholder:text-muted-foreground/50"
         placeholder="Вопрос к базе знаний..."
         autoFocus
       />
@@ -79,15 +78,15 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
           </div>
         )}
 
-        {/* Рендер GenUI */}
-        {genUIData?.type === 'decomposition' && (
-          <div className="mb-6">
-            <GenDecompose initialTasks={genUIData.data} />
+        {/* 1. РЕНДЕР ГЕНЕРАТИВНОГО КОМПОНЕНТА */}
+        {ToolComponent && genUIData && (
+          <div className="mb-6 animate-in fade-in zoom-in-95 duration-150">
+            <ToolComponent initialTasks={genUIData.data} />
           </div>
         )}
 
-        {/* Вывод ответа через твой компонент */}
-        {!genUIData && brainData && (
+        {/* 2. РЕНДЕР ТЕКСТА */}
+        {brainData && (
           <BrainResponse
             text={brainData.answer}
             sources={brainData.sources}
