@@ -13,7 +13,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { useStore } from "@/lib/store"
 import { useCommandCenterStore } from "../model/store"
-import { Layers, ListTodo, Focus, CheckCircle2, Archive, Circle, Tag, Sparkles, Check } from "lucide-react"
+import { Layers, ListTodo, Focus, CheckCircle2, Archive, Circle, Tag, Check, BrainCircuit } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 
@@ -157,19 +157,19 @@ export function Omni() {
               <>
                 <CommandGroup heading="Действия">
                   <CommandItem onSelect={() => alert("AI Chat coming soon")}>
-                    <Sparkles className="mr-2 h-4 w-4 text-amber-500" /> Спросить AI (начни с ?)
+                    <BrainCircuit className="h-4 w-4 text-amber-500" /> Спросить AI (начни с ?)
                   </CommandItem>
                 </CommandGroup>
 
                 <CommandGroup heading="Навигация">
                   <CommandItem onSelect={() => run(() => setView('inbox'))}>
-                    <Layers className="mr-2 h-4 w-4" /> Инбокс
+                    <Layers className="h-4 w-4" /> Инбокс
                   </CommandItem>
                   <CommandItem onSelect={() => run(() => setView('focus'))}>
-                    <Focus className="mr-2 h-4 w-4" /> Фокус
+                    <Focus className="h-4 w-4" /> Фокус
                   </CommandItem>
                   <CommandItem onSelect={() => run(() => setView('plan'))}>
-                    <ListTodo className="mr-2 h-4 w-4" /> План
+                    <ListTodo className="h-4 w-4" /> План
                   </CommandItem>
                 </CommandGroup>
                 <CommandSeparator />
