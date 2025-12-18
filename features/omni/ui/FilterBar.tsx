@@ -25,7 +25,7 @@ export function FilterBar({ activeStatus, setActiveStatus, activeTags, toggleTag
       {topTags.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center">
           <Tag size={12} className="text-muted-foreground shrink-0 mr-1" />
-          {topTags.slice(0, 8).map(tag => (
+          {topTags.map(tag => (
             <Badge
               key={tag}
               variant={activeTags.includes(tag) ? "default" : "outline"}
