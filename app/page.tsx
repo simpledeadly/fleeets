@@ -11,7 +11,7 @@ import { FocusModal } from '@/features/focus'
 import { Settings } from 'lucide-react'
 
 export default function Home() {
-  const { isLoading, currentView, focusedItem, setFocusedItem } = useStore()
+  const { isLoading, currentView, focusItem, setFocusItem } = useStore()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   if (isLoading) {
@@ -35,9 +35,9 @@ export default function Home() {
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
       <FocusModal
-        item={focusedItem}
-        isOpen={!!focusedItem}
-        onClose={() => setFocusedItem(null)}
+        item={focusItem}
+        isOpen={!!focusItem}
+        onClose={() => setFocusItem(null)}
       />
 
       <div className="w-full max-w-md space-y-8 flex flex-col items-center">

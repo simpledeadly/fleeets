@@ -174,10 +174,12 @@ export async function searchWithAI(query: string): Promise<SearchResult[]> {
 
   const ftsQuery = query.trim().split(' ').join(' & ') + ':*'
 
-  // --- 1. Быстрый текстовый поиск (FTS) ---
+  // --- 1. Быстрый текстовый поиск (FTS) с фильтром ---
   const { data: ftsResults } = await supabase
     .from('items')
     .select()
+    // 👇 ГЛАВНЫЙ ФИКС: Исключаем inbox и deleted
+    .not('status', 'in', '("inbox", "deleted")')
     .textSearch('content', ftsQuery, { type: 'websearch', config: 'russian' })
     .limit(10)
 
@@ -187,23 +189,24 @@ export async function searchWithAI(query: string): Promise<SearchResult[]> {
   }))
 
   // --- 2. Глубокий семантический поиск (RAG) ---
-  // Генерируем вектор для запроса
+  // (Этот блок уже работает правильно, так как match_items фильтрует)
   const embeddingResponse = await openai.embeddings.create({
     model: 'openai/text-embedding-3-small',
     input: query,
   })
   const embedding = embeddingResponse.data[0].embedding
 
-  // Вызываем нашу SQL-функцию
   const { data: semanticResults } = await supabase.rpc('match_items', {
     query_embedding: embedding,
-    match_threshold: 0.35, // Более низкий порог, т.к. мы потом отфильтруем
-    match_count: 10,
+    match_threshold: 0.35,
+    match_count: 8,
     user_id_input: user.id,
   })
 
+  // 👇 Приводим к типу SearchResult сразу
   const semanticItems: SearchResult[] = (semanticResults || []).map(
-    (item: Item) => ({
+    (item: any) => ({
+      // Используем any, так как rpc возвращает untyped
       ...item,
       search_type: 'semantic',
     })
@@ -215,6 +218,7 @@ export async function searchWithAI(query: string): Promise<SearchResult[]> {
     new Map(allItems.map((item) => [item.id, item])).values()
   )
 
+  // Сортировка: сначала FTS, потом семантические по убыванию похожести
   uniqueItems.sort((a, b) => {
     if (a.search_type === 'fts' && b.search_type !== 'fts') return -1
     if (b.search_type === 'fts' && a.search_type !== 'fts') return 1

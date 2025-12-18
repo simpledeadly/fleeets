@@ -1,6 +1,6 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase/admin' 
+import { createAdminClient } from '@/lib/supabase/admin'
 
 // Цены (за 1 млн токенов ИЛИ за 1 минуту аудио)
 const PRICING = {
@@ -19,7 +19,13 @@ type ModelName = keyof typeof PRICING | string
 interface UsageParams {
   userId: string
   model: ModelName
-  action: 'rag_query' | 'create_item' | 'embedding' | 'chat' | 'transcription'
+  action:
+    | 'rag_query'
+    | 'create_item'
+    | 'embedding'
+    | 'chat'
+    | 'transcription'
+    | 'embedding_on_promote'
   inputTokens?: number
   outputTokens?: number
   seconds?: number

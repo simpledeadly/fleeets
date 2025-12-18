@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef } from "react"
 import confetti from "canvas-confetti"
-import { CheckCircle2, Save, X } from "lucide-react"
-import { type Item } from "@/lib/store"
+import { CheckCircle2, Save, Settings, X } from "lucide-react"
+import { useStore, type Item } from "@/lib/store"
 import { useDebounce } from "@/lib/hooks"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { SimilarItems } from "./SimilarItems"
 import { Timer as FocusTimer } from "./Timer"
-import { updateExecutionLog, completeItem, getFocusViewData } from "../model/actions"
+import { updateExecutionLog, completeItem } from "@/features/item"
+import { getFocusViewData } from '../model/actions'
 
 interface FocusModalProps {
   item: Item | null
@@ -19,6 +20,8 @@ interface FocusModalProps {
 type FocusData = { totalDuration: number, similarItems: any[] }
 
 export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
+  const { focusItem, setFocusItem, setEditingItem } = useStore()
+
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   const [logText, setLogText] = useState("")
   const [viewData, setViewData] = useState<{ totalDuration: number, similarItems: any[] } | null>(null)
@@ -98,17 +101,24 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={!!focusItem} onOpenChange={() => setFocusItem(null)}>
       <DialogContent className="max-w-2xl h-[85vh] p-0 gap-0 overflow-hidden bg-card flex flex-col sm:rounded-3xl border-border outline-none">
         {item && (
           <>
-            <DialogTitle className="sr-only">
+            <DialogTitle>
               Режим фокуса: {item.content}
             </DialogTitle>
 
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border/50 shrink-0">
               <div className="flex items-center gap-2">
+                <button onClick={() => setEditingItem(focusItem)} className="p-2 hover:bg-secondary rounded-full">
+                  <Settings size={16} />
+                </button>
+                <button onClick={() => setFocusItem(null)} className="p-2 ...">
+                  <X size={20} />
+                </button>
+
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Focus Mode</span>
               </div>

@@ -15,7 +15,6 @@ export function FilterBar({ activeStatus, setActiveStatus, activeTags, toggleTag
     <div className="flex flex-col gap-2 p-3 border-b border-border/40 bg-muted/20">
       <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
         <FilterChip label="Все" active={activeStatus === null} onClick={() => setActiveStatus(null)} />
-        <FilterChip label="Inbox" icon={<Layers size={12} />} active={activeStatus === 'inbox'} onClick={() => setActiveStatus(activeStatus === 'inbox' ? null : 'inbox')} />
         <FilterChip label="Focus" icon={<Focus size={12} />} active={activeStatus === 'today'} onClick={() => setActiveStatus(activeStatus === 'today' ? null : 'today')} />
         <FilterChip label="Plan" icon={<ListTodo size={12} />} active={activeStatus === 'planned'} onClick={() => setActiveStatus(activeStatus === 'planned' ? null : 'planned')} />
         <FilterChip label="Done" icon={<CheckCircle2 size={12} />} active={activeStatus === 'done'} onClick={() => setActiveStatus(activeStatus === 'done' ? null : 'done')} />

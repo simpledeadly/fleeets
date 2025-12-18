@@ -14,7 +14,7 @@ import { OmniChat } from "./OmniChat"
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
 export function Omni() {
-  const { setFocusedItem, setView } = useStore()
+  const { setFocusItem, setView } = useStore()
   const { isPaletteOpen, closePalette } = useCommandCenterStore()
 
   // Логика фильтров
@@ -33,7 +33,7 @@ export function Omni() {
       <Dialog open={isPaletteOpen} onOpenChange={closePalette}>
         <DialogContent className="overflow-hidden p-0 shadow-2xl max-w-200 sm:rounded-2xl border-border/60 bg-background/95 backdrop-blur-xl">
           <VisuallyHidden>
-            <DialogTitle>Командный центр</DialogTitle>
+            <DialogTitle className="sr-only">Командный центр</DialogTitle>
           </VisuallyHidden>
 
           {/* РЕЖИМ 1: AI CHAT */}
@@ -67,12 +67,12 @@ export function Omni() {
                 )}
 
                 {/* СПИСОК ЗАДАЧ */}
-                <CommandGroup heading={filter.searchQuery ? `Найдено (${filter.filteredItems.length})` : "Последние задачи"}>
-                  {filter.filteredItems.map((item) => (
+                <CommandGroup heading={filter.searchQuery ? `Найдено (${filter.visibleItems.length})` : "Последние задачи"}>
+                  {filter.visibleItems.map((item) => (
                     <CommandItem
                       key={item.id}
                       value={item.content} // value нужен для ключа, хоть фильтрация отключена
-                      onSelect={() => run(() => setFocusedItem(item))}
+                      onSelect={() => run(() => setFocusItem(item))}
                       className="cursor-pointer"
                     >
                       {item.type === 'task' && item.status === 'done' ?

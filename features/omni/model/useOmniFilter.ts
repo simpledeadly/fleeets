@@ -36,26 +36,32 @@ export function useOmniFilter() {
   }, [items])
 
   // Фильтрация
-  const filteredItems = useMemo(() => {
-    let result = items
+  const visibleItems = useMemo(() => {
+    let result = items.filter(
+      (item) => item.status !== 'inbox' && item.status !== 'deleted'
+    )
 
-    if (activeStatus) result = result.filter((i) => i.status === activeStatus)
+    // А. Фильтр по статусу
+    if (activeStatus) {
+      // Мы уже отфильтровали inbox и deleted, так что здесь всё ок
+      result = result.filter((item) => item.status === activeStatus)
+    }
 
     if (activeTags.length > 0) {
-      result = result.filter(
-        (i) => i.ai_tags && activeTags.every((t) => i.ai_tags!.includes(t))
-      )
+      result = result.filter((item) => {
+        if (!item.ai_tags) return false
+        return activeTags.every((t) => item.ai_tags!.includes(t))
+      })
     }
 
     if (searchQuery.trim() !== '') {
-      const lower = searchQuery.toLowerCase()
-      result = result.filter(
-        (i) =>
-          i.content.toLowerCase().includes(lower) ||
-          (i.description && i.description.toLowerCase().includes(lower)) ||
-          (i.raw_content && i.raw_content.toLowerCase().includes(lower)) ||
-          i.ai_tags?.some((t) => t.toLowerCase().includes(lower))
-      )
+      const lowerQuery = searchQuery.toLowerCase()
+      result = result.filter((item) => {
+        return (
+          item.content.toLowerCase().includes(lowerQuery) ||
+          item.ai_tags?.some((tag) => tag.toLowerCase().includes(lowerQuery))
+        )
+      })
     }
 
     result.sort((a, b) => {
@@ -80,7 +86,7 @@ export function useOmniFilter() {
     setActiveStatus,
     activeTags,
     toggleTag,
-    filteredItems,
+    visibleItems,
     topTags,
     isDefaultView: !searchQuery && !activeStatus && activeTags.length === 0,
   }

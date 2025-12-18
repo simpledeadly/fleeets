@@ -15,8 +15,10 @@ interface AppState {
   isInitialized: boolean
   currentView: View
   setView: (view: View) => void
-  focusedItem: Item | null
-  setFocusedItem: (item: Item | null) => void
+  focusItem: Item | null // Для модалки фокуса
+  setFocusItem: (item: Item | null) => void
+  editingItem: Item | null // Для сайдбара-редактора
+  setEditingItem: (item: Item | null) => void
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -41,6 +43,8 @@ export const useStore = create<AppState>((set) => ({
     set((state) => ({
       items: state.items.filter((item) => item.id !== itemId),
     })),
-  focusedItem: null,
-  setFocusedItem: (item) => set({ focusedItem: item }),
+  focusItem: null,
+  setFocusItem: (item) => set({ focusItem: item }),
+  editingItem: null,
+  setEditingItem: (item) => set({ editingItem: item }),
 }))

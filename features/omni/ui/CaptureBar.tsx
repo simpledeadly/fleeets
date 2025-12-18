@@ -5,7 +5,8 @@ import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { motion, AnimatePresence } from "framer-motion"
 import { Plus, Mic, ArrowUp, BrainCircuit, Loader2, Square } from "lucide-react"
-import { createItemWithAI, searchWithAI, transcribeAudio, askBrain } from "@/features/ai"
+import { createItemWithAI } from "@/features/item"
+import { searchWithAI, transcribeAudio, askBrain } from "@/features/ai"
 import { useCommandCenterStore } from '../model/store'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
 import { Item, useStore } from '@/lib/store'

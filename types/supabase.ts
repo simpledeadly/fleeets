@@ -158,7 +158,7 @@ export type Database = {
           content: string
           created_at: string | null
           description: string | null
-          embedding: string | null
+          embedding: number[] | null
           execution_log: string | null
           id: string
           is_quick: boolean | null
@@ -177,7 +177,7 @@ export type Database = {
           content: string
           created_at?: string | null
           description?: string | null
-          embedding?: string | null
+          embedding?: number[] | null
           execution_log?: string | null
           id?: string
           is_quick?: boolean | null
@@ -196,7 +196,7 @@ export type Database = {
           content?: string
           created_at?: string | null
           description?: string | null
-          embedding?: string | null
+          embedding?: number[] | null
           execution_log?: string | null
           id?: string
           is_quick?: boolean | null

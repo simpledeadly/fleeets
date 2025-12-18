@@ -5,5 +5,6 @@ export {
   searchWithAI,
   findSimilarItemsByQuery,
   askBrain,
-  type SearchResult
+  type SearchResult,
 } from './actions'
+export { logTokenUsage } from './analytics'

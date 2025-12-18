@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 
 export default function PlanList() {
   const items = useStore((state) => state.items)
-  const { setFocusedItem } = useStore()
+  const { setFocusItem } = useStore()
 
   const tasks = items
     .filter(item => item.status === 'planned' && item.type === 'task')
@@ -50,7 +50,7 @@ export default function PlanList() {
         return (
           <div
             key={task.id}
-            onClick={() => setFocusedItem(task)}
+            onClick={() => setFocusItem(task)}
             className={cn(
               "relative group flex flex-col gap-2 p-4 rounded-2xl border border-border/60 hover:border-border active:scale-[0.98] bg-card shadow-sm transition-all duration-150 cursor-pointer",
               opacityClass,

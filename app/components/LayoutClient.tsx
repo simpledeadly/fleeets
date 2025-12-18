@@ -4,6 +4,7 @@ import { useHotkeys } from "@/lib/hooks"
 import { useCommandCenterStore, PendingIndicator, Omni, CaptureBar } from "@/features/omni"
 import BottomNav from "./BottomNav"
 import { AnimatePresence, motion } from "framer-motion"
+import { ItemEditor } from '@/features/item'
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
   const { togglePalette, isPaletteOpen } = useCommandCenterStore()
@@ -32,6 +33,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
       </AnimatePresence>
 
       <BottomNav />
+      <ItemEditor />
     </>
   )
 }
