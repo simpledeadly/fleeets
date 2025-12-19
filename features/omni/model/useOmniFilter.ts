@@ -9,12 +9,14 @@ export function useOmniFilter() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeStatus, setActiveStatus] = useState<string | null>(null)
   const [activeTags, setActiveTags] = useState<string[]>([])
+  const [isQuick, setIsQuick] = useState<boolean | null>(false)
 
   // Сброс при закрытии
   useEffect(() => {
     if (!isPaletteOpen) {
       const t = setTimeout(() => {
         setActiveStatus(null)
+        setIsQuick(null)
         setActiveTags([])
         setSearchQuery('')
       }, 300)
@@ -41,10 +43,12 @@ export function useOmniFilter() {
       (item) => item.status !== 'inbox' && item.status !== 'deleted'
     )
 
-    // А. Фильтр по статусу
     if (activeStatus) {
-      // Мы уже отфильтровали inbox и deleted, так что здесь всё ок
       result = result.filter((item) => item.status === activeStatus)
+    }
+
+    if (isQuick) {
+      result = result.filter((item) => item.is_quick === isQuick)
     }
 
     if (activeTags.length > 0) {
@@ -70,8 +74,8 @@ export function useOmniFilter() {
       return dateB - dateA
     })
 
-    return result.slice(0, 40)
-  }, [items, activeStatus, activeTags, searchQuery])
+    return result.slice(0, 30)
+  }, [items, activeStatus, isQuick, activeTags, searchQuery])
 
   const toggleTag = (tag: string) => {
     setActiveTags((prev) =>
@@ -84,6 +88,8 @@ export function useOmniFilter() {
     setSearchQuery,
     activeStatus,
     setActiveStatus,
+    isQuick,
+    setIsQuick,
     activeTags,
     toggleTag,
     visibleItems,
