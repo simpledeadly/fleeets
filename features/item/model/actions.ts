@@ -91,7 +91,7 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
   if (error) return { error: error.message }
   revalidatePath('/')
   return { success: true }
-} // <--- ВОТ ПРОПУЩЕННАЯ СКОБКА
+}
 
 // 3. МЯГКОЕ УДАЛЕНИЕ
 export async function softDeleteItem(itemId: string) {

@@ -1,20 +1,28 @@
-"use client"
+'use client'
 
-import { useStore, type View } from "@/lib/store"
-import { Layers, ListTodo, Archive, Zap, Focus, Lock, ShieldUser } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { usePaywall } from "@/features/paywall"
+import { useStore, type View } from '@/lib/store'
+import {
+  Layers,
+  ListTodo,
+  Archive,
+  Zap,
+  Focus,
+  Lock,
+  ShieldUser,
+} from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { usePaywall } from '@/features/paywall'
 import { redirect } from 'next/navigation'
 
 export default function BottomNav() {
   const { currentView, setView, items } = useStore()
   const { check, isPro } = usePaywall()
 
-  const inboxCount = items.filter(i => i.status === 'inbox').length
+  const inboxCount = items.filter((i) => i.status === 'inbox').length
 
   const tabs: { name: string; view: View; icon: React.ElementType }[] = [
-    { name: "Инбокс", view: "inbox", icon: Layers },
-    { name: "Фокус", view: "focus", icon: Focus },
+    { name: 'Инбокс', view: 'inbox', icon: Layers },
+    { name: 'Фокус', view: 'focus', icon: Focus },
     // { name: "План", view: "plan", icon: ListTodo },
     // { name: "Архив", view: "archive", icon: Archive },
   ]
@@ -26,8 +34,8 @@ export default function BottomNav() {
     if (!check('blitz_mode')) return
 
     // TODO: Здесь будет логика включения блиц-режима
-    console.log("⚡️ Блиц-режим активирован (доступно только для PRO)")
-    alert("Блиц-режим включен!")
+    console.log('⚡️ Блиц-режим активирован (доступно только для PRO)')
+    alert('Блиц-режим включен!')
   }
 
   const handleRedirectToAdminDashboard = () => {
@@ -45,10 +53,10 @@ export default function BottomNav() {
               onClick={() => setView(tab.view)}
               aria-label={tab.name}
               className={cn(
-                "relative cursor-pointer flex flex-col items-center justify-center w-10 h-10 rounded-full transition-all duration-150",
+                'relative cursor-pointer flex flex-col items-center justify-center w-10 h-10 rounded-full transition-all duration-150',
                 isActive
-                  ? "bg-foreground text-background scale-110"
-                  : "text-muted-foreground hover:bg-foreground/5"
+                  ? 'bg-foreground text-background scale-110'
+                  : 'text-muted-foreground hover:bg-foreground/5'
               )}
             >
               <tab.icon size={18} strokeWidth={isActive ? 2 : 1.8} />
@@ -70,7 +78,11 @@ export default function BottomNav() {
           className="group relative flex cursor-pointer items-center justify-center w-10 h-10 rounded-full text-amber-500 hover:bg-amber-500/10 dark:hover:bg-amber-500/5 transition-colors"
           aria-label="Блиц-режим"
         >
-          <Zap size={18} fill="currentColor" className="transition-transform group-active:scale-90" />
+          <Zap
+            size={18}
+            fill="currentColor"
+            className="transition-transform group-active:scale-90"
+          />
 
           {!isPro && (
             <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-transparent">
@@ -88,7 +100,11 @@ export default function BottomNav() {
               className="group relative flex cursor-pointer items-center justify-center w-10 h-10 rounded-full text-amber-500 hover:bg-amber-500/10 dark:hover:bg-amber-500/5 transition-colors"
               aria-label="Админ-дашборд"
             >
-              <ShieldUser size={18} fill="currentColor" className="transition-transform group-active:scale-90" />
+              <ShieldUser
+                size={18}
+                fill="currentColor"
+                className="transition-transform group-active:scale-90"
+              />
             </button>
           </>
         )}
