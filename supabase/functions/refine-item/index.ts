@@ -44,7 +44,14 @@ serve(async (req) => {
       )
     }
 
-    const textToProcess = originalItem.raw_content || originalItem.content
+    const textToProcess = `Исходный текст: ${
+      originalItem.raw_content || originalItem.content
+    }
+      ${
+        originalItem.description
+          ? '\nОписание:\n' + originalItem.description
+          : ''
+      }`
 
     // 2. Отправляем в AI (тот же самый промпт)
     const response = await fetch(
@@ -61,15 +68,16 @@ serve(async (req) => {
             {
               role: 'system',
               content: `
-              Ты — профессиональный секретарь. Преобразуй сырую мысль в четкую задачу.
-              ВХОД: "${textToProcess}"
+              Ты — профессиональный секретарь. Преобразуй сырую мысль в чёткую задачу.
+
               ПРАВИЛА:
-              1. Title: Краткий заголовок (до 7 слов), глагол в начале.
+              1. Title: Создай яркое, креативное, метафоричное название для этой задачи, как будто это квест в игре Cyberpunk 2077.
               2. Description: Полное описание, если нужно.
-              3. Priority: 'high', 'medium', 'low'.
+              3. Priority: 'critical' 'high', 'medium', 'low'.
               4. Type: 'task', 'note', 'thought', 'resource'.
               5. Is_Quick: true, если меньше 5 минут.
               6. Tags: Массив из 2-5 тегов (существительные, lowercase, на языке текста). Примеры: ["work", "bugfix"], ["здоровье", "магазин"].
+
               ОТВЕТ В ФОРМАТЕ JSON: { "title": "...", "description": "...", "priority": "...", "type": "...", "is_quick": boolean, "tags": ["tag1", "tag2"] }
             `,
             },
