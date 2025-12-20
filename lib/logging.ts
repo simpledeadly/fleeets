@@ -10,6 +10,7 @@ type EventType =
   | 'item.delete'
   | 'item.triage'
   | 'item.log_update'
+  | 'item.decompose'
   | 'focus.session'
 
 interface LogEventParams {

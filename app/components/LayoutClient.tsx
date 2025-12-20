@@ -26,6 +26,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
       <Omni />
 
       <FocusModal
+        // key={focusItem?.id || 'modal-closed'}
         item={focusItem}
         isOpen={!!focusItem}
         onClose={() => setFocusItem(null)}

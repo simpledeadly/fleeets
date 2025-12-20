@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { toast } from 'sonner'
 import {
   Mic,
   Sparkles,
@@ -11,11 +13,12 @@ import {
   CheckSquare,
   FileBox,
   CheckCircle2,
+  Spline,
+  Loader2,
 } from 'lucide-react'
-import { type Item } from '@/lib/store'
-import { useItemActions } from '@/features/item/model/useItemActions'
 import { cn } from '@/lib/utils'
-import { completeItem } from '@/features/item'
+import { useStore, type Item } from '@/lib/store'
+import { useItemActions, completeItem, decomposeTask } from '@/features/item'
 
 interface CardFaceProps {
   item: Item
@@ -25,6 +28,7 @@ interface CardFaceProps {
   index: number
   total: number
   setEditing: (isEditing: boolean) => void
+  hasSimilar: boolean
 }
 
 export function CardFace({
@@ -34,8 +38,34 @@ export function CardFace({
   onFlip,
   total,
   setEditing,
+  // hasSimilar,
 }: CardFaceProps) {
   const { update, toggleBlitz, setType } = useItemActions(item)
+  const [isDecomposing, setIsDecomposing] = useState(false)
+
+  // Новый хендлер
+  const handleDecompose = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsDecomposing(true)
+
+    const result = await decomposeTask(item.id)
+
+    setIsDecomposing(false)
+
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      // Здесь можно показать результат (например, в модалке)
+      // Или просто сказать "Готово, 3 подзадачи в Инбоксе"
+      toast.success(`Задача разбита на шаги!\nШагов: ${result.count}`)
+      // После этого исходная задача должна удалиться или уйти в архив
+    }
+
+    if (result.success && result.newItems) {
+      result.newItems.forEach((newItem) => useStore.getState().addItem(newItem))
+      useStore.getState().removeItem(item.id)
+    }
+  }
 
   const types = [
     { id: 'task', icon: CheckSquare },
@@ -73,10 +103,24 @@ export function CardFace({
           ))}
         </div>
 
-        {/* Счетчик */}
-        <span className="text-sm font-mono text-muted-foreground/50">
-          #{total}
-        </span>
+        <div className="flex gap-2 items-center">
+          {/* Счетчик */}
+          <span className="text-sm font-mono font-medium text-muted-foreground/50">
+            #{total}
+          </span>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onFlip(e)
+            }}
+            className="p-2 rounded-full text-muted-foreground hover:bg-muted hover:text-primary transition-colors cursor-pointer"
+            title="Показать исходник и связи"
+          >
+            <Eye strokeWidth={1.6} size={20} />
+            {/* <BurningEye /> */}
+          </button>
+        </div>
       </div>
 
       {/* --- Центральная часть (РЕДАКТИРУЕМЫЙ Контент) --- */}
@@ -122,7 +166,6 @@ export function CardFace({
 
       {/* --- Нижняя часть (Кнопки действий) --- */}
       <div className="flex justify-around items-center pt-2 border-t border-border">
-        {/* Блиц (Твоя просьба) */}
         <button
           onClick={(e) => {
             e.stopPropagation()
@@ -132,34 +175,44 @@ export function CardFace({
             'p-2 rounded-full transition-colors cursor-pointer',
             item.is_quick
               ? 'text-amber-500 bg-amber-500/10'
-              : 'text-muted-foreground hover:bg-muted'
+              : 'text-muted-foreground hover:bg-muted hover:text-primary'
           )}
           title="Блиц (2-5 мин)"
         >
-          <Zap strokeWidth={1.6} size={20} fill={item.is_quick ? 'currentColor' : 'none'} />
-        </button>
-
-        <button
-          onClick={onFlip}
-          className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
-        >
-          <Eye strokeWidth={1.6} size={20} />
+          <Zap
+            strokeWidth={1.6}
+            size={20}
+            fill={item.is_quick ? 'currentColor' : 'none'}
+          />
         </button>
 
         <button
           onClick={async () => completeItem(item.id)}
-          className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+          className="p-2 rounded-full text-muted-foreground hover:bg-muted  hover:text-primary transition-colors cursor-pointer"
         >
           <CheckCircle2 strokeWidth={1.6} size={20} />
         </button>
 
         <button
+          onClick={handleDecompose}
+          disabled={isDecomposing || isProcessing}
+          className="p-2 rounded-full text-muted-foreground hover:bg-muted hover:text-primary transition-colors disabled:opacity-50 cursor-pointer"
+          title="Разбить на шаги (AI)"
+        >
+          {isDecomposing ? (
+            <Loader2 strokeWidth={1.6} size={20} className="animate-spin" />
+          ) : (
+            <Spline strokeWidth={1.6} size={20} />
+          )}
+        </button>
+
+        <button
           onClick={onRefine}
           disabled={isProcessing}
-          className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors disabled:opacity-50 cursor-pointer"
+          className="p-2 rounded-full text-muted-foreground hover:bg-muted  hover:text-primary transition-colors disabled:opacity-50 cursor-pointer"
         >
           {isProcessing ? (
-            <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+            <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent hover:text-primary rounded-full animate-spin" />
           ) : (
             <Sparkles strokeWidth={1.6} size={20} />
           )}

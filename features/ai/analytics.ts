@@ -9,6 +9,11 @@ const PRICING = {
     output: 0,
     unit: '1M_tokens',
   }, // https://openrouter.ai/openai/text-embedding-3-small
+  'meta-llama/llama-3.1-8b-instruct': {
+    input: 0.02,
+    output: 0.03,
+    unit: '1M_tokens',
+  }, // https://openrouter.ai/meta-llama/llama-3.1-8b-instruct
   'llama-3.1-8b-instant': { input: 0.05, output: 0.08, unit: '1M_tokens' }, // https://console.groq.com/docs/model/llama-3.1-8b-instant
   'llama-3.3-70b-versatile': { input: 0.59, output: 0.79, unit: '1M_tokens' }, // https://console.groq.com/docs/model/llama-3.3-70b-versatile
   'whisper-large-v3': { input: 0.002, output: 0, unit: 'minute' }, // https://console.groq.com/docs/model/whisper-large-v3

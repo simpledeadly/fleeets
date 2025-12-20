@@ -6,3 +6,13 @@
 3. StoreInitializer: Это "бутстрап" приложения. Ему положено знать обо всем.
 
 http://localhost:3001/api/admin/vectorize
+
+
+
+чтобы подгрузить типы с Supabase на локалку, в код, нужно выполнить эти команды:
+
+npx supabase link
+
+а затем
+
+npx supabase gen types typescript --linked --schema public > types/supabase.ts

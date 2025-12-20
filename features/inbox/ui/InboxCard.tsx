@@ -36,6 +36,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [similarItems, setSimilarItems] = useState<Item[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [hasSimilar, setHasSimilar] = useState(false) 
 
   // Твои таймеры и пороги
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
@@ -56,10 +57,10 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
         setIsSearching(true)
         try {
           const results = await findSimilarItems(item.id)
-          if (results && results.length > 0 && results.similarity > 50) {
+          if (results && results.length > 0) {
             setSimilarItems(results as any)
-            // 🔥 АВТО-ПЕРЕВОРОТ
-            setIsFlipped(true)
+            setHasSimilar(true) // 🔥 Вместо флипа - просто ставим флаг
+            // setIsFlipped(true)
           }
         } catch (e) {
           console.error('Auto-search failed:', e)
@@ -222,9 +223,10 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
             item={item}
             isProcessing={isProcessing}
             onRefine={handleRefine}
+            hasSimilar={hasSimilar} 
             onFlip={handleFlip}
-            index={index} // Для счетчика
-            total={total} // Для счетчика
+            index={index}
+            total={total}
             setEditing={setIsEditing}
           />
           <CardBack

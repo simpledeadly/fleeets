@@ -158,17 +158,23 @@ export type Database = {
           content: string
           created_at: string | null
           description: string | null
-          embedding: number[] | null
+          embedding: string | null
           execution_log: string | null
+          first_interaction_at: string | null
           id: string
+          interaction_count: number | null
           is_quick: boolean | null
           metadata: Json | null
+          parent_id: string | null
           planned_at: string | null
           priority: Database["public"]["Enums"]["priority_level"] | null
           raw_content: string | null
+          revision_count: number | null
           scope: Database["public"]["Enums"]["app_scope"] | null
+          sentiment: string | null
           status: Database["public"]["Enums"]["item_status"] | null
           type: Database["public"]["Enums"]["item_type"] | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
@@ -177,17 +183,23 @@ export type Database = {
           content: string
           created_at?: string | null
           description?: string | null
-          embedding?: number[] | null
+          embedding?: string | null
           execution_log?: string | null
+          first_interaction_at?: string | null
           id?: string
+          interaction_count?: number | null
           is_quick?: boolean | null
           metadata?: Json | null
+          parent_id?: string | null
           planned_at?: string | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
           raw_content?: string | null
+          revision_count?: number | null
           scope?: Database["public"]["Enums"]["app_scope"] | null
+          sentiment?: string | null
           status?: Database["public"]["Enums"]["item_status"] | null
           type?: Database["public"]["Enums"]["item_type"] | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
@@ -196,20 +208,33 @@ export type Database = {
           content?: string
           created_at?: string | null
           description?: string | null
-          embedding?: number[] | null
+          embedding?: string | null
           execution_log?: string | null
+          first_interaction_at?: string | null
           id?: string
+          interaction_count?: number | null
           is_quick?: boolean | null
           metadata?: Json | null
+          parent_id?: string | null
           planned_at?: string | null
           priority?: Database["public"]["Enums"]["priority_level"] | null
           raw_content?: string | null
+          revision_count?: number | null
           scope?: Database["public"]["Enums"]["app_scope"] | null
+          sentiment?: string | null
           status?: Database["public"]["Enums"]["item_status"] | null
           type?: Database["public"]["Enums"]["item_type"] | null
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "items_user_id_fkey"
             columns: ["user_id"]
@@ -402,7 +427,36 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_item_total_duration: { Args: { item_uuid: string }; Returns: number }
+      match_items: {
+        Args: {
+          match_count: number
+          match_threshold: number
+          query_embedding: string
+          user_id_input: string
+        }
+        Returns: {
+          ai_tags: string[]
+          completed_at: string
+          content: string
+          created_at: string
+          description: string
+          embedding: string
+          execution_log: string
+          id: string
+          is_quick: boolean
+          metadata: Json
+          parent_id: string
+          planned_at: string
+          priority: Database["public"]["Enums"]["priority_level"]
+          raw_content: string
+          scope: Database["public"]["Enums"]["app_scope"]
+          similarity: number
+          status: Database["public"]["Enums"]["item_status"]
+          type: Database["public"]["Enums"]["item_type"]
+          user_id: string
+        }[]
+      }
     }
     Enums: {
       app_scope: "fleeets" | "randona" | "flode"
