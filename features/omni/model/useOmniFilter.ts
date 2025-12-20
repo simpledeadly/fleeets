@@ -63,6 +63,10 @@ export function useOmniFilter() {
       result = result.filter((item) => {
         return (
           item.content.toLowerCase().includes(lowerQuery) ||
+          (item.description &&
+            item.description.toLowerCase().includes(lowerQuery)) ||
+          (item.raw_content &&
+            item.raw_content.toLowerCase().includes(lowerQuery)) ||
           item.ai_tags?.some((tag) => tag.toLowerCase().includes(lowerQuery))
         )
       })
