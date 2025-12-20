@@ -10,10 +10,12 @@ import {
   Lightbulb,
   CheckSquare,
   FileBox,
+  CheckCircle2,
 } from 'lucide-react'
 import { type Item } from '@/lib/store'
 import { useItemActions } from '@/features/item/model/useItemActions'
 import { cn } from '@/lib/utils'
+import { completeItem } from '@/features/item'
 
 interface CardFaceProps {
   item: Item
@@ -142,6 +144,13 @@ export function CardFace({
           className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
         >
           <Eye size={20} />
+        </button>
+
+        <button
+          onClick={async () => completeItem(item.id)}
+          className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
+        >
+          <CheckCircle2 size={20} />
         </button>
 
         <button
