@@ -59,7 +59,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           <div className="space-y-3">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Ваш план</h3>
 
-            <div className={`relative overflow-hidden rounded-2xl border p-5 transition-all duration-500 ${isPro ? 'bg-zinc-900 dark:bg-zinc-100 border-zinc-900' : 'bg-secondary/50 border-border'}`}>
+            <div className={`relative overflow-hidden rounded-2xl border p-5 transition-all duration-500 ${isPro ? 'bg-zinc-900 dark:bg-zinc-50 border-zinc-900' : 'bg-secondary/50 border-border'}`}>
               {isPro && (
                 <div className="absolute -right-4 -top-4 opacity-10 animate-pulse">
                   <Sparkles size={100} />
