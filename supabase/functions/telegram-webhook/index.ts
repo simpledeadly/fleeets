@@ -1,7 +1,11 @@
 // supabase/functions/telegram-webhook/index.ts
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { getEmbedding, logEdgeUsage } from '../_shared/analytics.ts'
+import {
+  getEmbedding,
+  logEdgeUsage,
+  logActivity,
+} from '../_shared/analytics.ts'
 
 const BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN')!
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
@@ -190,6 +194,17 @@ serve(async (req) => {
         metadata: { source: 'voice' },
       })
 
+      await logActivity({
+        userId: userId,
+        source: 'telegram_bot',
+        category: 'item.create',
+        details: {
+          source: 'voice',
+          duration: message.voice.duration,
+          is_telegram: true,
+        },
+      })
+
       await sendMessage(chatId, `✅ Задача:\n"${transcribedText}"`)
       return new Response('OK')
     }
@@ -219,6 +234,17 @@ serve(async (req) => {
         `❌ Ошибка записи в БД:\nCode: ${error.code}\nMsg: ${error.message}\nDetails: ${error.details}`
       )
     } else {
+      await logActivity({
+        userId: userId,
+        source: 'telegram_bot',
+        category: 'item.create',
+        details: {
+          source: 'text',
+          length: text.length,
+          is_telegram: true,
+        },
+      })
+
       await setReaction(chatId, message.message_id, '👍')
       // await sendMessage(chatId, '✅ Записано (Debug)') // Раскомментируй, если реакцию не видно
     }

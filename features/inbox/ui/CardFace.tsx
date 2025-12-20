@@ -74,7 +74,7 @@ export function CardFace({
         </div>
 
         {/* Счетчик */}
-        <span className="text-[10px] font-mono text-muted-foreground/50">
+        <span className="text-sm font-mono text-muted-foreground/50">
           #{total}
         </span>
       </div>
@@ -108,7 +108,7 @@ export function CardFace({
             if (e.target.value !== (item.description || ''))
               update({ description: e.target.value })
           }}
-          className="w-full bg-transparent text-md font-medium text-muted-foreground leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20 min-h-12"
+          className="w-full bg-transparent text-md font-medium text-muted-foreground leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20 min-h-36"
           placeholder="Описание..."
         />
 
@@ -121,7 +121,7 @@ export function CardFace({
       </div>
 
       {/* --- Нижняя часть (Кнопки действий) --- */}
-      <div className="flex justify-between items-center pt-4 border-t border-border">
+      <div className="flex justify-around items-center pt-2 border-t border-border">
         {/* Блиц (Твоя просьба) */}
         <button
           onClick={(e) => {
@@ -136,21 +136,21 @@ export function CardFace({
           )}
           title="Блиц (2-5 мин)"
         >
-          <Zap size={20} fill={item.is_quick ? 'currentColor' : 'none'} />
+          <Zap strokeWidth={1.6} size={20} fill={item.is_quick ? 'currentColor' : 'none'} />
         </button>
 
         <button
           onClick={onFlip}
           className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
         >
-          <Eye size={20} />
+          <Eye strokeWidth={1.6} size={20} />
         </button>
 
         <button
           onClick={async () => completeItem(item.id)}
           className="p-2 rounded-full text-muted-foreground hover:bg-muted transition-colors cursor-pointer"
         >
-          <CheckCircle2 size={20} />
+          <CheckCircle2 strokeWidth={1.6} size={20} />
         </button>
 
         <button
@@ -161,7 +161,7 @@ export function CardFace({
           {isProcessing ? (
             <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
           ) : (
-            <Sparkles size={20} />
+            <Sparkles strokeWidth={1.6} size={20} />
           )}
         </button>
       </div>

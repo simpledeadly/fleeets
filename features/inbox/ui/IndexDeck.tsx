@@ -1,24 +1,79 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '@/lib/store'
 import { InboxCard } from './InboxCard'
+import { getInboxStats } from '../model/stats'
+
+const EMPTY_MESSAGES = [
+  'Инбокс чист, как совесть младенца 🧘‍♂️',
+  'Хаос побежден. Пока что.',
+  'Отличная работа! Можно выпить кофе ☕️',
+  'Пустота — это начало творчества.',
+  'Zero Inbox. Ты сделал это! 🔥',
+  'Тишина и покой...',
+  'Все по полочкам. Кайф.',
+  'Красава, Марат!',
+]
 
 export function InboxDeck() {
   const allItems = useStore((state) => state.items)
+  const [stats, setStats] = useState({ today: 0, total: 0 })
+  const [randomMessage, setRandomMessage] = useState('')
 
-  // Твоя логика фильтрации
   const inboxTasks = useMemo(
     () => allItems.filter((item) => item.status === 'inbox'),
     [allItems]
   )
 
-  if (inboxTasks.length === 0) {
+  const isEmpty = inboxTasks.length === 0
+
+  useEffect(() => {
+    if (isEmpty) {
+      getInboxStats().then(setStats)
+
+      const t = setTimeout(() => {
+        setRandomMessage(
+          EMPTY_MESSAGES[Math.floor(Math.random() * EMPTY_MESSAGES.length)]
+        )
+      }, 0)
+
+      return () => clearTimeout(t)
+    }
+  }, [isEmpty])
+
+  if (isEmpty) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 text-center animate-in fade-in">
-        <div className="text-6xl mb-4">🧘‍♂️</div>
-        <h2 className="text-2xl font-bold">Инбокс пуст</h2>
+      <div className="flex flex-col items-center justify-center h-full min-h-[50vh] text-center animate-in fade-in space-y-6">
+        <div className="text-6xl animate-bounce duration-2000">✨</div>
+
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold px-8 leading-relaxed">
+            {randomMessage || 'Инбокс пуст'}
+          </h2>
+        </div>
+
+        {/* Блок статистики */}
+        <div className="flex gap-6 text-sm text-muted-foreground bg-secondary/30 px-6 py-3 rounded-2xl border border-border/50">
+          <div className="flex flex-col items-center">
+            <span className="font-bold text-foreground text-2xl">
+              {stats.today}
+            </span>
+            <span className="text-[10px] uppercase tracking-wider opacity-70">
+              За сегодня
+            </span>
+          </div>
+          <div className="w-px bg-border/50" />
+          <div className="flex flex-col items-center">
+            <span className="font-bold text-foreground text-2xl">
+              {stats.total}
+            </span>
+            <span className="text-[10px] uppercase tracking-wider opacity-70">
+              Всего
+            </span>
+          </div>
+        </div>
       </div>
     )
   }

@@ -1,13 +1,21 @@
-"use client"
+'use client'
 
-import { useHotkeys } from "@/lib/hooks"
-import { useCommandCenterStore, PendingIndicator, Omni, CaptureBar } from "@/features/omni"
-import BottomNav from "./BottomNav"
-import { AnimatePresence, motion } from "framer-motion"
+import { useHotkeys } from '@/lib/hooks'
+import {
+  useCommandCenterStore,
+  PendingIndicator,
+  Omni,
+  CaptureBar,
+} from '@/features/omni'
+import BottomNav from './BottomNav'
+import { AnimatePresence, motion } from 'framer-motion'
 import { ItemEditor } from '@/features/item'
+import { FocusModal } from '@/features/focus'
+import { useStore } from '@/lib/store'
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
   const { togglePalette, isPaletteOpen } = useCommandCenterStore()
+  const { focusItem, setFocusItem } = useStore()
 
   // Подключаем хоткей
   useHotkeys([['mod+k', togglePalette]])
@@ -16,6 +24,12 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
     <>
       {children}
       <Omni />
+
+      <FocusModal
+        item={focusItem}
+        isOpen={!!focusItem}
+        onClose={() => setFocusItem(null)}
+      />
 
       {/* Обертка для анимации */}
       <AnimatePresence>

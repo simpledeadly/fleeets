@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { Database } from '@/types/supabase'
 import OpenAI from 'openai'
-import { logTokenUsage } from '@/features/ai'
+import { logTokenUsage } from '@/features/ai/analytics'
+import { logEvent } from '@/lib/logging' // Твой новый логгер событий
 
 const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -13,7 +14,9 @@ const openai = new OpenAI({
 
 type Item = Database['public']['Tables']['items']['Row']
 
-// 1. СОЗДАНИЕ (Без векторов)
+/**
+ * 1. СОЗДАНИЕ (Легкое, без векторов)
+ */
 export async function createItemWithAI(text: string) {
   const supabase = await createClient()
   const {
@@ -31,11 +34,28 @@ export async function createItemWithAI(text: string) {
         type: 'task',
         raw_content: text,
         metadata: { source: 'web' },
+        revision_count: 0,
+        interaction_count: 0,
       })
       .select()
       .single()
 
     if (error) throw error
+
+    // Логируем событие создания
+    if (data) {
+      await logEvent({
+        userId: user.id,
+        itemId: data.id,
+        eventType: 'item.create',
+        meta: {
+          length: text.length,
+          source: 'web',
+          item_content: data.content
+        },
+      })
+    }
+
     revalidatePath('/')
     return { success: true, item: data }
   } catch (e: any) {
@@ -43,81 +63,176 @@ export async function createItemWithAI(text: string) {
   }
 }
 
-// 2. ОБНОВЛЕНИЕ (С "Умной Векторизацией")
+/**
+ * 2. УНИВЕРСАЛЬНОЕ ОБНОВЛЕНИЕ (Ядро логики)
+ * Включает: Аналитику, Векторизацию, Счетчики, Смену статусов
+ */
 export async function updateItem(itemId: string, data: Partial<Item>) {
   const supabase = await createClient()
 
-  // Проверяем, нужно ли генерировать вектор
-  if (data.status && data.status !== 'inbox' && data.status !== 'deleted') {
-    const { data: currentItem } = await supabase
-      .from('items')
-      .select('status, content, description, raw_content, user_id')
-      .eq('id', itemId)
-      .single()
+  // А. Получаем текущее состояние (со всеми полями)
+  const { data: currentItem, error: fetchError } = await supabase
+    .from('items')
+    .select('*') // Берем всё, чтобы видеть старые статусы и счетчики
+    .eq('id', itemId)
+    .single()
 
-    if (currentItem?.status === 'inbox') {
+  if (fetchError || !currentItem) return { error: 'Item not found' }
+
+  // Б. Готовим объект обновлений
+  // Мы используем any для updates, чтобы TS не ругался на динамические поля,
+  // но data типизирована
+  const updates: any = { ...data }
+
+  // --- ЛОГИКА СЧЕТЧИКОВ ---
+  updates.interaction_count = (currentItem.interaction_count || 0) + 1
+  updates.updated_at = new Date().toISOString()
+
+  if (data.content && data.content !== currentItem.content) {
+    updates.revision_count = (currentItem.revision_count || 0) + 1
+  }
+
+  // Фиксируем начало работы над задачей
+  if (
+    !currentItem.first_interaction_at &&
+    currentItem.status === 'inbox' &&
+    data.status &&
+    data.status !== 'inbox'
+  ) {
+    updates.first_interaction_at = new Date().toISOString()
+  }
+
+  // --- ЛОГИКА ДАТ ---
+  if (data.status === 'today' && !data.planned_at) {
+    updates.planned_at = new Date().toISOString()
+  }
+  if (data.status === 'done' && !data.completed_at) {
+    updates.completed_at = new Date().toISOString()
+  }
+
+  // --- ЛОГИКА ВЕКТОРИЗАЦИИ (При выходе из Инбокса) ---
+  if (data.status && data.status !== 'inbox' && data.status !== 'deleted') {
+    if (currentItem.status === 'inbox') {
       console.log(`🧠 Векторизация при переходе из Inbox: ${itemId}`)
+
       const textForEmbedding = `${currentItem.content}\n${
         currentItem.description || ''
       }\n${currentItem.raw_content || ''}`.trim()
 
-      const embeddingModel = 'openai/text-embedding-3-small'
-      const embeddingResponse = await openai.embeddings.create({
-        model: embeddingModel,
-        input: textForEmbedding,
-      })
-
-      // Добавляем эмбеддинг к данным для обновления
-      data.embedding = embeddingResponse.data[0].embedding
-
-      if (embeddingResponse.usage && currentItem.user_id) {
-        logTokenUsage({
-          userId: currentItem.user_id, // Берем ID из задачи
+      try {
+        const embeddingModel = 'openai/text-embedding-3-small'
+        const embeddingResponse = await openai.embeddings.create({
           model: embeddingModel,
-          action: 'embedding_on_promote', // Особый экшен
-          inputTokens: embeddingResponse.usage.prompt_tokens,
-          outputTokens: 0,
+          input: textForEmbedding,
         })
+
+        updates.embedding = embeddingResponse.data[0].embedding
+
+        // Лог затрат на AI
+        if (embeddingResponse.usage) {
+          logTokenUsage({
+            userId: currentItem.user_id,
+            model: embeddingModel,
+            action: 'embedding_on_promote',
+            inputTokens: embeddingResponse.usage.prompt_tokens,
+            outputTokens: 0,
+          })
+        }
+      } catch (e) {
+        console.error('Embedding failed during update:', e)
+        // Не прерываем обновление, если AI упал
       }
     }
   }
 
-  // Логика planned_at
-  if (data.status === 'today' && !data.planned_at) {
-    data.planned_at = new Date().toISOString()
+  // --- ЛОГИРОВАНИЕ СОБЫТИЙ (DATA HOARDING) ---
+  const logPromises = []
+
+  // 1. Смена статуса (Воронка)
+  if (data.status && data.status !== currentItem.status) {
+    // Триггер разбора инбокса
+    if (currentItem.status === 'inbox') {
+      logPromises.push(
+        logEvent({
+          userId: currentItem.user_id,
+          itemId: itemId,
+          eventType: 'item.triage', // <--- Специальное событие
+          meta: { destination: data.status, item_content: currentItem.content },
+        })
+      )
+    }
+
+    logPromises.push(
+      logEvent({
+        userId: currentItem.user_id,
+        itemId: itemId,
+        eventType: 'item.status_change',
+        meta: {
+          from: currentItem.status,
+          to: data.status,
+          item_content: currentItem.content,
+          // Сколько времени висело в старом статусе (в часах)
+          hours_in_status:
+            Math.round(
+              ((Date.now() -
+                new Date(
+                  currentItem.updated_at || currentItem.created_at
+                ).getTime()) /
+                1000 /
+                3600) *
+                10
+            ) / 10,
+        },
+      })
+    )
+  }
+  // 2. Просто редактирование
+  else if (Object.keys(data).length > 0) {
+    logPromises.push(
+      logEvent({
+        userId: currentItem.user_id,
+        itemId: itemId,
+        eventType: 'item.update',
+        meta: { fields: Object.keys(data) },
+      })
+    )
   }
 
-  const { error } = await supabase.from('items').update(data).eq('id', itemId)
+  // Запускаем логи в фоне, не ждем их
+  Promise.all(logPromises).catch((err) => console.error('Logging failed', err))
+
+  // В. Выполняем обновление
+  const { error } = await supabase
+    .from('items')
+    .update(updates)
+    .eq('id', itemId)
 
   if (error) return { error: error.message }
   revalidatePath('/')
   return { success: true }
 }
 
-// 3. МЯГКОЕ УДАЛЕНИЕ
+// === ОБЕРТКИ (ХЕЛПЕРЫ) ===
+// Используем их в UI для ясности, но внутри они все вызывают updateItem
+
 export async function softDeleteItem(itemId: string) {
   return await updateItem(itemId, { status: 'deleted' })
 }
 
-// 4. ЖЕСТКОЕ УДАЛЕНИЕ
+export async function completeItem(itemId: string) {
+  // Логика даты уже внутри updateItem
+  return await updateItem(itemId, { status: 'done' })
+}
+
+export async function updateExecutionLog(itemId: string, text: string) {
+  return await updateItem(itemId, { execution_log: text })
+}
+
+// Хард-делит остается отдельным, т.к. это DELETE, а не UPDATE
 export async function hardDeleteItem(itemId: string) {
   const supabase = await createClient()
   const { error } = await supabase.from('items').delete().eq('id', itemId)
-
   if (error) return { error: error.message }
   revalidatePath('/')
   return { success: true }
-}
-
-// 5. ЗАВЕРШЕНИЕ
-export async function completeItem(itemId: string) {
-  return await updateItem(itemId, {
-    status: 'done',
-    completed_at: new Date().toISOString(),
-  })
-}
-
-// 6. ОБНОВЛЕНИЕ ЛОГА
-export async function updateExecutionLog(itemId: string, text: string) {
-  return await updateItem(itemId, { execution_log: text })
 }

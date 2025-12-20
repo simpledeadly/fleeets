@@ -107,3 +107,21 @@ export async function getEmbedding(
     return null
   }
 }
+
+export async function logActivity(params: {
+  userId: string
+  source: string // 'telegram_bot'
+  category: string // 'item_create'
+  details: any
+}) {
+  const { error } = await supabase.from('activity_logs').insert({
+    user_id: params.userId,
+    source: params.source,
+    category: params.category,
+    started_at: new Date().toISOString(),
+    ended_at: new Date().toISOString(),
+    details: params.details,
+  })
+
+  if (error) console.error('Activity Log Error:', error)
+}

@@ -1,32 +1,24 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
+import { logEvent } from '@/lib/logging'
 
-export async function updateExecutionLog(itemId: string, text: string) {
-  const supabase = await createClient()
-
-  const { error } = await supabase
-    .from('items')
-    .update({ execution_log: text })
-    .eq('id', itemId)
-
-  if (error) {
-    console.error('Log update failed:', error)
-    return { error: error.message }
-  }
-
-  // revalidatePath не обязателен, если мы не обновляем список,
-  // но полезен для синхронизации
-  return { success: true }
-}
-
+/**
+ * Запись сессии таймера (Activity Log)
+ */
 export async function logFocusSession(itemId: string, durationSeconds: number) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return
+
+  // Получаем теги для аналитики
+  const { data: item } = await supabase
+    .from('items')
+    .select('ai_tags, content')
+    .eq('id', itemId)
+    .single()
 
   const endedAt = new Date()
   const startedAt = new Date(endedAt.getTime() - durationSeconds * 1000)
@@ -37,46 +29,33 @@ export async function logFocusSession(itemId: string, durationSeconds: number) {
     started_at: startedAt.toISOString(),
     ended_at: endedAt.toISOString(),
     category: 'deep_work',
-    details: { item_id: itemId },
+    details: {
+      item_id: itemId,
+      tags: item?.ai_tags || [],
+    },
   })
 
-  if (error) console.error('Session log error:', error)
-}
-
-export async function getItemTotalDuration(itemId: string) {
-  const supabase = await createClient()
-
-  const { data, error } = await supabase.rpc('get_item_total_duration', {
-    item_uuid: itemId,
-  })
-
-  if (error) {
-    console.error(error)
-    return 0
-  }
-
-  return data as number // Возвращает секунды
-}
-
-export async function completeItem(itemId: string) {
-  const supabase = await createClient()
-
-  const { error } = await supabase
-    .from('items')
-    .update({
-      status: 'done',
-      completed_at: new Date().toISOString(),
+  // Также пишем в нашу общую систему событий для единообразия
+  if (!error) {
+    await logEvent({
+      userId: user.id,
+      itemId: itemId,
+      eventType: 'focus.session',
+      startedAt: startedAt.toISOString(),
+      endedAt: endedAt.toISOString(),
+      meta: {
+        duration_seconds: durationSeconds, // Дублируем в meta для удобства JSON
+        tags: item?.ai_tags || [],
+        item_content: item?.content,
+      },
     })
-    .eq('id', itemId)
-
-  if (error) return { error: error.message }
-
-  revalidatePath('/') // Обновляем списки
-  return { success: true }
+  }
 }
 
+/**
+ * Оптимизированная загрузка данных для Фокуса (Batching)
+ */
 export async function getFocusViewData(itemId: string) {
-  // 1. Инициализация (ОДИН РАЗ)
   const supabase = await createClient()
   const {
     data: { user },
@@ -84,16 +63,16 @@ export async function getFocusViewData(itemId: string) {
 
   if (!user) return { totalDuration: 0, similarItems: [] }
 
-  // 2. Подготовка запросов (используем тот же клиент)
+  // Запускаем запросы параллельно используя один инстанс клиента
 
-  // Запрос А: Время (сразу отправляем промис)
+  // 1. Время
   const durationPromise = supabase.rpc('get_item_total_duration', {
     item_uuid: itemId,
   })
 
-  // Запрос Б: Похожие элементы (немного сложнее, т.к. нужно сначала достать вектор)
+  // 2. Контекст (RAG)
   const similarItemsPromise = (async () => {
-    // 2.1 Получаем вектор текущей задачи
+    // Сначала нужен вектор
     const { data: currentItem } = await supabase
       .from('items')
       .select('embedding')
@@ -102,7 +81,6 @@ export async function getFocusViewData(itemId: string) {
 
     if (!currentItem?.embedding) return []
 
-    // 2.2 Ищем похожие
     const { data } = await supabase.rpc('match_items', {
       query_embedding: currentItem.embedding,
       match_threshold: 0.5,
@@ -114,7 +92,6 @@ export async function getFocusViewData(itemId: string) {
     return data?.filter((i: any) => i.id !== itemId) || []
   })()
 
-  // 3. Ждем выполнения всех запросов параллельно
   const [durationResult, similarItems] = await Promise.all([
     durationPromise,
     similarItemsPromise,

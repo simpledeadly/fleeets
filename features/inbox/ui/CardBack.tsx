@@ -26,7 +26,7 @@ export function CardBack({ item, onFlip, setEditing }: CardBackProps) {
           Метаданные
         </h4>
         <div className="flex items-center gap-1.5 mt-1 text-zinc-400">
-          <Calendar size={12} />
+          <Calendar strokeWidth={1.6} size={12} />
           <span className="text-[10px] font-mono">
             {item.created_at
               ? format(new Date(item.created_at), 'd MMM HH:mm', { locale: ru })
@@ -37,7 +37,7 @@ export function CardBack({ item, onFlip, setEditing }: CardBackProps) {
           onClick={onFlip}
           className="p-2 rounded-full text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer"
         >
-          <EyeClosed size={20} />
+          <EyeClosed strokeWidth={1.6} size={20} />
         </button>
       </div>
 
