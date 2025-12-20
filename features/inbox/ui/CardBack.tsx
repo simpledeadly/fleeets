@@ -30,7 +30,7 @@ export function CardBack({
       style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
       className="absolute w-full h-full p-6 rounded-3xl border bg-background text-white shadow-2xl flex flex-col"
     >
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center mb-2">
         <h4 className="text-sm font-bold uppercase text-foreground">
           Метаданные
         </h4>
@@ -52,7 +52,7 @@ export function CardBack({
 
       {/* Редактируемый RAW */}
       <div
-        className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
+        className="flex-1 h-full overflow-y-auto custom-scrollbar"
         onClick={(e) => e.stopPropagation()}
       >
         <textarea
@@ -66,11 +66,11 @@ export function CardBack({
           }}
           placeholder="Исходного текста нет, но можно сюда добавить"
           onClick={(e) => e.stopPropagation()}
-          className="flex-1 w-full bg-transparent text-foreground overflow-y-auto whitespace-pre-wrap resize-none focus:outline-none"
+          className="w-full h-full bg-transparent text-foreground overflow-y-auto whitespace-pre-wrap resize-none focus:outline-none"
         />
       </div>
 
-      <div className="mt-4 pt-4 border-t border-white/10">
+      <div className="mt-2 pt-3 border-t border-white/10">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
           <Link size={12} />
           <span>Найденные связи</span>
@@ -88,7 +88,7 @@ export function CardBack({
               <button
                 key={similar.id}
                 onClick={() => setFocusItem(similar)}
-                className="w-full text-left text-xs p-2 rounded bg-white/5 hover:bg-white/10 transition-colors truncate"
+                className="w-full text-left text-xs p-2 rounded bg-white/5 hover:bg-white/10 transition-colors truncate cursor-pointer"
               >
                 - {similar.content}
                 <span className="font-mono opacity-50 ml-2">

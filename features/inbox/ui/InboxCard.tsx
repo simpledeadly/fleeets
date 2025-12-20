@@ -56,7 +56,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
         setIsSearching(true)
         try {
           const results = await findSimilarItems(item.id)
-          if (results && results.length > 0) {
+          if (results && results.length > 0 && results.similarity > 50) {
             setSimilarItems(results as any)
             // 🔥 АВТО-ПЕРЕВОРОТ
             setIsFlipped(true)
