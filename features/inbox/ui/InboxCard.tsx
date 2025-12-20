@@ -13,6 +13,7 @@ import { type Item } from '@/lib/store'
 import { useItemActions } from '@/features/item/model/useItemActions'
 import { CardFace } from './CardFace'
 import { CardBack } from './CardBack'
+import { findSimilarItems } from '@/features/ai'
 
 interface InboxCardProps {
   item: Item
@@ -33,6 +34,8 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
   const [swipeState, setSwipeState] = useState<SwipeState>('idle')
   const [isProcessing, setIsProcessing] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
+  const [similarItems, setSimilarItems] = useState<Item[]>([])
+  const [isSearching, setIsSearching] = useState(false)
 
   // Твои таймеры и пороги
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
@@ -44,6 +47,30 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
   const x = useMotionValue(0)
   const y = useMotionValue(0)
   const rotate = useTransform(x, [-300, 300], [-15, 15])
+
+  useEffect(() => {
+    // Искать только для верхней карты и только один раз
+    if (isTop && !isSearching && similarItems.length === 0) {
+      // Задержка, чтобы не спамить, если юзер быстро свайпает
+      const searchTimer = setTimeout(async () => {
+        setIsSearching(true)
+        try {
+          const results = await findSimilarItems(item.id)
+          if (results && results.length > 0) {
+            setSimilarItems(results as any)
+            // 🔥 АВТО-ПЕРЕВОРОТ
+            setIsFlipped(true)
+          }
+        } catch (e) {
+          console.error('Auto-search failed:', e)
+        } finally {
+          setIsSearching(false)
+        }
+      }, 700) // 0.7 секунды
+
+      return () => clearTimeout(searchTimer)
+    }
+  }, [isTop, item.id])
 
   // Твоя логика штампов
   const getStampText = () => {
@@ -200,7 +227,13 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
             total={total} // Для счетчика
             setEditing={setIsEditing}
           />
-          <CardBack item={item} onFlip={handleFlip} setEditing={setIsEditing} />
+          <CardBack
+            item={item}
+            onFlip={handleFlip}
+            setEditing={setIsEditing}
+            similarItems={similarItems}
+            isSearching={isSearching}
+          />
         </motion.div>
 
         {/* ШТАМП (Твой код) */}
