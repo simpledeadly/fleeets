@@ -70,7 +70,7 @@ export function CardBack({
         />
       </div>
 
-      <div className="mt-2 pt-3 border-t border-white/10">
+      <div className="mt-2 pt-3 border-t border-border">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
           <Link size={12} />
           <span>Найденные связи</span>
