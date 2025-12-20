@@ -29,6 +29,7 @@ export async function createItemWithAI(text: string) {
         content: text,
         status: 'inbox',
         type: 'task',
+        raw_content: text,
         metadata: { source: 'web' },
       })
       .select()

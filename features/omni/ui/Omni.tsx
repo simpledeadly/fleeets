@@ -1,16 +1,24 @@
-"use client"
+'use client'
 
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command"
-import { useStore } from "@/lib/store"
-import { useCommandCenterStore } from "../model/store"
-import { Layers, ListTodo, Focus, CheckCircle2, Circle } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from '@/components/ui/command'
+import { useStore } from '@/lib/store'
+import { useCommandCenterStore } from '../model/store'
+import { Layers, Focus, CheckCircle2, Circle } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 // Импорт декомпозированных частей
-import { useOmniFilter } from "../model/useOmniFilter"
-import { FilterBar } from "./FilterBar"
-import { OmniChat } from "./OmniChat"
+import { useOmniFilter } from '../model/useOmniFilter'
+import { FilterBar } from './FilterBar'
+import { OmniChat } from './OmniChat'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
 export function Omni() {
@@ -21,7 +29,7 @@ export function Omni() {
   const filter = useOmniFilter()
 
   // Режим AI: Если запрос начинается с ?
-  const isAiMode = filter.searchQuery.startsWith("?")
+  const isAiMode = filter.searchQuery.startsWith('?')
 
   const run = (action: () => void) => {
     closePalette()
@@ -40,7 +48,6 @@ export function Omni() {
           {isAiMode ? (
             <OmniChat initialQuery={filter.searchQuery} />
           ) : (
-
             /* РЕЖИМ 2: СТАНДАРТНЫЙ ПОИСК */
             <Command shouldFilter={false} className="h-full">
               <CommandInput
@@ -58,16 +65,25 @@ export function Omni() {
                 {filter.isDefaultView && (
                   <>
                     <CommandGroup heading="Быстрый переход">
-                      <CommandItem onSelect={() => run(() => setView('inbox'))}><Layers className="h-4 w-4" /> Инбокс</CommandItem>
-                      <CommandItem onSelect={() => run(() => setView('focus'))}><Focus className="h-4 w-4" /> Фокус</CommandItem>
-                      <CommandItem onSelect={() => run(() => setView('plan'))}><ListTodo className="h-4 w-4" /> План</CommandItem>
+                      <CommandItem onSelect={() => run(() => setView('inbox'))}>
+                        <Layers className="h-4 w-4" />Инбокс
+                      </CommandItem>
+                      <CommandItem onSelect={() => run(() => setView('focus'))}>
+                        <Focus className="h-4 w-4" />Фокус
+                      </CommandItem>
                     </CommandGroup>
                     <CommandSeparator />
                   </>
                 )}
 
                 {/* СПИСОК ЗАДАЧ */}
-                <CommandGroup heading={filter.searchQuery ? `Найдено (${filter.visibleItems.length})` : "Последние задачи"}>
+                <CommandGroup
+                  heading={
+                    filter.searchQuery
+                      ? `Найдено (${filter.visibleItems.length})`
+                      : 'Последние задачи'
+                  }
+                >
                   {filter.visibleItems.map((item) => (
                     <CommandItem
                       key={item.id}
@@ -75,13 +91,22 @@ export function Omni() {
                       onSelect={() => run(() => setFocusItem(item))}
                       className="cursor-pointer"
                     >
-                      {item.type === 'task' && item.status === 'done' ?
-                        <CheckCircle2 className="h-4 w-4 text-green-500" /> :
-                        item.type === 'task' && item.status !== 'done' &&
-                        <Circle className="h-4 w-4 text-muted-foreground" />
-                      }
+                      {item.type === 'task' && item.status === 'done' ? (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      ) : (
+                        item.type === 'task' &&
+                        item.status !== 'done' && (
+                          <Circle className="h-4 w-4 text-muted-foreground" />
+                        )
+                      )}
 
-                      <span className={cn("flex-1 truncate", item.status === 'done' && "line-through text-muted-foreground")}>
+                      <span
+                        className={cn(
+                          'flex-1 truncate',
+                          item.status === 'done' &&
+                            'line-through text-muted-foreground'
+                        )}
+                      >
                         {item.content}
                       </span>
 
@@ -91,11 +116,17 @@ export function Omni() {
                             {item.ai_tags[0]}
                           </span>
                         )}
-                        {item.ai_tags && item.ai_tags.length > 1 && (<span className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
-                          ...
-                        </span>)}
+                        {item.ai_tags && item.ai_tags.length > 1 && (
+                          <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
+                            ...
+                          </span>
+                        )}
                       </div>
-                      {!filter.activeStatus && <div className="flex text-xs text-muted-foreground">{item.status}</div>}
+                      {!filter.activeStatus && (
+                        <div className="flex text-xs text-muted-foreground">
+                          {item.status}
+                        </div>
+                      )}
                     </CommandItem>
                   ))}
                 </CommandGroup>
@@ -104,6 +135,6 @@ export function Omni() {
           )}
         </DialogContent>
       </Dialog>
-    </Command >
+    </Command>
   )
 }

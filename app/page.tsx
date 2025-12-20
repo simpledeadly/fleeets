@@ -3,8 +3,6 @@
 import { useState } from 'react'
 import { useStore } from "@/lib/store"
 import InboxDeck from "./components/InboxDeck"
-import PlanList from "./components/PlanList"
-import ArchiveList from './components/ArchiveList'
 import FocusList from './components/FocusList'
 import { SettingsModal } from '@/features/settings'
 import { FocusModal } from '@/features/focus'
@@ -51,8 +49,6 @@ export default function Home() {
 
         {currentView === 'inbox' && <InboxDeck />}
         {currentView === 'focus' && <FocusList />}
-        {currentView === 'plan' && <PlanList />}
-        {currentView === 'archive' && <ArchiveList />}
       </div>
     </main>
   )
