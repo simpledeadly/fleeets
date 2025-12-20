@@ -51,15 +51,15 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
   if (data.status && data.status !== 'inbox' && data.status !== 'deleted') {
     const { data: currentItem } = await supabase
       .from('items')
-      .select('status, content, description, user_id')
+      .select('status, content, description, raw_content, user_id')
       .eq('id', itemId)
       .single()
 
     if (currentItem?.status === 'inbox') {
       console.log(`🧠 Векторизация при переходе из Inbox: ${itemId}`)
-      const textForEmbedding = `${currentItem.content} \n ${
+      const textForEmbedding = `${currentItem.content}\n${
         currentItem.description || ''
-      }`.trim()
+      }\n${currentItem.raw_content || ''}`.trim()
 
       const embeddingModel = 'openai/text-embedding-3-small'
       const embeddingResponse = await openai.embeddings.create({

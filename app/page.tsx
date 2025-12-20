@@ -1,8 +1,8 @@
-"use client"
+'use client'
 
 import { useState } from 'react'
-import { useStore } from "@/lib/store"
-import InboxDeck from "./components/InboxDeck"
+import { useStore } from '@/lib/store'
+import { InboxDeck } from '@/features/inbox'
 import FocusList from './components/FocusList'
 import { SettingsModal } from '@/features/settings'
 import { FocusModal } from '@/features/focus'
@@ -30,7 +30,10 @@ export default function Home() {
       </button>
 
       {/* Модалка */}
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
 
       <FocusModal
         item={focusItem}
@@ -39,7 +42,6 @@ export default function Home() {
       />
 
       <div className="w-full max-w-md space-y-8 flex flex-col items-center">
-
         <div className="text-center space-y-2 mb-8 animate-in fade-in">
           <h1 className="text-4xl font-bold tracking-tighter">Fleeets</h1>
           <p className="text-muted-foreground text-sm">

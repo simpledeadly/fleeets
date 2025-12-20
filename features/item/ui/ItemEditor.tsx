@@ -42,7 +42,7 @@ export function ItemEditor() {
   }
 
   return (
-    <Sheet open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)} className="z-999">
+    <Sheet open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
       <SheetContent>
         {editingItem && (
           <>
