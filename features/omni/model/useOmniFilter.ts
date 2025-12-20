@@ -32,9 +32,7 @@ export function useOmniFilter() {
         (tag) => (tagCounts[tag] = (tagCounts[tag] || 0) + 1)
       )
     })
-    return Object.keys(tagCounts)
-      .sort((a, b) => tagCounts[b] - tagCounts[a])
-      .slice(0, 8)
+    return Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a])
   }, [items])
 
   // Фильтрация
