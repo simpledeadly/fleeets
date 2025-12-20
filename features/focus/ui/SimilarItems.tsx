@@ -42,7 +42,7 @@ function SkeletonCard() {
 }
 
 export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
-  const { setFocusedItem } = useStore()
+  const { setFocusItem } = useStore()
 
   return (
     <motion.div layout="position" className="space-y-3">
@@ -75,7 +75,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
                 hidden: { opacity: 0, y: 0 },
                 visible: { opacity: 1, y: 0 }
               }}
-              onClick={() => setFocusedItem(item)}
+              onClick={() => setFocusItem(item)}
               className="group relative p-3 rounded-xl bg-secondary/30 border border-border/50 hover:bg-secondary/60 transition-all cursor-pointer" // убираем animate-in, Framer Motion рулит
             >
               <div className="flex justify-between items-start gap-2">

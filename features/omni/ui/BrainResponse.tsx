@@ -4,7 +4,7 @@ import { useStore } from '@/lib/store'
 import { MarkdownRenderer } from '@/app/components/ui/MarkdownRenderer'
 
 export function BrainResponse({ text, sources }: { text: string, sources: any[] }) {
-  const { setFocusedItem } = useStore()
+  const { setFocusItem } = useStore()
   // const typedText = useTypewriter(text, 5)
 
   return (
@@ -30,7 +30,7 @@ export function BrainResponse({ text, sources }: { text: string, sources: any[] 
             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2 font-semibold">Источники</p>
             <div className="flex gap-2 flex-wrap pb-1 no-scrollbar">
               {sources.slice(0, 6).map((src: any) => (
-                <div key={src.id} onClick={() => setFocusedItem(src)} className="shrink-0 max-w-30 py-1 px-2 rounded-lg bg-muted-foreground/10 border border-border/60 text-xs truncate hover:border-muted-foreground/30 duration-150 cursor-pointer">
+                <div key={src.id} onClick={() => setFocusItem(src)} className="shrink-0 max-w-30 py-1 px-2 rounded-lg bg-muted-foreground/10 border border-border/60 text-xs truncate hover:border-muted-foreground/30 duration-150 cursor-pointer">
                   {src.content}
                 </div>
               ))}
