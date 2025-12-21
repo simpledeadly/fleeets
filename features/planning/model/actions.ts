@@ -17,7 +17,7 @@ export async function generateDailyPlan() {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
-  // 1. ПОЛУЧАЕМ КОНТЕКСТ: Манифест и Задачи
+  // 1. ПОЛУЧАЕМ КОНТЕКСТ
   const supabaseAdmin = createAdminClient()
   const { data: profile } = await supabaseAdmin
     .from('profiles')
@@ -27,59 +27,87 @@ export async function generateDailyPlan() {
 
   const { data: availableTasks } = await supabase
     .from('items')
-    .select('id, content, description, priority, ai_tags')
-    .in('status', ['inbox', 'planned']) // Берем из Инбокса и Плана
-    .limit(100) // Ограничиваем, чтобы не сломать контекст
+    .select('id, content, description, priority, ai_tags, type')
+    .in('status', ['planned']) // Только из Плана
+    .limit(200)
 
   if (!availableTasks || availableTasks.length === 0) {
-    console.log('No tasks available to plan.')
-    return { success: true }
+    return { error: 'Нет запланированных задач для составления плана.' }
   }
 
-  // 2. ФОРМИРУЕМ ПРОМПТ
-  const manifestoStr = JSON.stringify(profile?.manifesto || {})
-  const tasksStr = JSON.stringify(availableTasks)
+  // 2. ФОРМИРУЕМ ЧИТАЕМЫЙ ПРОМПТ (КАК В ASK_BRAIN)
+  const manifestoStr = `МАНИФЕСТ (Цели и Роли):\n${JSON.stringify(
+    profile?.manifesto || {},
+    null,
+    2
+  )}`
+
+  const tasksStr =
+    'СПИСОК ДОСТУПНЫХ ЗАДАЧ (БЭКЛОГ):\n' +
+    availableTasks
+      .map((item) => {
+        return `
+          ---
+          ID: ${item.id}
+          ЗАДАЧА: "${item.content}"
+          ПРИОРИТЕТ: ${item.priority || 'medium'}
+          ТЕГИ: [${(item.ai_tags || []).join(', ')}]
+          ---`
+      })
+      .join('\n')
 
   const systemPrompt = `
-    ТЫ — ЛИЧНЫЙ АССИСТЕНТ.
-    Твоя задача — проанализировать Манифест пользователя (его цели и роли) и его список доступных задач,
-    а затем выбрать 3-5 САМЫХ ВАЖНЫХ задач на сегодня.
-
+    ТЫ — АССИСТЕНТ-СТРАТЕГ. Твоя задача — проанализировать Манифест и Бэклог пользователя, а затем составить СБАЛАНСИРОВАННЫЙ план на день.
+    
     МАНИФЕСТ ПОЛЬЗОВАТЕЛЯ:
     ${manifestoStr}
-
-    СПИСОК ДОСТУПНЫХ ЗАДАЧ (JSON):
-    ${tasksStr}
-
-    ПРАВИЛА:
-    1. Выбирай задачи, которые максимально приближают пользователя к его целям из Манифеста.
-    2. Учитывай приоритет (priority: 'high') и теги.
-    3. Не бери слишком много, чтобы план был реалистичным (3-5 задач).
-    4. Верни ТОЛЬКО JSON-массив с ID выбранных задач.
     
-    Пример ответа:
-    {
-      "task_ids": ["uuid-1", "uuid-2", "uuid-3"]
-    }
+    ДОСТУПНЫЕ ЗАДАЧИ (БЭКЛОГ):
+    ${tasksStr}
+    
+    ПРАВИЛА:
+    1. Проанализируй Манифест и Бэклог.
+    2. Выбери 3-5 самых важных ID задач. Учитывай роли и приоритеты.
+    3. Объясни свой выбор в поле 'reasoning'.
+    4. Верни ТОЛЬКО JSON в формате: { "reasoning": "...", "task_ids": ["..."] }
   `
+
+  // ... (дебаг-логи, которые ты просил)
+  console.log(
+    '==================== AI PLANNER PROMPT START ===================='
+  )
+  console.log(systemPrompt)
+  console.log(
+    '==================== AI PLANNER PROMPT END ======================'
+  )
 
   try {
     const completion = await openai.chat.completions.create({
-      messages: [{ role: 'system', content: systemPrompt }],
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: 'Составь для меня план на сегодня.' },
+      ],
       model: 'meta-llama/llama-3-70b-instruct',
       response_format: { type: 'json_object' },
-      temperature: 0.3, // Низкая температура для точности
+      temperature: 0.6,
     })
 
-    const result = JSON.parse(completion.choices[0].message.content || '{}')
+    const content = completion.choices[0].message.content || '{}'
+    console.log('🤖 AI Planner Raw Response:', content)
+
+    const result = JSON.parse(content)
     const taskIds = result.task_ids
+    const reasoning = result.reasoning
 
     if (!taskIds || taskIds.length === 0) {
-      console.log("AI didn't select any tasks.")
-      return { success: true }
+      return {
+        error: `ИИ не выбрал задачи. Его объяснение: ${
+          reasoning || 'нет объяснения'
+        }`,
+      }
     }
 
-    // 3. ОБНОВЛЯЕМ СТАТУС В БАЗЕ
+    // ОБНОВЛЕНИЕ СТАТУСА В БАЗЕ
     const { error } = await supabase
       .from('items')
       .update({ status: 'today', planned_at: new Date().toISOString() })
@@ -87,10 +115,41 @@ export async function generateDailyPlan() {
 
     if (error) throw error
 
-    revalidatePath('/') // Обновляем UI
-    return { success: true, planned: taskIds.length }
+    revalidatePath('/')
+    return { success: true, planned: taskIds.length, reasoning: reasoning }
   } catch (e: any) {
     console.error('Daily plan generation failed:', e)
+    return { error: e.message }
+  }
+}
+
+/**
+ * Сбрасывает все задачи "Сегодня" обратно в "План".
+ * Очищает planned_at, чтобы убрать их из "гниения".
+ */
+export async function resetTodayView() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  try {
+    const { error } = await supabase
+      .from('items')
+      .update({
+        status: 'planned',
+        planned_at: null, // <-- Сбрасываем дату
+      })
+      .eq('user_id', user.id)
+      .eq('status', 'today') // Только те, что в фокусе
+
+    if (error) throw error
+
+    revalidatePath('/') // Обновляем UI
+    return { success: true }
+  } catch (e: any) {
+    console.error('Reset today failed:', e)
     return { error: e.message }
   }
 }

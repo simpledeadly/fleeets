@@ -1,1 +1,1 @@
-export { generateDailyPlan } from './model/actions'
+export { generateDailyPlan, resetTodayView } from './model/actions'
