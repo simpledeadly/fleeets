@@ -3,6 +3,7 @@ import { useStore, type Item } from '@/lib/store'
 import { updateItem, softDeleteItem } from './actions'
 import { createClient } from '@/lib/supabase/client'
 import { useCallback, useRef } from 'react'
+import { notify } from '@/features/notifications'
 
 export function useItemActions(item: Item) {
   const {
@@ -77,14 +78,14 @@ export function useItemActions(item: Item) {
         status: previousItem.status,
       })
       if (error) {
-        toast.error('Не удалось восстановить')
+        notify('info', 'Не удалось восстановить')
         removeStore(item.id) // Если сервер отказал, удаляем обратно
       } else {
         // toast.info('Задача восстановлена')
       }
     }
 
-    toast.success('Удалено', {
+    notify('success', 'Удалено', {
       action: { label: 'Вернуть', onClick: undo },
       duration: 4000,
     })
@@ -93,7 +94,7 @@ export function useItemActions(item: Item) {
   }
 
   /**
-   * AI Refine (ФИКС БАГА С ПЕРЕЗАГРУЗКОЙ)
+   * AI Refine
    */
   const refine = async () => {
     const toastId = toast.loading('AI думает...')
