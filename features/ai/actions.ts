@@ -406,15 +406,15 @@ export async function askBrain(question: string) {
   `
 
   // 3. Генерация ответа (через Groq Llama-3 для скорости)
-  const groq = new OpenAI({
-    apiKey: process.env.GROQ_API_KEY,
-    baseURL: 'https://api.groq.com/openai/v1',
-  })
+  // const groq = new OpenAI({
+  //   apiKey: process.env.GROQ_API_KEY,
+  //   baseURL: 'https://api.groq.com/openai/v1',
+  // })
 
-  const llmModel = 'llama-3.1-8b-instant'
+  const llmModel = 'meta-llama/llama-3.1-8b-instruct'
 
   try {
-    const completion = await groq.chat.completions.create({
+    const completion = await openai.chat.completions.create({
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: question },
