@@ -28,15 +28,15 @@ export function CardBack({
     <motion.div
       // onClick={onFlip} // Клик по фону переворачивает обратно (как было)
       style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-      className="absolute w-full h-full p-6 rounded-3xl border bg-background text-white shadow-2xl flex flex-col"
+      className="absolute w-full h-full p-4 rounded-3xl border bg-background text-white shadow-2xl flex flex-col"
     >
       <div className="flex justify-between items-center mb-2">
-        <h4 className="text-sm font-bold uppercase text-foreground">
+        <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500">
           Метаданные
         </h4>
         <div className="flex items-center gap-1.5 mt-1 text-zinc-400">
           <Calendar strokeWidth={1.6} size={12} />
-          <span className="text-[10px] font-mono">
+          <span className="text-xs font-medium font-mono">
             {item.created_at
               ? format(new Date(item.created_at), 'd MMM HH:mm', { locale: ru })
               : 'Неизвестно'}
@@ -64,7 +64,7 @@ export function CardBack({
             if (e.target.value !== (item.raw_content || ''))
               update({ raw_content: e.target.value })
           }}
-          placeholder="Исходного текста нет, но можно сюда добавить"
+          placeholder="Исходного текста нет, но можно добавить"
           onClick={(e) => e.stopPropagation()}
           className="w-full h-full bg-transparent text-foreground overflow-y-auto whitespace-pre-wrap resize-none focus:outline-none"
         />
@@ -73,7 +73,7 @@ export function CardBack({
       <div className="mt-2 pt-3 border-t border-border">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
           <Link size={12} />
-          <span>Найденные связи (3/{similarItems.length})</span>
+          <span>Найденные связи ({similarItems.length})</span>
         </div>
 
         {isSearching && (
@@ -101,7 +101,7 @@ export function CardBack({
 
         {!isSearching && similarItems.length === 0 && (
           <p className="text-xs text-zinc-600 italic">
-            Похожих записей не найдено.
+            Похожие записи не найдены (отключено).
           </p>
         )}
       </div>

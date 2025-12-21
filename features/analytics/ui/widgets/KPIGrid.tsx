@@ -15,7 +15,7 @@ export function KPIGrid({ stats }: KPIGridProps) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       <StatCard
-        title="Событий (Last 500)"
+        title="Событий"
         value={stats.totalEvents}
         icon={<Activity size={16} />}
       />

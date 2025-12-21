@@ -49,29 +49,29 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
   const y = useMotionValue(0)
   const rotate = useTransform(x, [-300, 300], [-15, 15])
 
-  useEffect(() => {
-    // Искать только для верхней карты и только один раз
-    if (isTop && !isSearching && similarItems.length === 0) {
-      // Задержка, чтобы не спамить, если юзер быстро свайпает
-      const searchTimer = setTimeout(async () => {
-        setIsSearching(true)
-        try {
-          const results = await findSimilarItems(item.id)
-          if (results && results.length > 0) {
-            setSimilarItems(results as any)
-            setHasSimilar(true) // 🔥 Вместо флипа - просто ставим флаг
-            // setIsFlipped(true)
-          }
-        } catch (e) {
-          console.error('Auto-search failed:', e)
-        } finally {
-          setIsSearching(false)
-        }
-      }, 700) // 0.7 секунды
+  // useEffect(() => {
+  //   // Искать только для верхней карты и только один раз
+  //   if (isTop && !isSearching && similarItems.length === 0) {
+  //     // Задержка, чтобы не спамить, если юзер быстро свайпает
+  //     const searchTimer = setTimeout(async () => {
+  //       setIsSearching(true)
+  //       try {
+  //         const results = await findSimilarItems(item.id)
+  //         if (results && results.length > 0) {
+  //           setSimilarItems(results as any)
+  //           setHasSimilar(true) // 🔥 Вместо флипа - просто ставим флаг
+  //           // setIsFlipped(true)
+  //         }
+  //       } catch (e) {
+  //         console.error('Auto-search failed:', e)
+  //       } finally {
+  //         setIsSearching(false)
+  //       }
+  //     }, 700) // 0.7 секунды
 
-      return () => clearTimeout(searchTimer)
-    }
-  }, [isTop, item.id])
+  //     return () => clearTimeout(searchTimer)
+  //   }
+  // }, [isTop, item.id])
 
   // Твоя логика штампов
   const getStampText = () => {

@@ -13,8 +13,8 @@ import {
   CheckSquare,
   FileBox,
   CheckCircle2,
-  Spline,
   Loader2,
+  GitBranch,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useStore, type Item } from '@/lib/store'
@@ -77,12 +77,12 @@ export function CardFace({
   return (
     <motion.div
       style={{ backfaceVisibility: 'hidden' }}
-      className="absolute w-full h-full p-6 rounded-3xl border bg-card shadow-2xl flex flex-col"
+      className="absolute w-full h-full p-4 rounded-3xl border bg-card shadow-2xl flex flex-col columns-2"
     >
       {/* --- Верхняя часть: ТИПЫ + СЧЕТЧИК --- */}
-      <div className="flex justify-between items-center mb-2">
+      <div className="flex justify-between items-center mb-4">
         {/* Выбор типа (твоя просьба) */}
-        <div className="flex gap-1">
+        <div className="flex gap-1 rounded-lg bg-accent dark:bg-background p-1">
           {types.map((t) => (
             <button
               key={t.id}
@@ -94,7 +94,7 @@ export function CardFace({
               className={cn(
                 'p-1.5 rounded-md transition-all duration-150 cursor-pointer',
                 item.type === t.id
-                  ? 'text-primary bg-primary/10'
+                  ? 'text-primary bg-muted-foreground/15 dark:bg-primary/10'
                   : 'text-muted-foreground/50 hover:text-muted-foreground'
               )}
             >
@@ -106,7 +106,7 @@ export function CardFace({
         <div className="flex gap-2 items-center">
           {/* Счетчик */}
           <span className="text-sm font-mono font-medium text-muted-foreground/50">
-            #{total}
+            №{total}
           </span>
 
           <button
@@ -124,7 +124,7 @@ export function CardFace({
       </div>
 
       {/* --- Центральная часть (РЕДАКТИРУЕМЫЙ Контент) --- */}
-      <div className="flex-1 flex flex-col justify-center gap-2">
+      <div className="flex-1 flex flex-col justify-start gap-2">
         {/* Заголовок-Textarea */}
         <textarea
           key={`title-${item.id}-${item.content}`} // Пересоздать, если контент изменился на сервере
@@ -136,7 +136,7 @@ export function CardFace({
             if (e.target.value !== item.content)
               update({ content: e.target.value })
           }}
-          className="w-full bg-transparent text-2xl font-bold leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20 overflow-hidden"
+          className="w-full bg-transparent text-2xl font-bold leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20"
           placeholder="Заголовок"
           rows={2} // Примерная высота
           style={{ fieldSizing: 'content' } as any} // Новый CSS для автовысоты (если поддерживается), иначе фиксированный rows
@@ -152,7 +152,7 @@ export function CardFace({
             if (e.target.value !== (item.description || ''))
               update({ description: e.target.value })
           }}
-          className="w-full bg-transparent text-md font-medium text-muted-foreground leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20 min-h-36"
+          className="flex-1 w-full bg-transparent text-md font-mono text-muted-foreground leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20"
           placeholder="Описание..."
         />
 
@@ -202,7 +202,7 @@ export function CardFace({
           {isDecomposing ? (
             <Loader2 strokeWidth={1.6} size={20} className="animate-spin" />
           ) : (
-            <Spline strokeWidth={1.6} size={20} />
+            <GitBranch strokeWidth={1.6} size={20} />
           )}
         </button>
 
