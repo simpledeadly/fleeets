@@ -4,7 +4,8 @@ import {
   CheckCircle2, CalendarDays,
   StickyNote, Lightbulb, CheckSquare,
   Mic, Hash, FileText,
-  Sparkles
+  Sparkles,
+  FileBox
 } from "lucide-react"
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
@@ -23,8 +24,8 @@ const TypeIcon = ({ type }: { type: string }) => {
   switch (type) {
     case 'note': return <StickyNote size={12} className="text-blue-500" />
     case 'thought': return <Lightbulb size={12} className="text-purple-500" />
-    case 'resource': return <Lightbulb size={12} className="text-shadow-cyan-500" />
-    default: return <CheckSquare size={12} className="text-emerald-500" /> // task
+    case 'resource': return <FileBox size={12} className="text-orange-500" />
+    default: return <CheckSquare size={12} className="text-emerald-500" />
   }
 }
 
