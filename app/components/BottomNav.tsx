@@ -1,18 +1,11 @@
 'use client'
 
-import { useStore, type View } from '@/lib/store'
-import {
-  Layers,
-  ListTodo,
-  Archive,
-  Zap,
-  Focus,
-  Lock,
-  ShieldUser,
-} from 'lucide-react'
+import { useStore } from '@/lib/store'
+import { Zap, Lock, ShieldUser } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePaywall } from '@/features/paywall'
 import { redirect } from 'next/navigation'
+import { VIEW_REGISTRY } from '@/features/views'
 
 export default function BottomNav() {
   const { currentView, setView, items } = useStore()
@@ -20,17 +13,13 @@ export default function BottomNav() {
 
   const inboxCount = items.filter((i) => i.status === 'inbox').length
 
-  const tabs: { name: string; view: View; icon: React.ElementType }[] = [
-    { name: 'Инбокс', view: 'inbox', icon: Layers },
-    { name: 'Фокус', view: 'focus', icon: Focus },
-    // { name: "План", view: "plan", icon: ListTodo },
-    // { name: "Архив", view: "archive", icon: Archive },
-  ]
+  const tabs = Object.entries(VIEW_REGISTRY).map(([key, { name, icon }]) => ({
+    view: key,
+    name,
+    icon,
+  }))
 
   const handleBlitzClick = () => {
-    // 👇 ОДНА СТРОЧКА!
-    // Если юзер Free, функция check сама откроет модалку с текстом про Блиц
-    // и вернет false, прервав выполнение.
     if (!check('blitz_mode')) return
 
     // TODO: Здесь будет логика включения блиц-режима
@@ -50,7 +39,7 @@ export default function BottomNav() {
           return (
             <button
               key={tab.view}
-              onClick={() => setView(tab.view)}
+              onClick={() => setView(tab.view as any)}
               aria-label={tab.name}
               className={cn(
                 'relative cursor-pointer flex flex-col items-center justify-center w-10 h-10 rounded-full transition-all duration-150',

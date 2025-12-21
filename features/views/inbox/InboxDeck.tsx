@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '@/lib/store'
-import { InboxCard } from './InboxCard'
-import { getInboxStats } from '../model/stats'
+import { InboxCard } from '../../inbox/ui/InboxCard'
+import { getInboxStats } from '../../inbox/model/stats'
 
 const EMPTY_MESSAGES = [
   'Инбокс чист, как совесть младенца 🧘‍♂️',

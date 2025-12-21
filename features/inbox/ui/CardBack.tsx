@@ -73,7 +73,7 @@ export function CardBack({
       <div className="mt-2 pt-3 border-t border-border">
         <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
           <Link size={12} />
-          <span>Найденные связи ({similarItems.length})</span>
+          <span>Найденные связи (3/{similarItems.length})</span>
         </div>
 
         {isSearching && (
@@ -88,7 +88,7 @@ export function CardBack({
               <button
                 key={similar.id}
                 onClick={() => setFocusItem(similar)}
-                className="w-full text-left text-xs p-2 rounded bg-white/5 hover:bg-white/10 transition-colors truncate cursor-pointer"
+                className="w-full text-left text-xs p-2 rounded text-foreground dark:bg-white/5 dark:hover:bg-white/10 bg-muted hover:bg-border transition-colors truncate cursor-pointer"
               >
                 - {similar.content}
                 <span className="font-mono opacity-50 ml-2">

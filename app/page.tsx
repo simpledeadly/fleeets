@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
-import { useStore } from '@/lib/store'
-import { InboxDeck } from '@/features/inbox'
-import FocusList from './components/FocusList'
-import { SettingsModal } from '@/features/settings'
 import { Settings } from 'lucide-react'
+import { useStore } from '@/lib/store'
+import { VIEW_REGISTRY } from '@/features/views'
+import { SettingsModal } from '@/features/settings'
 
 export default function Home() {
   const { isLoading, currentView } = useStore()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+
+  const CurrentViewComponent = VIEW_REGISTRY[currentView].component
 
   if (isLoading) {
     return (
@@ -42,8 +43,11 @@ export default function Home() {
           </p>
         </div>
 
-        {currentView === 'inbox' && <InboxDeck />}
-        {currentView === 'focus' && <FocusList />}
+        {CurrentViewComponent ? (
+          <CurrentViewComponent />
+        ) : (
+          <div>View not found</div>
+        )}
       </div>
     </main>
   )

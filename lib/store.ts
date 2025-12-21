@@ -1,8 +1,8 @@
 import { create } from 'zustand'
-import { type Database } from '@/types/supabase'
+import type { Database } from '@/types/supabase'
+import type { ViewType } from '@/features/views'
 
 export type Item = Database['public']['Tables']['items']['Row']
-export type View = 'inbox' | 'plan' | 'archive' | 'focus'
 
 interface AppState {
   items: Item[]
@@ -13,8 +13,8 @@ interface AppState {
   removeItem: (itemId: string) => void
   isLoading: boolean
   isInitialized: boolean
-  currentView: View
-  setView: (view: View) => void
+  currentView: ViewType
+  setView: (view: ViewType) => void
   focusItem: Item | null // Для модалки фокуса
   setFocusItem: (item: Item | null) => void
   editingItem: Item | null // Для сайдбара-редактора

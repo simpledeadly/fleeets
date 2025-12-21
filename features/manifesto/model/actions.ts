@@ -59,6 +59,7 @@ export async function updateManifesto(
     ],
     model: 'meta-llama/llama-3-70b-instruct',
     response_format: { type: 'json_object' },
+    temperature: 0.7,
   })
 
   const extractedData = JSON.parse(
@@ -137,6 +138,7 @@ export async function getManifestoSuggestion(currentManifesto: any) {
   const completion = await openai.chat.completions.create({
     messages: [{ role: 'system', content: prompt }],
     model: 'meta-llama/llama-3-8b-instruct', // 8b для вопросов хватит
+    temperature: 0.7,
   })
 
   return completion.choices[0].message.content || 'Что еще для тебя важно?'

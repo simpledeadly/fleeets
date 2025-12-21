@@ -1,1 +1,1 @@
-export { InboxDeck } from './ui/IndexDeck'
+export { InboxDeck } from '../views/inbox/InboxDeck'
