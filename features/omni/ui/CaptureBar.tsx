@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Mic, ArrowUp, BrainCircuit, Loader2, Square } from 'lucide-react'
 import { createItemWithAI } from '@/features/item'
 import { searchWithAI, transcribeAudio, askBrain } from '@/features/ai'
-import { useCommandCenterStore } from '../model/store'
+import { useOmniStore } from '../model/store'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
 import { Item, useStore } from '@/lib/store'
 import { useDebounce } from '@/lib/hooks'
@@ -17,7 +17,7 @@ import { BrainResponse } from './BrainResponse'
 
 export function CaptureBar() {
   const [text, setText] = useState('')
-  const { increment, decrement, togglePalette } = useCommandCenterStore()
+  const { increment, decrement, togglePalette } = useOmniStore()
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [suggestions, setSuggestions] = useState<Item[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -247,6 +247,7 @@ export function CaptureBar() {
 
         {/* Инпут */}
         <input
+          id="capture-bar-input"
           value={text}
           onChange={(e) => setText(e.target.value)}
           placeholder={brainMode ? 'Спроси базу знаний...' : 'Новая мысль...'}

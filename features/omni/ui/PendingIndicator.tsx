@@ -1,10 +1,10 @@
 "use client"
 import { Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
-import { useCommandCenterStore } from '../model/store'
+import { useOmniStore } from '../model/store'
 
 export function PendingIndicator() {
-  const { count } = useCommandCenterStore()
+  const { count } = useOmniStore()
 
   return (
     <AnimatePresence>

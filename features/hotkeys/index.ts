@@ -1,0 +1,1 @@
+export { getHotkeys } from './config'

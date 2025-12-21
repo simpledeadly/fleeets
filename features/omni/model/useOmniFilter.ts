@@ -1,10 +1,10 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useStore } from '@/lib/store'
-import { useCommandCenterStore } from './store'
+import { useOmniStore } from './store'
 
 export function useOmniFilter() {
   const { items } = useStore()
-  const { isPaletteOpen } = useCommandCenterStore()
+  const { isPaletteOpen } = useOmniStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeStatus, setActiveStatus] = useState<string | null>(null)

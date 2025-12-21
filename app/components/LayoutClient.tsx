@@ -2,7 +2,7 @@
 
 import { useHotkeys } from '@/lib/hooks'
 import {
-  useCommandCenterStore,
+  useOmniStore,
   PendingIndicator,
   Omni,
   CaptureBar,
@@ -12,13 +12,13 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ItemEditor } from '@/features/item'
 import { FocusModal } from '@/features/focus'
 import { useStore } from '@/lib/store'
+import { getHotkeys } from '@/features/hotkeys'
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
-  const { togglePalette, isPaletteOpen } = useCommandCenterStore()
+  const { isPaletteOpen } = useOmniStore()
   const { focusItem, setFocusItem } = useStore()
 
-  // Подключаем хоткей
-  useHotkeys([['mod+k', togglePalette]])
+  useHotkeys(getHotkeys())
 
   return (
     <>

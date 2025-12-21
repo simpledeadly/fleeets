@@ -11,7 +11,7 @@ import {
   CommandSeparator,
 } from '@/components/ui/command'
 import { useStore } from '@/lib/store'
-import { useCommandCenterStore } from '../model/store'
+import { useOmniStore } from '../model/store'
 import { Layers, Focus, CheckCircle2, Circle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -23,7 +23,7 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 
 export function Omni() {
   const { setFocusItem, setView } = useStore()
-  const { isPaletteOpen, closePalette } = useCommandCenterStore()
+  const { isPaletteOpen, closePalette } = useOmniStore()
 
   // Логика фильтров
   const filter = useOmniFilter()
