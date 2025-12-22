@@ -76,9 +76,12 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
   useEffect(() => {
     if (isOpen && item) {
       // Обновляем, только если текст реально отличается
-      setLogText((prev) =>
-        item.execution_log !== prev ? item.execution_log || '' : prev
-      )
+      const t = setTimeout(() => {
+        setLogText((prev) =>
+          item.execution_log !== prev ? item.execution_log || '' : prev
+        )
+      }, 0)
+      return () => clearTimeout(t)
     }
   }, [item?.execution_log, isOpen])
 
