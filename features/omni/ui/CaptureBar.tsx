@@ -145,7 +145,7 @@ export function CaptureBar() {
   }
 
   return (
-    <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-70">
+    <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-20">
       <AnimatePresence>
         {!brainMode && (suggestions.length > 0 || isSearching) && isPro ? (
           <motion.div

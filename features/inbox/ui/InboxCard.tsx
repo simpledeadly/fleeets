@@ -55,7 +55,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
         y: index * 15,
         rotate: isTop ? 0 : 0,
         rotateY: 0,
-        zIndex: total - index,
+        zIndex: 30,
         opacity: 1 - index * 0.2,
       }
 
@@ -64,7 +64,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
       <motion.div
         key={item.id}
         className="absolute"
-        style={{ perspective: 1000, zIndex: isTop ? 100 : 1 }}
+        style={{ perspective: 1000, zIndex: isTop ? 100 : 30 }}
         // layout
         // layoutId={`card-${item.id}`}
         initial={{
@@ -76,6 +76,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
           minHeight: '24rem',
           maxWidth: '100%',
           maxHeight: '100%',
+          zIndex: 30
         }}
         // transition={{
         //   // Пружина для движения и вращения
