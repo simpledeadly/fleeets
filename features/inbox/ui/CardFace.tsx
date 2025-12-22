@@ -141,7 +141,7 @@ CardFaceProps) {
           autoCapitalize="off"
           spellCheck="false"
           placeholder="Заголовок"
-          className="w-full bg-transparent text-2xl font-bold leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20"
+          className="w-full line-clamp-3 bg-transparent text-2xl font-bold leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20"
           rows={2} // Примерная высота
           style={{ fieldSizing: 'content' } as any} // Новый CSS для автовысоты (если поддерживается), иначе фиксированный rows
         />
