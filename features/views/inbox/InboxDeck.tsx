@@ -5,6 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '@/lib/store'
 import { InboxCard } from '../../inbox/ui/InboxCard'
 import { getInboxStats } from '../../inbox/model/stats'
+// import { CoolEmoji } from './CoolEmoji'
+// import { Loveduck } from './Loveduck'
+// import { YourKickAss } from './YourKickAss'
 
 const EMPTY_MESSAGES = [
   'Инбокс чист, как совесть младенца 🧘‍♂️',
@@ -17,10 +20,17 @@ const EMPTY_MESSAGES = [
   'Красава, Марат!',
 ]
 
+// const EMPTY_STICKERS = [
+//   <CoolEmoji key={1} />,
+//   <Loveduck key={2} />,
+//   <YourKickAss key={3} />,
+// ]
+
 const STATS_TTL = 30000
 
 export function InboxDeck() {
   const [randomMessage, setRandomMessage] = useState('')
+  // const [randomSticker, setRandomSticker] = useState<any>()
   const items = useStore((state) => state.items)
   const inboxStats = useStore((state) => state.inboxStats)
   const setInboxStats = useStore((state) => state.setInboxStats)
@@ -34,25 +44,26 @@ export function InboxDeck() {
 
   useEffect(() => {
     if (isEmpty) {
-      // 👇 ГЛАВНЫЙ ФИКС: ПРОВЕРКА КЭША
       const now = Date.now()
       const isStale = now - inboxStats.lastUpdated > STATS_TTL
 
       if (isStale) {
         // Данные протухли — грузим новые
         getInboxStats().then(setInboxStats)
-      } else {
-        // Данные свежие — ничего не делаем, используем то, что в сторе.
-        // "Rendering..." не появится.
       }
 
-      // Логика фразы (как было)
+      // Логика фразы и стикера
       const t = setTimeout(() => {
         setRandomMessage(
           (prev) =>
             prev ||
             EMPTY_MESSAGES[Math.floor(Math.random() * EMPTY_MESSAGES.length)]
         )
+        // setRandomSticker(
+        //   (prev: JSX.Element) =>
+        //     prev ||
+        //     EMPTY_STICKERS[Math.floor(Math.random() * EMPTY_STICKERS.length)]
+        // )
       }, 0)
       return () => clearTimeout(t)
     } else {
@@ -65,8 +76,8 @@ export function InboxDeck() {
 
   if (isEmpty) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[50vh] text-center animate-in fade-in space-y-6">
-        <div className="text-6xl animate-bounce duration-6000">✨</div>
+      <div className="flex flex-col items-center justify-center h-full min-h-[50vh] text-center animate-in fade-in space-y-3">
+        {/* {randomSticker || <CoolEmoji />} */}
 
         <div className="space-y-2">
           <h2 className="text-xl font-bold px-8 leading-relaxed">
@@ -80,7 +91,7 @@ export function InboxDeck() {
             <span className="font-bold text-foreground text-2xl">
               {inboxStats.today}
             </span>
-            <span className="text-[10px] uppercase tracking-wider opacity-70">
+            <span className="text-xs uppercase tracking-wider opacity-70">
               За сегодня
             </span>
           </div>
