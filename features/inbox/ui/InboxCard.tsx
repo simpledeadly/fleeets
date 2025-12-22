@@ -9,8 +9,8 @@ import {
   animate,
   AnimatePresence,
 } from 'framer-motion'
-import { type Item } from '@/lib/store'
-import { useItemActions } from '@/features/item/model/useItemActions'
+import { useStore, type Item } from '@/lib/store'
+import { useItemActions } from '@/features/item'
 import { CardFace } from './CardFace'
 import { CardBack } from './CardBack'
 import { findSimilarItems } from '@/features/ai'
@@ -36,7 +36,8 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [similarItems, setSimilarItems] = useState<Item[]>([])
   const [isSearching, setIsSearching] = useState(false)
-  const [hasSimilar, setHasSimilar] = useState(false) 
+  const [hasSimilar, setHasSimilar] = useState(false)
+  const incrementStats = useStore((state) => state.incrementInboxStats)
 
   // Твои таймеры и пороги
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
@@ -139,22 +140,24 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
       animate(y, exitY, { type: 'spring', stiffness: 300, damping: 30 })
 
       // ЛОГИКА ДЕЙСТВИЙ ЧЕРЕЗ ХУК
-      setTimeout(async () => {
+      setTimeout(() => {
         if (swipeState === 'left') {
-          await remove() // Тост "Удалено" уже внутри remove
+          remove() // Тост "Удалено" уже внутри remove
+          incrementStats()
         } else if (swipeState === 'up') {
-          // Up -> Сегодня
-          await update({ status: 'today' }, 'Задача взята в фокус на сегодня')
+          update({ status: 'today' }, 'Задача взята в фокус')
+          incrementStats()
         } else if (swipeState === 'right') {
           if (item.type === 'task') {
             if (isHeld) {
-              await update({ status: 'today' }, 'Задача взята в фокус')
+              update({ status: 'today' }, 'Задача взята в фокус')
             } else {
-              await update({ status: 'planned' }, 'Добавлено в План')
+              update({ status: 'planned' }, 'Добавлено в План')
             }
           } else {
-            await update({ status: 'archived' }, 'Отправлено в Архив')
+            update({ status: 'archived' }, 'Отправлено в Архив')
           }
+          incrementStats()
         }
       }, 50)
     } else {
@@ -223,7 +226,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
             item={item}
             isProcessing={isProcessing}
             onRefine={handleRefine}
-            hasSimilar={hasSimilar} 
+            hasSimilar={hasSimilar}
             onFlip={handleFlip}
             index={index}
             total={total}

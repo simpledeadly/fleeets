@@ -2,10 +2,9 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { revalidatePath } from 'next/cache'
 import type { Database } from '@/types/supabase'
 import OpenAI from 'openai'
-import { logTokenUsage } from '@/features/ai/analytics'
+import { logTokenUsage } from '@/features/ai'
 import { logEvent } from '@/lib/logging' // Твой новый логгер событий
 
 const openai = new OpenAI({
@@ -57,7 +56,7 @@ export async function createItemWithAI(text: string) {
       })
     }
 
-    revalidatePath('/')
+    // revalidatePath('/')
     return { success: true, item: data }
   } catch (e: any) {
     return { error: e.message }
@@ -209,7 +208,7 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
     .eq('id', itemId)
 
   if (error) return { error: error.message }
-  revalidatePath('/')
+  // revalidatePath('/')
   return { success: true }
 }
 
@@ -234,7 +233,7 @@ export async function hardDeleteItem(itemId: string) {
   const supabase = await createClient()
   const { error } = await supabase.from('items').delete().eq('id', itemId)
   if (error) return { error: error.message }
-  revalidatePath('/')
+  // revalidatePath('/')
   return { success: true }
 }
 

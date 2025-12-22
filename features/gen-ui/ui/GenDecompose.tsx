@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { CheckSquare, Plus, X } from "lucide-react"
-import { createItemWithAI } from "@/features/ai/actions"
+import { createItemWithAI } from "@/features/ai"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
 

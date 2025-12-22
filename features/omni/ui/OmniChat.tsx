@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { Command, CommandInput, CommandList } from "@/components/ui/command"
-import { askBrain } from "@/features/ai/actions"
+import { askBrain } from "@/features/ai"
 import { toast } from "sonner"
 import { BrainResponse } from './BrainResponse'
 import { GEN_UI_REGISTRY, isGenUITool } from '@/features/gen-ui'

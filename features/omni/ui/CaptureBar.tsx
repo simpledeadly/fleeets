@@ -250,6 +250,10 @@ export function CaptureBar() {
           id="capture-bar-input"
           value={text}
           onChange={(e) => setText(e.target.value)}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
           placeholder={brainMode ? 'Спроси базу знаний...' : 'Новая мысль...'}
           className={cn(
             'flex-1 bg-transparent text-md focus:outline-none transition-colors',

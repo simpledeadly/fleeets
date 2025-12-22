@@ -23,10 +23,7 @@ export function useItemActions(item: Item) {
       // 1. Snapshot (для отката)
       const previousItem = { ...item }
 
-      // 2. Optimistic: Применяем изменения в UI МГНОВЕННО
-      // Важно: мы берем текущее состояние из пропса item, но накладываем changes
-      const newItem = { ...item, ...changes }
-      updateStore(newItem)
+      updateStore({ id: item.id, ...changes } as Item)
 
       const undo = async () => {
         // Возвращаем в стор
@@ -55,9 +52,9 @@ export function useItemActions(item: Item) {
             duration: 4000, // Даем 4 секунды на подумать
           })
         }
-      }, 800) // Ждем 500мс тишины перед отправкой
+      }, 10)
     },
-    [item, updateStore]
+    [item.id, updateStore]
   )
 
   /**

@@ -4,6 +4,12 @@ import type { ViewType } from '@/features/views'
 
 export type Item = Database['public']['Tables']['items']['Row']
 
+interface InboxStats {
+  today: number
+  total: number
+  lastUpdated: number
+}
+
 interface AppState {
   items: Item[]
   setItems: (items: Item[]) => void
@@ -19,6 +25,9 @@ interface AppState {
   setFocusItem: (item: Item | null) => void
   editingItem: Item | null // Для сайдбара-редактора
   setEditingItem: (item: Item | null) => void
+  inboxStats: InboxStats
+  setInboxStats: (stats: Omit<InboxStats, 'lastUpdated'>) => void
+  incrementInboxStats: () => void // Чтобы увеличивать на +1 при свайпе
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -47,4 +56,17 @@ export const useStore = create<AppState>((set) => ({
   setFocusItem: (item) => set({ focusItem: item }),
   editingItem: null,
   setEditingItem: (item) => set({ editingItem: item }),
+  inboxStats: { today: 0, total: 0, lastUpdated: 0 },
+  setInboxStats: (stats) =>
+    set({
+      inboxStats: { ...stats, lastUpdated: Date.now() },
+    }),
+  incrementInboxStats: () =>
+    set((state) => ({
+      inboxStats: {
+        ...state.inboxStats, // Копируем все, включая lastUpdated
+        today: state.inboxStats.today + 1,
+        total: state.inboxStats.total + 1,
+      },
+    })),
 }))

@@ -17,40 +17,60 @@ const EMPTY_MESSAGES = [
   'Красава, Марат!',
 ]
 
+const STATS_TTL = 30000
+
 export function InboxDeck() {
-  const allItems = useStore((state) => state.items)
-  const [stats, setStats] = useState({ today: 0, total: 0 })
   const [randomMessage, setRandomMessage] = useState('')
+  const items = useStore((state) => state.items)
+  const inboxStats = useStore((state) => state.inboxStats)
+  const setInboxStats = useStore((state) => state.setInboxStats)
 
   const inboxTasks = useMemo(
-    () => allItems.filter((item) => item.status === 'inbox'),
-    [allItems]
+    () => items.filter((item) => item.status === 'inbox'),
+    [items]
   )
 
   const isEmpty = inboxTasks.length === 0
 
   useEffect(() => {
     if (isEmpty) {
-      getInboxStats().then(setStats)
+      // 👇 ГЛАВНЫЙ ФИКС: ПРОВЕРКА КЭША
+      const now = Date.now()
+      const isStale = now - inboxStats.lastUpdated > STATS_TTL
 
+      if (isStale) {
+        // Данные протухли — грузим новые
+        getInboxStats().then(setInboxStats)
+      } else {
+        // Данные свежие — ничего не делаем, используем то, что в сторе.
+        // "Rendering..." не появится.
+      }
+
+      // Логика фразы (как было)
       const t = setTimeout(() => {
         setRandomMessage(
-          EMPTY_MESSAGES[Math.floor(Math.random() * EMPTY_MESSAGES.length)]
+          (prev) =>
+            prev ||
+            EMPTY_MESSAGES[Math.floor(Math.random() * EMPTY_MESSAGES.length)]
         )
       }, 0)
-
+      return () => clearTimeout(t)
+    } else {
+      const t = setTimeout(() => {
+        setRandomMessage('')
+      }, 0)
       return () => clearTimeout(t)
     }
-  }, [isEmpty])
+  }, [isEmpty, setInboxStats, inboxStats.lastUpdated])
 
   if (isEmpty) {
     return (
       <div className="flex flex-col items-center justify-center h-full min-h-[50vh] text-center animate-in fade-in space-y-6">
-        <div className="text-6xl animate-bounce duration-2000">✨</div>
+        <div className="text-6xl animate-bounce duration-6000">✨</div>
 
         <div className="space-y-2">
           <h2 className="text-xl font-bold px-8 leading-relaxed">
-            {randomMessage || 'Инбокс пуст'}
+            {randomMessage || 'Входящих нет'}
           </h2>
         </div>
 
@@ -58,19 +78,10 @@ export function InboxDeck() {
         <div className="flex gap-6 text-sm text-muted-foreground bg-secondary/30 px-6 py-3 rounded-2xl border border-border/50">
           <div className="flex flex-col items-center">
             <span className="font-bold text-foreground text-2xl">
-              {stats.today}
+              {inboxStats.today}
             </span>
             <span className="text-[10px] uppercase tracking-wider opacity-70">
               За сегодня
-            </span>
-          </div>
-          <div className="w-px bg-border/50" />
-          <div className="flex flex-col items-center">
-            <span className="font-bold text-foreground text-2xl">
-              {stats.total}
-            </span>
-            <span className="text-[10px] uppercase tracking-wider opacity-70">
-              Всего
             </span>
           </div>
         </div>
