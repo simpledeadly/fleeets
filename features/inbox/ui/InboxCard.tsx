@@ -39,8 +39,9 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
         x: 0,
         y: 0,
         rotate: 0,
-        rotateY: 180,
+        // rotateY: 180,
         zIndex: 1000,
+        opacity: 1
       }
     : {
         scale: 1 - index * 0.05,
@@ -53,7 +54,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
 
   return (
     <>
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {isFlipped && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -63,7 +64,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
             onClick={() => setIsFlipped(false)}
           />
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
 
       <motion.div
         key={item.id}
