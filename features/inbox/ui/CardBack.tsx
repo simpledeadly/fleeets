@@ -45,7 +45,7 @@ export function CardBack({
         </div>
         <button
           onClick={onFlip}
-          className="p-2 rounded-full text-muted-foreground hover:bg-muted/50 transition-colors cursor-pointer"
+          className="p-2 rounded-full text-muted-foreground hover:bg-muted/50 hover:text-primary transition-colors cursor-pointer"
         >
           <EyeClosed strokeWidth={1.6} size={20} />
         </button>

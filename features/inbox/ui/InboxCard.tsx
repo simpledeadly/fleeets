@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { type Item } from '@/lib/store'
 import { CardFace } from './CardFace'
 import { CardBack } from './CardBack'
@@ -21,7 +21,6 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
     y,
     rotate,
     isFlipped,
-    setIsFlipped,
     isEditing,
     setIsEditing,
     isProcessing,
@@ -35,16 +34,22 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
 
   const animateState = isFlipped
     ? {
-        scale: 1.05,
+        scale: 1,
+        width: 'min(90vw, 600px)', // Ширина: 90% экрана, но не шире 600px
+        height: 'min(80vh, 700px)', // Высота: 80% экрана, но не выше 700px
         x: 0,
         y: 0,
         rotate: 0,
-        // rotateY: 180,
-        zIndex: 1000,
-        opacity: 1
+        rotateY: 0,
+        rotateZ: 0,
+        zIndex: 100,
+        opacity: 1,
       }
     : {
         scale: 1 - index * 0.05,
+        width: '100%',
+        height: '24rem',
+        x: 0,
         y: index * 15,
         rotate: isTop ? 0 : 0,
         rotateY: 0,
@@ -54,32 +59,13 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
 
   return (
     <>
-      {/* <AnimatePresence>
-        {isFlipped && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-90"
-            onClick={() => setIsFlipped(false)}
-          />
-        )}
-      </AnimatePresence> */}
-
       <motion.div
         key={item.id}
         className="absolute w-full h-96"
-        style={{
-          x: isFlipped ? 0 : x,
-          y: isFlipped ? 0 : y,
-          rotate: isFlipped ? 0 : rotate,
-          perspective: 1000,
-          zIndex: isFlipped ? 100 : total - index,
-        }}
+        style={{ perspective: 1000, zIndex: isTop ? 100 : 1 }}
         initial={{ scale: 0.95, opacity: 0, y: 20 }}
         animate={animateState}
-        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-        exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.15 } }}
+        exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
       >
         <motion.div
           drag={isTop && !isFlipped && !isEditing}
