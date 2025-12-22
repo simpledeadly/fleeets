@@ -1,6 +1,6 @@
 'use client'
 import Lottie from 'lottie-react'
-import eyeAnimation from '@/assets/burning-eye.json' // Положи скачанный JSON в папку assets
+import eyeAnimation from '@/assets/lottie/burning-eye.json' // Положи скачанный JSON в папку assets
 
 export function BurningEye() {
   return (

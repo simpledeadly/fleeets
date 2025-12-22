@@ -1,6 +1,6 @@
 'use client'
 import Lottie from 'lottie-react'
-import animation from '@/assets/your-kick-ass.json'
+import animation from '@/assets/lottie/your-kick-ass.json'
 
 export function YourKickAss() {
   return (
