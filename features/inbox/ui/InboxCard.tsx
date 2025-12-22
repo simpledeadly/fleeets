@@ -1,6 +1,6 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, scale } from 'framer-motion'
 import { type Item } from '@/lib/store'
 import { CardFace } from './CardFace'
 import { CardBack } from './CardBack'
@@ -38,7 +38,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
         width: 'min(90vw, 600px)', // Ширина: 90% экрана, но не шире 600px
         height: 'min(80vh, 700px)', // Высота: 80% экрана, но не выше 700px
         x: 0,
-        y: 0,
+        y: -50,
         rotate: 0,
         rotateY: 0,
         rotateZ: 0,
