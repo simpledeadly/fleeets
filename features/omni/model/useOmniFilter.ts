@@ -94,6 +94,7 @@ export function useOmniFilter() {
     setIsQuick,
     activeTags,
     toggleTag,
+    // foundItems,
     visibleItems,
     topTags,
     isDefaultView: !searchQuery && !activeStatus && activeTags.length === 0,
