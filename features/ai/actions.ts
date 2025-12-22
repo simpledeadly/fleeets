@@ -75,7 +75,7 @@ export async function findSimilarItems(itemId: string) {
     .single()
 
   if (!currentItem?.embedding) {
-    console.log('❌ [RAG] У этой задачи нет вектора (embedding is null)')
+    console.log('[RAG] У этой задачи нет вектора (embedding is null)')
     return []
   }
 

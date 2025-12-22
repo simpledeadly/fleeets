@@ -1,19 +1,11 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import {
-  motion,
-  useMotionValue,
-  useTransform,
-  PanInfo,
-  animate,
-  AnimatePresence,
-} from 'framer-motion'
-import { useStore, type Item } from '@/lib/store'
-import { useItemActions } from '@/features/item'
+import { motion, AnimatePresence } from 'framer-motion'
+import { type Item } from '@/lib/store'
 import { CardFace } from './CardFace'
 import { CardBack } from './CardBack'
-import { findSimilarItems } from '@/features/ai'
+import { useInboxCard } from '../model/useInboxCard'
+import { SwipeStamp } from './SwipeStamp'
 
 interface InboxCardProps {
   item: Item
@@ -22,248 +14,124 @@ interface InboxCardProps {
   total: number
 }
 
-type SwipeState = 'idle' | 'left' | 'right' | 'up'
-
 export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
-  // Подключаем логику (actions)
-  const { update, remove, refine } = useItemActions(item)
+  // Подключаем логику
+  const {
+    x,
+    y,
+    rotate,
+    isFlipped,
+    setIsFlipped,
+    isEditing,
+    setIsEditing,
+    isProcessing,
+    swipeState,
+    isHeld,
+    similarItems,
+    isSearching,
+    hasSimilar,
+    handlers,
+  } = useInboxCard(item, isTop)
 
-  // Твои стейты
-  const [isFlipped, setIsFlipped] = useState(false)
-  const [isHeld, setIsHeld] = useState(false)
-  const [swipeState, setSwipeState] = useState<SwipeState>('idle')
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
-  const [similarItems, setSimilarItems] = useState<Item[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const [hasSimilar, setHasSimilar] = useState(false)
-  const incrementStats = useStore((state) => state.incrementInboxStats)
-
-  // Твои таймеры и пороги
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
-  const holdTimer = useRef<NodeJS.Timeout | null>(null)
-  const swipeThreshold = 120
-  const holdThreshold = 400
-
-  // Твоя физика
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
-  const rotate = useTransform(x, [-300, 300], [-15, 15])
-
-  // useEffect(() => {
-  //   // Искать только для верхней карты и только один раз
-  //   if (isTop && !isSearching && similarItems.length === 0) {
-  //     // Задержка, чтобы не спамить, если юзер быстро свайпает
-  //     const searchTimer = setTimeout(async () => {
-  //       setIsSearching(true)
-  //       try {
-  //         const results = await findSimilarItems(item.id)
-  //         if (results && results.length > 0) {
-  //           setSimilarItems(results as any)
-  //           setHasSimilar(true) // 🔥 Вместо флипа - просто ставим флаг
-  //           // setIsFlipped(true)
-  //         }
-  //       } catch (e) {
-  //         console.error('Auto-search failed:', e)
-  //       } finally {
-  //         setIsSearching(false)
-  //       }
-  //     }, 700) // 0.7 секунды
-
-  //     return () => clearTimeout(searchTimer)
-  //   }
-  // }, [isTop, item.id])
-
-  // Твоя логика штампов
-  const getStampText = () => {
-    if (swipeState === 'up')
-      return item.type === 'task' ? 'На сегодня' : 'В архив'
-    if (swipeState === 'left') return 'Удалить'
-    if (swipeState === 'right') {
-      return item.type === 'task'
-        ? isHeld
-          ? 'На сегодня'
-          : 'В план'
-        : 'В архив'
-    }
-    return ''
-  }
-
-  const getStampColor = () => {
-    if (swipeState === 'up') return 'text-orange-500 border-orange-500'
-    if (swipeState === 'left') return 'text-red-500 border-red-500'
-    if (swipeState === 'right') {
-      return isHeld
-        ? 'text-blue-500 border-blue-500'
-        : 'text-green-500 border-green-500'
-    }
-    return ''
-  }
-
-  const getStampRotate = () => {
-    if (swipeState === 'right') return -5
-    if (swipeState === 'left') return 5
-    return 0
-  }
-
-  // Твои обработчики
-  const handleDrag = (_e: unknown, info: PanInfo) => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current)
-
-    if (info.offset.x > swipeThreshold) setSwipeState('right')
-    else if (info.offset.x < -swipeThreshold) setSwipeState('left')
-    else if (info.offset.y < -swipeThreshold) setSwipeState('up')
-    else {
-      setSwipeState('idle')
-      setIsHeld(false)
-      if (holdTimer.current) clearTimeout(holdTimer.current)
-    }
-  }
-
-  useEffect(() => {
-    if (swipeState === 'right' && item.type === 'task' && !isHeld) {
-      holdTimer.current = setTimeout(() => setIsHeld(true), holdThreshold)
-    }
-    return () => {
-      if (holdTimer.current) clearTimeout(holdTimer.current)
-    }
-  }, [swipeState, isHeld, item.type])
-
-  const handleDragEnd = async (_e: unknown, info: PanInfo) => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current)
-
-    if (swipeState !== 'idle') {
-      const exitX = (info.offset.x > 0 ? 1 : -1) * 300 // Чуть дальше, чтоб наверняка
-      const exitY = info.offset.y < 0 ? -300 : 0
-
-      animate(x, exitX, { type: 'spring', stiffness: 300, damping: 30 })
-      animate(y, exitY, { type: 'spring', stiffness: 300, damping: 30 })
-
-      // ЛОГИКА ДЕЙСТВИЙ ЧЕРЕЗ ХУК
-      setTimeout(() => {
-        if (swipeState === 'left') {
-          remove() // Тост "Удалено" уже внутри remove
-          incrementStats()
-        } else if (swipeState === 'up') {
-          update({ status: 'today' }, 'Задача взята в фокус')
-          incrementStats()
-        } else if (swipeState === 'right') {
-          if (item.type === 'task') {
-            if (isHeld) {
-              update({ status: 'today' }, 'Задача взята в фокус')
-            } else {
-              update({ status: 'planned' }, 'Добавлено в План')
-            }
-          } else {
-            update({ status: 'archived' }, 'Отправлено в Архив')
-          }
-          incrementStats()
-        }
-      }, 50)
-    } else {
-      animate(x, 0, { type: 'spring', stiffness: 400, damping: 40 })
-      animate(y, 0, { type: 'spring', stiffness: 400, damping: 40 })
-    }
-    setIsHeld(false)
-  }
-
-  const handlePointerDown = (e: React.PointerEvent) => {
-    if (isEditing) return // Не флипаем при редактировании
-    if ((e.target as HTMLElement).closest('button, textarea, input')) return
-
-    longPressTimer.current = setTimeout(() => {
-      if (x.get() === 0 && y.get() === 0) setIsFlipped(true)
-    }, holdThreshold)
-  }
-
-  const handlePointerUp = () => {
-    if (longPressTimer.current) clearTimeout(longPressTimer.current)
-  }
-
-  const handleFlip = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsFlipped(!isFlipped)
-  }
-
-  const handleRefine = (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsProcessing(true)
-    refine().finally(() => setIsProcessing(false))
-  }
+  const animateState = isFlipped
+    ? {
+        scale: 1.05,
+        x: 0,
+        y: 0,
+        rotate: 0,
+        rotateY: 180,
+        zIndex: 1000,
+      }
+    : {
+        scale: 1 - index * 0.05,
+        y: index * 15,
+        rotate: isTop ? 0 : 0,
+        rotateY: 0,
+        zIndex: total - index,
+        opacity: 1 - index * 0.2,
+      }
 
   return (
-    <motion.div
-      key={item.id}
-      className="absolute w-full h-96"
-      style={{ perspective: 1000, zIndex: isTop ? 100 : 1 }}
-      initial={{ scale: 0.95, opacity: 0, y: 20 }}
-      animate={{
-        scale: 1,
-        opacity: 1,
-        y: 0,
-        transition: { type: 'spring', stiffness: 400, damping: 40 },
-      }}
-      exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
-    >
+    <>
+      <AnimatePresence>
+        {isFlipped && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-90"
+            onClick={() => setIsFlipped(false)}
+          />
+        )}
+      </AnimatePresence>
+
       <motion.div
-        drag={isTop && !isFlipped && !isEditing}
-        dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-        dragElastic={0.1}
-        onDrag={handleDrag}
-        onDragEnd={handleDragEnd}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        className="relative w-full h-full"
-        style={{ x, y, rotate, transformStyle: 'preserve-3d' }}
+        key={item.id}
+        className="absolute w-full h-96"
+        style={{
+          x: isFlipped ? 0 : x,
+          y: isFlipped ? 0 : y,
+          rotate: isFlipped ? 0 : rotate,
+          perspective: 1000,
+          zIndex: isFlipped ? 100 : total - index,
+        }}
+        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        animate={animateState}
+        transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+        exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.15 } }}
       >
         <motion.div
-          className="absolute w-full h-full"
-          style={{ transformStyle: 'preserve-3d' }}
-          animate={{ rotateY: isFlipped ? 180 : 0 }}
-          transition={{ duration: 0.5, type: 'spring' }}
+          drag={isTop && !isFlipped && !isEditing}
+          dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+          dragElastic={0.1}
+          onDrag={handlers.handleDrag}
+          onDragEnd={handlers.handleDragEnd}
+          onPointerDown={handlers.handlePointerDown}
+          onPointerUp={handlers.handlePointerUp}
+          className="relative w-full h-full"
+          style={{ x, y, rotate, transformStyle: 'preserve-3d' }}
         >
-          <CardFace
-            item={item}
-            isProcessing={isProcessing}
-            onRefine={handleRefine}
-            hasSimilar={hasSimilar}
-            onFlip={handleFlip}
-            index={index}
-            total={total}
-            setEditing={setIsEditing}
-          />
-          <CardBack
-            item={item}
-            onFlip={handleFlip}
-            setEditing={setIsEditing}
-            similarItems={similarItems}
-            isSearching={isSearching}
+          <motion.div
+            className="absolute w-full h-full"
+            style={{ transformStyle: 'preserve-3d' }}
+            animate={{ rotateY: isFlipped ? 180 : 0 }}
+            transition={{ duration: 0.5, type: 'spring' }}
+          >
+            <div className="absolute w-full h-full backface-hidden">
+              <CardFace
+                item={item}
+                isProcessing={isProcessing}
+                onRefine={handlers.handleRefine}
+                hasSimilar={hasSimilar}
+                onFlip={handlers.handleFlip}
+                index={index}
+                total={total}
+                setEditing={setIsEditing}
+              />
+            </div>
+            <div
+              className="absolute w-full h-full backface-hidden"
+              style={{ transform: 'rotateY(180deg)' }}
+            >
+              <CardBack
+                item={item}
+                onFlip={handlers.handleFlip}
+                setEditing={setIsEditing}
+                similarItems={similarItems}
+                isSearching={isSearching}
+              />
+            </div>
+          </motion.div>
+
+          <SwipeStamp
+            state={swipeState}
+            itemType={item.type}
+            isHeld={isHeld}
+            isTop={isTop && !isFlipped}
+            isFlipped={isFlipped}
           />
         </motion.div>
-
-        {/* ШТАМП (Твой код) */}
-        <AnimatePresence>
-          {swipeState !== 'idle' && (
-            <motion.div
-              initial={{ scale: 1.5, opacity: 0 }}
-              animate={{
-                scale: 1,
-                opacity: 1,
-                transition: { type: 'spring', stiffness: 500, damping: 30 },
-              }}
-              exit={{ scale: 0.5, opacity: 0 }}
-              style={{ rotate: getStampRotate() }}
-              className="absolute inset-x-0 top-10 flex items-center justify-center pointer-events-none"
-            >
-              <span
-                className={`px-6 py-2 rounded-lg border-4 font-bold text-2xl uppercase tracking-wider ${getStampColor()}`}
-              >
-                {getStampText()}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </motion.div>
-    </motion.div>
+    </>
   )
 }
