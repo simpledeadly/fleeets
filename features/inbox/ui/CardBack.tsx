@@ -32,7 +32,7 @@ export function CardBack({
     >
       <div className="flex justify-between items-center mb-2">
         <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500">
-          Метаданные
+          Исходный текст
         </h4>
         <div className="flex items-center gap-1.5 mt-1 text-zinc-400">
           <Calendar strokeWidth={1.6} size={12} />
