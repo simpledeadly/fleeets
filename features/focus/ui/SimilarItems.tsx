@@ -49,7 +49,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
     <motion.div layout="position" className="space-y-3">
       <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
         <Sparkles size={12} className="text-amber-500" />
-        <span>AI Context</span>
+        <span>Похожее ({items?.length})</span>
       </div>
 
       {/* Показываем скелет, только если isLoading */}
