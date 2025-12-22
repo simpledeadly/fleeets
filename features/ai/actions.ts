@@ -12,7 +12,7 @@ const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
 })
 
-export async function createItemWithAI(text: string) {
+export async function createItem(text: string) {
   const supabase = await createClient()
   const {
     data: { user },

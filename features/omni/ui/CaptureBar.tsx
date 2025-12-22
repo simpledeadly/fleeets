@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Mic, ArrowUp, BrainCircuit, Loader2, Square } from 'lucide-react'
-import { createItemWithAI } from '@/features/item'
+import { createItem } from '@/features/item'
 import { searchWithAI, transcribeAudio, askBrain } from '@/features/ai'
 import { useOmniStore } from '../model/store'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
@@ -118,7 +118,7 @@ export function CaptureBar() {
       setText('')
 
       // 2. Отправляем запрос в фоне
-      createItemWithAI(content)
+      createItem(content)
         .then((result) => {
           // 3. Обрабатываем результат, когда он придет
           if (result.error) {

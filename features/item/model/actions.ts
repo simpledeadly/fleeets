@@ -17,7 +17,7 @@ type Item = Database['public']['Tables']['items']['Row']
 /**
  * 1. СОЗДАНИЕ (Легкое, без векторов)
  */
-export async function createItemWithAI(text: string) {
+export async function createItem(text: string) {
   const supabase = await createClient()
   const {
     data: { user },

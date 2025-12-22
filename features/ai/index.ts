@@ -1,6 +1,6 @@
 export {
   findSimilarItems,
-  createItemWithAI,
+  createItem,
   transcribeAudio,
   searchWithAI,
   findSimilarItemsByQuery,

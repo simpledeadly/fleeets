@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { CheckSquare, Plus, X } from "lucide-react"
-import { createItemWithAI } from "@/features/ai"
+import { createItem } from "@/features/ai"
 import { toast } from "sonner"
 import { motion } from "framer-motion"
 
@@ -14,7 +14,7 @@ export function GenDecompose({ data }: { data?: string[] }) {
   const handleSave = async () => {
     setIsSaving(true)
     // Создаем все задачи параллельно
-    await Promise.all(tasks.map(t => createItemWithAI(t)))
+    await Promise.all(tasks.map(t => createItem(t)))
     setIsSaving(false)
     setIsDone(true)
     toast.success(`${tasks.length} задач создано!`)
