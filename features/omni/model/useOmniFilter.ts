@@ -76,7 +76,7 @@ export function useOmniFilter() {
       return dateB - dateA
     })
 
-    return result.slice(0, 30)
+    return result.slice(0, 8)
   }, [items, activeStatus, isQuick, activeTags, searchQuery])
 
   const toggleTag = (tag: string) => {

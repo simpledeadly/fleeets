@@ -66,10 +66,12 @@ export function Omni() {
                   <>
                     <CommandGroup heading="Быстрый переход">
                       <CommandItem onSelect={() => run(() => setView('inbox'))}>
-                        <Layers className="h-4 w-4" />Инбокс
+                        <Layers className="h-4 w-4" />
+                        Инбокс
                       </CommandItem>
                       <CommandItem onSelect={() => run(() => setView('focus'))}>
-                        <Focus className="h-4 w-4" />Фокус
+                        <Focus className="h-4 w-4" />
+                        Фокус
                       </CommandItem>
                     </CommandGroup>
                     <CommandSeparator />
@@ -80,8 +82,8 @@ export function Omni() {
                 <CommandGroup
                   heading={
                     filter.searchQuery
-                      ? `Найдено (${filter.visibleItems.length})`
-                      : 'Последние задачи'
+                      ? `Найдено (показано ${filter.visibleItems.length})`
+                      : `Элементы (показано ${filter.visibleItems.length})`
                   }
                 >
                   {filter.visibleItems.map((item) => (
