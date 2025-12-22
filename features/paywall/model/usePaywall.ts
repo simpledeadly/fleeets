@@ -16,7 +16,7 @@ export function usePaywall() {
     // Приводим к общему интерфейсу FeatureConfig, чтобы TS не ругался на отсутствие полей
     const config = PAYWALL_CONFIG[feature] as FeatureConfig
 
-    // Если фича требует PRO или PREMIUM, а у нас Free
+    // Если фича требует PRO, а у нас Free
     if (config.tier === 'pro') {
       openPaywall(feature)
       return false

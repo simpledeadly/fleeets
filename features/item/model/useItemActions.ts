@@ -2,96 +2,115 @@ import { toast } from 'sonner'
 import { useStore, type Item } from '@/lib/store'
 import { updateItem, softDeleteItem } from './actions'
 import { createClient } from '@/lib/supabase/client'
-import { useCallback, useRef } from 'react'
-import { notify } from '@/features/notifications'
+import { useRef, useCallback } from 'react'
 
 export function useItemActions(item: Item) {
-  const {
-    updateItem: updateStore,
-    removeItem: removeStore,
-    addItem: addStore,
-  } = useStore.getState()
+  // Достаем методы стора
+  // getState() позволяет читать данные без подписки на ре-рендеры
+  const store = useStore.getState()
   const supabase = createClient()
 
-  const debounceTimer = useRef<NodeJS.Timeout | null>(null)
+  // 1. НАКОПИТЕЛЬ ИЗМЕНЕНИЙ (Фикс потери заголовка)
+  // Здесь мы храним все поля, которые менялись за последние 500мс
+  const pendingChangesRef = useRef<Partial<Item>>({})
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   /**
-   * Универсальное обновление
+   * Получить САМУЮ свежую версию задачи из стора.
+   * (Фикс возврата старой карточки)
+   */
+  const getFreshItem = () => {
+    return useStore.getState().items.find((i) => i.id === item.id) || item
+  }
+
+  /**
+   * update: Умное обновление с накопителем
    */
   const update = useCallback(
     async (changes: Partial<Item>, successMessage?: string) => {
-      // 1. Snapshot (для отката)
-      const previousItem = { ...item }
+      // 1. Optimistic Update (Мгновенно в UI)
+      // Мержим изменения с текущим состоянием в сторе
+      const freshItem = getFreshItem()
+      const newItem = { ...freshItem, ...changes }
+      store.updateItem(newItem)
 
-      updateStore({ id: item.id, ...changes } as Item)
+      // 2. Накапливаем изменения для сервера
+      pendingChangesRef.current = { ...pendingChangesRef.current, ...changes }
 
-      const undo = async () => {
-        // Возвращаем в стор
-        updateStore(previousItem)
-        await updateItem(item.id, previousItem)
-        // toast.info("Действие отменено")
+      // 3. Подготовка Undo (Снимок делаем ДО отправки, но берем свежий item)
+      // Важно: Снимок нужен только если это "важное" действие (свайп/статус)
+      const previousItemSnapshot = { ...freshItem }
+
+      // 4. Мгновенный Тост (Фикс тормозов)
+      if (successMessage) {
+        const undo = async () => {
+          // Оптимистичный возврат
+          store.updateItem(previousItemSnapshot)
+          // Серверный возврат (без дебаунса, сразу)
+          await updateItem(item.id, previousItemSnapshot)
+        }
+
+        toast.success(successMessage, {
+          action: { label: 'Отмена', onClick: undo },
+          duration: 4000,
+        })
       }
 
-      // 3. Серверная часть (DEBOUNCED)
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current)
-      }
+      // 5. Серверная синхронизация (Debounced)
+      // Если это смена статуса (свайп) - отправляем практически сразу (маленькая задержка для плавности)
+      // Если это текст - ждем 1000мс (чтобы собрать все буквы)
+      const isStatusChange = 'status' in changes || 'type' in changes
+      const delay = isStatusChange ? 50 : 1000
 
-      debounceTimer.current = setTimeout(async () => {
-        // Тут мы отправляем запрос
-        const result = await updateItem(item.id, changes)
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+
+      debounceTimerRef.current = setTimeout(async () => {
+        // Забираем всё, что накопилось, и очищаем реф
+        const payload = { ...pendingChangesRef.current }
+        pendingChangesRef.current = {} // Очищаем ДО await, чтобы новые изменения не пропали
+
+        const result = await updateItem(item.id, payload)
 
         if (result.error) {
-          updateStore(previousItem) // Откат при ошибке
+          // Если сервер упал - откатываем UI
+          store.updateItem(previousItemSnapshot)
           toast.error('Ошибка сохранения')
-        } else if (successMessage) {
-          // Тост показываем только когда реально сохранилось (или можно сразу, по вкусу)
-          // Но лучше здесь, чтобы не спамить тостами
-          toast.success(successMessage, {
-            action: { label: 'Отмена', onClick: undo },
-            duration: 4000, // Даем 4 секунды на подумать
-          })
         }
-      }, 10)
+      }, delay)
     },
-    [item.id, updateStore]
-  )
+    [item.id]
+  ) // Зависимость только от ID!
 
   /**
-   * Удаление
+   * remove: Удаление
    */
   const remove = async () => {
-    const previousItem = { ...item }
+    // 1. Свежий снимок
+    const freshItem = getFreshItem()
 
-    // 1. Optimistic
-    removeStore(item.id)
+    // 2. Optimistic Delete
+    store.removeItem(item.id)
 
-    // 2. Undo Logic
+    // 3. Undo Logic
     const undo = async () => {
-      // Сразу возвращаем в UI
-      addStore({ ...previousItem })
-
-      const { error } = await updateItem(item.id, {
-        status: previousItem.status,
-      })
-      if (error) {
-        notify('info', 'Не удалось восстановить')
-        removeStore(item.id) // Если сервер отказал, удаляем обратно
-      } else {
-        // toast.info('Задача восстановлена')
-      }
+      // Возвращаем в стор
+      store.addItem(freshItem)
+      // Возвращаем на сервер (статус)
+      await updateItem(item.id, { status: freshItem.status })
     }
 
-    notify('success', 'Удалено', {
+    // 4. Мгновенный тост
+    toast.success('Удалено', {
       action: { label: 'Вернуть', onClick: undo },
       duration: 4000,
     })
 
+    // 5. Server
     await softDeleteItem(item.id)
   }
 
   /**
-   * AI Refine
+   * AI Refine (Мгновенный апдейт)
    */
   const refine = async () => {
     const toastId = toast.loading('AI думает...')
@@ -104,9 +123,11 @@ export function useItemActions(item: Item) {
       if (error) throw error
 
       if (data) {
-        const mergedItem = { ...item, ...data }
-        updateStore(mergedItem)
-        toast.success('Обработано!', { id: toastId })
+        // Мержим с текущим состоянием стора
+        const current = getFreshItem()
+        const merged = { ...current, ...data }
+        store.updateItem(merged)
+        toast.success('Улучшено!', { id: toastId })
       }
     } catch (err) {
       console.error('Refine error:', err)
@@ -114,8 +135,8 @@ export function useItemActions(item: Item) {
     }
   }
 
-  const toggleBlitz = () => update({ is_quick: !item.is_quick })
-  const setType = (type: Item['type']) => update({ type })
+  const toggleBlitz = () => update({ is_quick: !item.is_quick }) // Без тоста
+  const setType = (type: Item['type']) => update({ type }) // Без тоста
 
   return { update, remove, refine, toggleBlitz, setType }
 }

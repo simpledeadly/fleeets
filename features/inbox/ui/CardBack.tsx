@@ -64,6 +64,10 @@ export function CardBack({
             if (e.target.value !== (item.raw_content || ''))
               update({ raw_content: e.target.value })
           }}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
           placeholder="Исходного текста нет, но можно добавить"
           onClick={(e) => e.stopPropagation()}
           className="w-full h-full bg-transparent text-foreground overflow-y-auto whitespace-pre-wrap resize-none focus:outline-none"

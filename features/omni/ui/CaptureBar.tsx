@@ -180,7 +180,7 @@ export function CaptureBar() {
             >
               <div>
                 <p className="font-medium">
-                  Семантический поиск доступен в PREMIUM
+                  Семантический поиск доступен в PRO
                 </p>
                 <p className="text-muted-foreground">
                   Нажмите, чтобы узнать подробнее

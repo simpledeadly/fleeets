@@ -38,8 +38,8 @@ export function CardFace({
   onFlip,
   total,
   setEditing,
-  // hasSimilar,
-}: CardFaceProps) {
+}: // hasSimilar,
+CardFaceProps) {
   const { update, toggleBlitz, setType } = useItemActions(item)
   const [isDecomposing, setIsDecomposing] = useState(false)
 
@@ -136,8 +136,12 @@ export function CardFace({
             if (e.target.value !== item.content)
               update({ content: e.target.value })
           }}
-          className="w-full bg-transparent text-2xl font-bold leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
           placeholder="Заголовок"
+          className="w-full bg-transparent text-2xl font-bold leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20"
           rows={2} // Примерная высота
           style={{ fieldSizing: 'content' } as any} // Новый CSS для автовысоты (если поддерживается), иначе фиксированный rows
         />
@@ -152,8 +156,12 @@ export function CardFace({
             if (e.target.value !== (item.description || ''))
               update({ description: e.target.value })
           }}
-          className="flex-1 w-full bg-transparent text-md font-mono text-muted-foreground leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck="false"
           placeholder="Описание..."
+          className="flex-1 w-full bg-transparent text-md font-mono text-muted-foreground leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20"
         />
 
         {(item.metadata as any)?.source === 'voice' && (
