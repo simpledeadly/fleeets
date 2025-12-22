@@ -344,14 +344,16 @@ export async function askBrain(question: string) {
           : item.type === 'thought'
           ? 'Мысль'
           : 'Задача'
-      const quickTag = item.is_quick ? '⚡️[БЛИЦ/Быстрое]' : ''
+      const quickTag = item.is_quick ? '⚡️ [БЛИЦ/Быстрое]' : ''
       const aiTags =
         item.ai_tags && item.ai_tags.length > 0
           ? `Теги: ${item.ai_tags.join(', ')}`
           : ''
 
       const priority =
-        item.priority && item.priority === 'high'
+        item.priority && item.priority === 'critical'
+          ? '‼️ КРИТИЧЕСКИЙ ПРИОРИТЕТ'
+          : item.priority === 'high'
           ? '❗️ ВЫСОКИЙ ПРИОРИТЕТ'
           : item.priority === 'low'
           ? '🔽 Низкий приоритет'
