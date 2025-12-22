@@ -162,7 +162,7 @@ export function CaptureBar() {
               >
                 <div>
                   <p className="font-medium">{item.content}</p>
-                  <p className="text-muted-foreground">{item.description}</p>
+                  <p className="text-muted-foreground line-clamp-2">{item.description}</p>
                 </div>
                 <p className="text-muted-foreground font-medium">
                   {item.status}
