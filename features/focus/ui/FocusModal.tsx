@@ -178,7 +178,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
               {subtasks.length > 0 && (
                 <div className="space-y-3 pt-4 border-t border-dashed">
                   <h3 className="text-xs font-bold uppercase text-muted-foreground">
-                    Подзадачи
+                    Задачи проекта
                   </h3>
                   <div className="space-y-2">
                     {subtasks.map((task) => (

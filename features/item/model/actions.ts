@@ -17,7 +17,7 @@ type Item = Database['public']['Tables']['items']['Row']
 /**
  * 1. СОЗДАНИЕ (Легкое, без векторов)
  */
-export async function createItem(text: string) {
+export async function createItem(text: string, parentId?: string) {
   const supabase = await createClient()
   const {
     data: { user },
@@ -33,6 +33,7 @@ export async function createItem(text: string) {
         status: 'inbox',
         type: 'task',
         raw_content: text,
+        parent_id: parentId,
         metadata: { source: 'web' },
         revision_count: 0,
         interaction_count: 0,

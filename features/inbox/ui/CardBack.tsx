@@ -1,8 +1,8 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Calendar, EyeClosed, Link, Loader2 } from 'lucide-react'
+import { Calendar, EyeClosed, Link, Loader2, Text } from 'lucide-react'
 import { useStore, type Item } from '@/lib/store'
-import { useItemActions } from '@/features/item'
+import { useItemActions, SubtaskList } from '@/features/item'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
@@ -31,9 +31,10 @@ export function CardBack({
       className="absolute w-full h-full p-4 rounded-3xl border bg-background text-white shadow-2xl flex flex-col"
     >
       <div className="flex justify-between items-center mb-2">
-        <h4 className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500">
+        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500">
+          <Text size={12} />
           Исходный текст
-        </h4>
+        </div>
         <div className="flex items-center gap-1.5 mt-1 text-zinc-400">
           <Calendar strokeWidth={1.6} size={12} />
           <span className="text-xs font-medium font-mono">
@@ -75,7 +76,7 @@ export function CardBack({
       </div>
 
       <div className="mt-2 pt-3 border-t border-border">
-        <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
+        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
           <Link size={12} />
           <span>Найденные связи ({similarItems.length})</span>
         </div>
@@ -108,6 +109,14 @@ export function CardBack({
             Похожие записи не найдены (отключено).
           </p>
         )}
+      </div>
+
+      <div className="mt-2 border-t border-border">
+        {/* {!isSearching && similarItems.length > 0 && ( */}
+        <div className="space-y-1">
+          <SubtaskList parentId={item.id} items={[]} />
+        </div>
+        {/* )} */}
       </div>
     </motion.div>
   )
