@@ -16,3 +16,4 @@ src-tauri/target
 .vercel
 .DS_Store
 .temp
+./supabase
