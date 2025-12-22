@@ -97,30 +97,23 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
             animate={{ rotateY: isFlipped ? 180 : 0 }}
             transition={{ duration: 0.5, type: 'spring' }}
           >
-            <div className="absolute w-full h-full backface-hidden">
-              <CardFace
-                item={item}
-                isProcessing={isProcessing}
-                onRefine={handlers.handleRefine}
-                hasSimilar={hasSimilar}
-                onFlip={handlers.handleFlip}
-                index={index}
-                total={total}
-                setEditing={setIsEditing}
-              />
-            </div>
-            <div
-              className="absolute w-full h-full backface-hidden"
-              style={{ transform: 'rotateY(180deg)' }}
-            >
-              <CardBack
-                item={item}
-                onFlip={handlers.handleFlip}
-                setEditing={setIsEditing}
-                similarItems={similarItems}
-                isSearching={isSearching}
-              />
-            </div>
+            <CardFace
+              item={item}
+              isProcessing={isProcessing}
+              onRefine={handlers.handleRefine}
+              hasSimilar={hasSimilar}
+              onFlip={handlers.handleFlip}
+              index={index}
+              total={total}
+              setEditing={setIsEditing}
+            />
+            <CardBack
+              item={item}
+              onFlip={handlers.handleFlip}
+              setEditing={setIsEditing}
+              similarItems={similarItems}
+              isSearching={isSearching}
+            />
           </motion.div>
 
           <SwipeStamp
