@@ -1,6 +1,6 @@
 'use client'
 
-import { motion, scale } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { type Item } from '@/lib/store'
 import { CardFace } from './CardFace'
 import { CardBack } from './CardBack'
@@ -35,20 +35,22 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
   const animateState = isFlipped
     ? {
         scale: 1,
-        width: 'min(90vw, 600px)', // Ширина: 90% экрана, но не шире 600px
-        height: 'min(80vh, 700px)', // Высота: 80% экрана, но не выше 700px
+        width: '90vw',
+        height: '75vh',
+        maxWidth: '600px',
+        maxHeight: '700px',
         x: 0,
         y: -50,
         rotate: 0,
-        rotateY: 0,
-        rotateZ: 0,
         zIndex: 100,
         opacity: 1,
       }
     : {
-        scale: 1 - index * 0.05,
+        scale: 1,
         width: '100%',
         height: '24rem',
+        maxWidth: '100%',
+        maxHeight: '100%',
         x: 0,
         y: index * 15,
         rotate: isTop ? 0 : 0,
@@ -61,11 +63,31 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
     <>
       <motion.div
         key={item.id}
-        className="absolute w-full h-96"
+        className="absolute"
         style={{ perspective: 1000, zIndex: isTop ? 100 : 1 }}
-        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+        // layout
+        // layoutId={`card-${item.id}`}
+        initial={{
+          scale: 0.95,
+          opacity: 0,
+          y: 20,
+          // Добавляем эти поля, чтобы они не анимировались с нуля
+          minWidth: '100%',
+          minHeight: '24rem',
+          maxWidth: '100%',
+          maxHeight: '100%',
+        }}
+        // transition={{
+        //   // Пружина для движения и вращения
+        //   default: { type: 'spring', stiffness: 260, damping: 20 },
+        //   // Плавная кривая для размеров (чтобы не дрыгалось)
+        //   width: { duration: 0.3, ease: 'easeInOut' },
+        //   height: { duration: 0.3, ease: 'easeInOut' },
+        //   maxWidth: { duration: 0.3, ease: 'easeInOut' },
+        //   maxHeight: { duration: 0.3, ease: 'easeInOut' },
+        // }}
         animate={animateState}
-        exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+        exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.15 } }}
       >
         <motion.div
           drag={isTop && !isFlipped && !isEditing}
