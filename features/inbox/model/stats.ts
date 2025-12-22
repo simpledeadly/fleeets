@@ -11,13 +11,15 @@ export async function getInboxStats() {
   const startOfDay = new Date()
   startOfDay.setHours(0, 0, 0, 0)
 
+  const startOfDayISO = startOfDay.toISOString()
+
   // 1. Статистика за сегодня (считаем логи)
   const { count: todayCount } = await supabase
     .from('activity_logs')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
-    .eq('category', 'inbox_triage') // Наша категория
-    .gte('created_at', startOfDay.toISOString())
+    .in('category', ['item.triage', 'inbox_triage'])
+    .gte('created_at', startOfDayISO)
 
   // 2. Статистика за все время (Можно считать логи, а можно считать обработанные задачи)
   // Вариант А: Считать логи (точно показывает процесс работы)
@@ -25,7 +27,7 @@ export async function getInboxStats() {
     .from('activity_logs')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
-    .eq('category', 'inbox_triage')
+    .in('category', ['item.triage', 'inbox_triage'])
 
   // Вариант Б: Считать текущее состояние базы (сколько сейчас НЕ в инбоксе)
   // Это покажет "Объем базы знаний", а не "Твою продуктивность".
