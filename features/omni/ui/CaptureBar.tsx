@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Mic, ArrowUp, BrainCircuit, Loader2, Square } from 'lucide-react'
+import { Plus, Mic, ArrowUp, BrainCircuit, Loader2, Square, Folder } from 'lucide-react'
 import { createItem } from '@/features/item'
 import { searchWithAI, transcribeAudio, askBrain } from '@/features/ai'
 import { useOmniStore } from '../model/store'
@@ -22,7 +22,7 @@ export function CaptureBar() {
   const [suggestions, setSuggestions] = useState<Item[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const debouncedText = useDebounce(text, 700)
-  const { setFocusItem } = useStore()
+  const { items, setFocusItem } = useStore()
   const { isPro, openPaywall } = usePaywall()
   const [brainMode, setBrainMode] = useState(false)
   const [brainAnswer, setBrainAnswer] = useState<{
@@ -87,10 +87,58 @@ export function CaptureBar() {
     performSearch()
   }, [debouncedText])
 
-  const handleSuggestionClick = (item: Item) => {
-    // setText("")
-    setSuggestions([])
-    setFocusItem(item)
+  // РЕЖИМ ДОБАВЛЕНИЯ ЭЛЕМЕНТА В ПРОЕКТ
+  useEffect(() => {
+    // Если включен BrainMode (?) - не ищем проекты
+    if (brainMode) return
+
+    // Если уже введен синтаксис проекта (есть >), то не подсказываем проекты
+    if (text.includes('>')) {
+      setSuggestions([])
+      return
+    }
+
+    const trimmed = text.trim().toLowerCase()
+
+    // Начинаем искать от 2 букв
+    if (trimmed.length >= 2) {
+      // Ищем среди НЕ удаленных и НЕ инбокса (только устоявшиеся задачи/проекты)
+      const matches = items
+        .filter(
+          (i) =>
+            i.status !== 'inbox' &&
+            i.status !== 'deleted' &&
+            i.content.toLowerCase().includes(trimmed)
+        )
+        .slice(0, 3) // Берем топ-3
+
+      // 👇 ХАК: Добавляем им спец. флаг, чтобы UI знал, как их рендерить
+      const suggestionsWithFlag = matches.map((m) => ({
+        ...m,
+        isProjectSuggestion: true,
+      })) as any
+
+      setSuggestions(suggestionsWithFlag)
+    } else {
+      setSuggestions([])
+    }
+
+    // Отключаем старый RAG-поиск в этом режиме, чтобы не мешал
+    // (Удали или закомментируй старый useEffect с searchWithAI, если хочешь заменить его полностью)
+  }, [text, items, brainMode])
+
+  const handleSuggestionClick = (item: any) => {
+    setText(`${item.content} > `)
+    // if (item.isProjectSuggestion) {
+    //   // 🔥 АВТОДОПОЛНЕНИЕ ПРОЕКТА
+    //   setText(`${item.content} > `)
+    //   // Оставляем фокус в инпуте (в идеале найти ref инпута и вызвать focus)
+    // } else {
+    //   // Старое поведение (открыть задачу)
+    //   // setText('')
+    //   setSuggestions([])
+    //   setFocusItem(item)
+    // }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -126,8 +174,15 @@ export function CaptureBar() {
               description: 'Задача не была сохранена.',
             })
             setText(content)
+          } else {
+            if (result.parentTitle) {
+              toast.success('Задача добавлена в проект', {
+                description: `«${result.parentTitle}» > ${result.item.content}`,
+              })
+            } else {
+              toast.success('Задача в Inbox!')
+            }
           }
-          toast.success('Задача в Inbox!')
         })
         .finally(() => {
           // 4. Уменьшаем счетчик в любом случае
@@ -146,7 +201,7 @@ export function CaptureBar() {
 
   return (
     <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-20">
-      <AnimatePresence>
+      {/* <AnimatePresence>
         {!brainMode && (suggestions.length > 0 || isSearching) && isPro ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -162,7 +217,9 @@ export function CaptureBar() {
               >
                 <div>
                   <p className="font-medium">{item.content}</p>
-                  <p className="text-muted-foreground line-clamp-2">{item.description}</p>
+                  <p className="text-muted-foreground line-clamp-2">
+                    {item.description}
+                  </p>
                 </div>
                 <p className="text-muted-foreground font-medium">
                   {item.status}
@@ -203,7 +260,60 @@ export function CaptureBar() {
             />
           </motion.div>
         )}
-      </AnimatePresence>
+      </AnimatePresence> */}
+
+      {!brainMode && suggestions.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 10 }}
+          className="absolute bottom-full w-full mb-2 space-y-1"
+        >
+          {suggestions.map((item: any) => (
+            <button
+              key={item.id}
+              onClick={() => handleSuggestionClick(item)}
+              className="w-full flex items-center justify-between text-left p-3 text-sm bg-card/90 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg hover:bg-accent transition-colors group"
+            >
+              <div className="flex items-center gap-3 overflow-hidden">
+                {/* Иконка папки для проектов */}
+                <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
+                  {item.isProjectSuggestion ? (
+                    <Folder size={18} />
+                  ) : (
+                    <BrainCircuit size={18} />
+                  )}
+                </div>
+
+                <div className="flex flex-col truncate">
+                  <span className="font-medium truncate">
+                    {item.content}
+                    {/* Подсказка синтаксиса */}
+                    {item.isProjectSuggestion && (
+                      <span className="text-muted-foreground opacity-50 ml-1">
+                        &gt;
+                      </span>
+                    )}
+                  </span>
+                  {/* Показываем статус, чтобы было понятно, откуда проект */}
+                  {item.isProjectSuggestion && (
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                      {item.status === 'today' ? 'Focus' : item.status}
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Подсказка клавиши (опционально) */}
+              {item.isProjectSuggestion && (
+                <span className="text-[10px] text-muted-foreground border border-border px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                  Enter
+                </span>
+              )}
+            </button>
+          ))}
+        </motion.div>
+      )}
 
       <form
         onSubmit={handleSubmit}

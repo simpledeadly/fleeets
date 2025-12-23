@@ -1,7 +1,7 @@
 import { motion } from "framer-motion"
 import { useTypewriter } from '@/lib/hooks/useTypewriter'
 import { useStore } from '@/lib/store'
-import { MarkdownRenderer } from '@/app/components/ui/MarkdownRenderer'
+import { MarkdownRenderer } from '@/app/components/MarkdownRenderer'
 
 export function BrainResponse({ text, sources }: { text: string, sources: any[] }) {
   const { setFocusItem } = useStore()

@@ -6,6 +6,7 @@ import type { Database } from '@/types/supabase'
 import OpenAI from 'openai'
 import { logTokenUsage } from '@/features/ai'
 import { logEvent } from '@/lib/logging' // Твой новый логгер событий
+import { revalidatePath } from 'next/cache'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -17,24 +18,58 @@ type Item = Database['public']['Tables']['items']['Row']
 /**
  * 1. СОЗДАНИЕ (Легкое, без векторов)
  */
-export async function createItem(text: string, parentId?: string) {
+export async function createItem(text: string) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  let finalContent = text
+  let parentId: string | null = null
+  let parentTitle: string | null = null
+
+  // 👇 ЛОГИКА "СИНТАКСИСА ПРОЕКТОВ"
+  // Ищем разделитель ">" (например: "Fleeets > Пофиксить баг")
+  if (text.includes('>')) {
+    const parts = text.split('>')
+    // Берем первую часть как название проекта, остальное склеиваем обратно (если там тоже были >)
+    const potentialParentName = parts[0].trim()
+    const potentialChildContent = parts.slice(1).join('>').trim()
+
+    if (potentialParentName.length > 0 && potentialChildContent.length > 0) {
+      // Ищем родителя в базе (нечеткий поиск)
+      // Ищем среди НЕ удаленных
+      const { data: parent } = await supabase
+        .from('items')
+        .select('id, content, status')
+        .eq('user_id', user.id)
+        .neq('status', 'deleted')
+        // Используем ilike для поиска без учета регистра (% - это wildcard)
+        .ilike('content', `%${potentialParentName}%`)
+        .limit(1)
+        .maybeSingle()
+
+      if (parent) {
+        console.log(`🔗 Found parent: ${parent.content} (${parent.id})`)
+        parentId = parent.id
+        parentTitle = parent.content
+        finalContent = potentialChildContent
+      }
+    }
+  }
+
   try {
     const { data, error } = await supabase
       .from('items')
       .insert({
         user_id: user.id,
-        content: text,
+        content: finalContent,
         status: 'inbox',
         type: 'task',
         raw_content: text,
         parent_id: parentId,
-        metadata: { source: 'web' },
+        metadata: { source: 'web', syntax_parent: parentTitle },
         revision_count: 0,
         interaction_count: 0,
       })
@@ -53,12 +88,13 @@ export async function createItem(text: string, parentId?: string) {
           length: text.length,
           source: 'web',
           item_content: data.content,
+          has_parent: !!parentId,
         },
       })
     }
 
-    // revalidatePath('/')
-    return { success: true, item: data }
+    revalidatePath('/')
+    return { success: true, item: data, parentTitle }
   } catch (e: any) {
     return { error: e.message }
   }
@@ -209,7 +245,7 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
     .eq('id', itemId)
 
   if (error) return { error: error.message }
-  // revalidatePath('/')
+  revalidatePath('/')
   return { success: true }
 }
 
@@ -234,7 +270,7 @@ export async function hardDeleteItem(itemId: string) {
   const supabase = await createClient()
   const { error } = await supabase.from('items').delete().eq('id', itemId)
   if (error) return { error: error.message }
-  // revalidatePath('/')
+  revalidatePath('/')
   return { success: true }
 }
 
