@@ -1,5 +1,6 @@
-import { useOmniStore } from '@/features/omni'
 import { useStore } from '@/lib/store'
+import { createItem } from '@/features/item'
+import { useOmniStore } from '@/features/omni'
 
 type HotkeyAction = () => void
 
@@ -27,6 +28,10 @@ export const HOTKEY_MAP: Record<
   'mod+f': {
     label: 'Перейти в Focus',
     action: () => useStore.getState().setView('focus'),
+  },
+  'mod+v': {
+    label: 'Создать новое входящее',
+    action: async () => await createItem(''),
   },
 }
 
