@@ -5,6 +5,7 @@ import { useStore, type Item } from '@/lib/store'
 import { useItemActions } from '@/features/item'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
+import { cn } from '@/lib/utils'
 
 interface CardBackProps {
   item: Item
@@ -94,7 +95,14 @@ export function CardBack({
                 onClick={() => setFocusItem(similar)}
                 className="w-full text-left text-xs p-2 rounded text-foreground dark:bg-white/5 dark:hover:bg-white/10 bg-muted hover:bg-border transition-colors truncate cursor-pointer"
               >
-                {similar.content}
+                <span
+                  className={cn(
+                    similar.status === 'done' &&
+                      'line-through text-muted-foreground'
+                  )}
+                >
+                  {similar.content}
+                </span>
                 <span className="font-mono opacity-50 ml-2">
                   ({Math.round(similar.similarity * 100)}%)
                 </span>
