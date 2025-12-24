@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useMotionValue, useTransform, animate, PanInfo } from 'framer-motion'
 import { useStore, type Item } from '@/lib/store'
 import { useItemActions } from '@/features/item/model/useItemActions'
-import { findSimilarItems } from '@/features/ai'
+import { findSimilarItemsByQuery } from '@/features/ai'
 
 export type SwipeState = 'idle' | 'left' | 'right' | 'up'
 
@@ -38,25 +38,29 @@ export function useInboxCard(item: Item, isTop: boolean) {
   const rotate = useTransform(x, [-200, 200], [-8, 8])
 
   // --- RAG EFFECT ---
-  // useEffect(() => {
-  //   if (isTop && !isSearching && similarItems.length === 0) {
-  //     const searchTimer = setTimeout(async () => {
-  //       setIsSearching(true)
-  //       try {
-  //         const results = await findSimilarItems(item.id)
-  //         if (results && results.length > 0) {
-  //           setHasSimilar(true)
-  //           setSimilarItems(results as Item[])
-  //         }
-  //       } catch (e) {
-  //         console.error(e)
-  //       } finally {
-  //         setIsSearching(false)
-  //       }
-  //     }, 700)
-  //     return () => clearTimeout(searchTimer)
-  //   }
-  // }, [isTop, item.id])
+  useEffect(() => {
+    if (isTop && !isSearching && similarItems.length === 0) {
+      const searchTimer = setTimeout(async () => {
+        setIsSearching(true)
+        try {
+          const results = await findSimilarItemsByQuery(
+            `${item.content}\n${item.description || ''}\n${
+              item.raw_content || ''
+            }`
+          )
+          if (results && results.length > 0) {
+            setHasSimilar(true)
+            setSimilarItems(results as Item[])
+          }
+        } catch (e) {
+          console.error(e)
+        } finally {
+          setIsSearching(false)
+        }
+      }, 3000)
+      return () => clearTimeout(searchTimer)
+    }
+  }, [isTop, item.content, item.description, item.raw_content])
 
   // --- DRAG HANDLERS ---
   const handleDrag = (_e: unknown, info: PanInfo) => {

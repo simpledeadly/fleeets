@@ -198,7 +198,7 @@ export async function searchWithAI(query: string): Promise<SearchResult[]> {
 
   const { data: semanticResults } = await supabase.rpc('match_items', {
     query_embedding: embedding,
-    match_threshold: 0.35,
+    match_threshold: 0.4,
     match_count: 8,
     user_id_input: user.id,
   })
@@ -243,8 +243,8 @@ export async function findSimilarItemsByQuery(query: string): Promise<Item[]> {
 
   const { data: similarItems } = await supabase.rpc('match_items', {
     query_embedding: embedding,
-    match_threshold: 0.35, // Более строгий порог для подсказок
-    match_count: 5,
+    match_threshold: 0.4,
+    match_count: 6,
     user_id_input: user.id,
   })
 

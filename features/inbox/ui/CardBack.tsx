@@ -2,7 +2,7 @@
 import { motion } from 'framer-motion'
 import { Calendar, EyeClosed, Link, Loader2, Text } from 'lucide-react'
 import { useStore, type Item } from '@/lib/store'
-import { useItemActions, SubtaskList } from '@/features/item'
+import { useItemActions } from '@/features/item'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
 
@@ -26,7 +26,6 @@ export function CardBack({
 
   return (
     <motion.div
-      // onClick={onFlip} // Клик по фону переворачивает обратно (как было)
       style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
       className="absolute w-full h-full p-4 rounded-3xl border bg-card text-white shadow-2xl flex flex-col"
     >
@@ -78,7 +77,7 @@ export function CardBack({
       <div className="mt-2 pt-3 border-t border-border">
         <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
           <Link size={12} />
-          <span>Найденные связи ({similarItems.length})</span>
+          <span>Найденные связи ({similarItems.length} лучших)</span>
         </div>
 
         {isSearching && (
@@ -88,14 +87,14 @@ export function CardBack({
         )}
 
         {!isSearching && similarItems.length > 0 && (
-          <div className="space-y-1">
-            {similarItems.slice(0, 3).map((similar: any) => (
+          <div className="grid grid-cols-2 2xl:grid-cols-3 gap-1">
+            {similarItems.map((similar: any) => (
               <button
                 key={similar.id}
                 onClick={() => setFocusItem(similar)}
                 className="w-full text-left text-xs p-2 rounded text-foreground dark:bg-white/5 dark:hover:bg-white/10 bg-muted hover:bg-border transition-colors truncate cursor-pointer"
               >
-                - {similar.content}
+                {similar.content}
                 <span className="font-mono opacity-50 ml-2">
                   ({Math.round(similar.similarity * 100)}%)
                 </span>
@@ -111,13 +110,13 @@ export function CardBack({
         )}
       </div>
 
-      <div className="mt-2 border-t border-border">
-        {/* {!isSearching && similarItems.length > 0 && ( */}
+      {/* <div className="mt-2 border-t border-border">
+        {!isSearching && similarItems.length > 0 && (
         <div className="space-y-1">
           <SubtaskList parentId={item.id} items={[]} />
         </div>
-        {/* )} */}
-      </div>
+        )}
+      </div> */}
     </motion.div>
   )
 }
