@@ -28,7 +28,7 @@ export function CardBack({
     <motion.div
       // onClick={onFlip} // Клик по фону переворачивает обратно (как было)
       style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-      className="absolute w-full h-full p-4 rounded-3xl border bg-background text-white shadow-2xl flex flex-col"
+      className="absolute w-full h-full p-4 rounded-3xl border bg-card text-white shadow-2xl flex flex-col"
     >
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500">
