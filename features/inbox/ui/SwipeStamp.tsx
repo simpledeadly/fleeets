@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { type Item } from '@/lib/store'
 
 interface SwipeStampProps {
-  state: 'idle' | 'left' | 'right' | 'up'
+  state: 'idle' | 'left' | 'right' | 'up' | 'down'
   itemType: Item['type']
   isHeld: boolean
   isTop: boolean
@@ -22,6 +22,7 @@ export function SwipeStamp({
   const getText = () => {
     if (state === 'up') return itemType === 'task' ? 'На сегодня' : 'В архив'
     if (state === 'left') return 'Удалить'
+    if (state === 'down') return 'Разложить колоду'
     if (state === 'right') {
       return itemType === 'task'
         ? isHeld

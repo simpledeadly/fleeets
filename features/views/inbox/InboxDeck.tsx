@@ -34,16 +34,36 @@ export function InboxDeck() {
   const items = useStore((state) => state.items)
   const inboxStats = useStore((state) => state.inboxStats)
   const setInboxStats = useStore((state) => state.setInboxStats)
+  const [isGridMode, setIsGridMode] = useState(false)
+  const [forcedTopId, setForcedTopId] = useState<string | null>(null)
 
-  const inboxTasks = useMemo(
-    () => items.filter((item) => item.status === 'inbox'),
-    [items]
-  )
+  const inboxTasks = useMemo(() => {
+    const sorted = items
+      .filter((item) => item.status === 'inbox')
+      // Старые сверху
+      .sort(
+        (a, b) =>
+          new Date(a.created_at!).getTime() - new Date(b.created_at!).getTime()
+      )
+
+    // Если мы выбрали карту в сетке, переносим ее в начало массива временно
+    if (forcedTopId) {
+      const selectedIndex = sorted.findIndex((i) => i.id === forcedTopId)
+      if (selectedIndex > -1) {
+        const [selected] = sorted.splice(selectedIndex, 1)
+        sorted.unshift(selected)
+      }
+    }
+    return sorted
+  }, [items, forcedTopId])
 
   const isEmpty = inboxTasks.length === 0
 
   useEffect(() => {
     if (isEmpty) {
+      const g = setTimeout(() => {
+        setIsGridMode(false)
+      }, 0)
       const now = Date.now()
       const isStale = now - inboxStats.lastUpdated > STATS_TTL
 
@@ -65,7 +85,10 @@ export function InboxDeck() {
         //     EMPTY_STICKERS[Math.floor(Math.random() * EMPTY_STICKERS.length)]
         // )
       }, 0)
-      return () => clearTimeout(t)
+      return () => {
+        clearTimeout(g)
+        clearTimeout(t)
+      }
     } else {
       const t = setTimeout(() => {
         setRandomMessage('')
@@ -105,40 +128,85 @@ export function InboxDeck() {
 
   return (
     <div className="relative w-full max-w-sm h-96 flex items-center justify-center">
-      <AnimatePresence mode="popLayout">
-        {visibleTasks.map((task, index) => {
-          const isTop = index === visibleTasks.length - 1
-          const stackIndex = visibleTasks.length - 1 - index
-
-          if (!isTop) {
-            // Твоя анимация задних карт
-            return (
+      {/* РЕЖИМ СЕТКИ (OVERVIEW) */}
+      {isGridMode ? (
+        <div className="w-full h-full px-4 pt-20 pb-20 overflow-y-auto custom-scrollbar">
+          <div className="grid grid-cols-2 gap-3 pb-20">
+            {inboxTasks.map((task) => (
               <motion.div
                 key={task.id}
-                initial={{ scale: 0.9, y: 20, opacity: 0 }}
-                animate={{
-                  scale: 1 - stackIndex * 0.05,
-                  y: stackIndex * 15,
-                  opacity: 1 - stackIndex * 0.3,
-                  zIndex: -stackIndex,
+                layoutId={`card-${task.id}`} // 🔥 МАГИЯ: Связывает карты в сетке и в колоде
+                onClick={() => {
+                  setForcedTopId(task.id) // Делаем её первой
+                  setIsGridMode(false) // Возвращаемся в колоду
                 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="absolute w-full h-96 rounded-3xl border bg-card shadow-sm pointer-events-none"
-              />
-            )
-          }
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-card border border-border p-4 rounded-2xl h-40 flex flex-col justify-between cursor-pointer hover:border-primary/50 transition-colors shadow-sm"
+              >
+                <span className="text-sm font-bold line-clamp-3">
+                  {task.content}
+                </span>
+                <div className="flex justify-between items-end">
+                  <span className="text-[10px] text-muted-foreground uppercase">
+                    {task.type}
+                  </span>
+                  {task.is_quick && (
+                    <span className="text-[10px] text-amber-500">⚡️</span>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+          {/* Кнопка закрытия сетки (на всякий случай) */}
+          <button
+            onClick={() => setIsGridMode(false)}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-zinc-900 text-white px-6 py-2 rounded-full shadow-xl text-xs font-bold z-50"
+          >
+            Вернуться к колоде
+          </button>
+        </div>
+      ) : (
+        <AnimatePresence mode="popLayout">
+          {visibleTasks.map((task, index) => {
+            const isTop = index === visibleTasks.length - 1
+            const stackIndex = visibleTasks.length - 1 - index
 
-          return (
-            <InboxCard
-              key={task.id}
-              item={task}
-              isTop={isTop}
-              index={inboxTasks.indexOf(task)} // Для счетчика
-              total={inboxTasks.length} // Для счетчика
-            />
-          )
-        })}
-      </AnimatePresence>
+            if (!isTop) {
+              // Твоя анимация задних карт
+              return (
+                <motion.div
+                  key={task.id}
+                  layoutId={`card-${task.id}`} // Связь с сеткой
+                  layout // Плавное перемещение в стеке
+                  initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                  animate={{
+                    scale: 1 - stackIndex * 0.05,
+                    y: stackIndex * 15,
+                    opacity: 1 - stackIndex * 0.3,
+                    zIndex: -stackIndex,
+                  }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="absolute w-full h-96 rounded-3xl border bg-card shadow-sm pointer-events-none"
+                />
+              )
+            }
+
+            return (
+              // <div key={task.id}>
+              <InboxCard
+                key={task.id}
+                item={task}
+                isTop={isTop}
+                index={inboxTasks.indexOf(task)} // Для счетчика
+                total={inboxTasks.length} // Для счетчика
+                onSwipeDown={() => setIsGridMode(true)}
+              />
+              // </div>
+            )
+          })}
+        </AnimatePresence>
+      )}
     </div>
   )
 }

@@ -6,9 +6,13 @@ import { useStore, type Item } from '@/lib/store'
 import { useItemActions } from '@/features/item/model/useItemActions'
 import { findSimilarItemsByQuery } from '@/features/ai'
 
-export type SwipeState = 'idle' | 'left' | 'right' | 'up'
+export type SwipeState = 'idle' | 'left' | 'right' | 'up' | 'down'
 
-export function useInboxCard(item: Item, isTop: boolean) {
+export function useInboxCard(
+  item: Item,
+  isTop: boolean,
+  onSwipeDown?: () => void
+) {
   const { update, remove, refine } = useItemActions(item)
   const incrementStats = useStore((state) => state.incrementInboxStats)
 
@@ -57,7 +61,7 @@ export function useInboxCard(item: Item, isTop: boolean) {
         } finally {
           setIsSearching(false)
         }
-      }, 3000)
+      }, 1000)
       return () => clearTimeout(searchTimer)
     }
   }, [isTop, item.content, item.description, item.raw_content])
@@ -69,6 +73,7 @@ export function useInboxCard(item: Item, isTop: boolean) {
     if (info.offset.x > swipeThreshold) setSwipeState('right')
     else if (info.offset.x < -swipeThreshold) setSwipeState('left')
     else if (info.offset.y < -swipeThreshold) setSwipeState('up')
+    else if (info.offset.y > swipeThreshold) setSwipeState('down')
     else {
       setSwipeState('idle')
       setIsHeld(false)
@@ -87,6 +92,15 @@ export function useInboxCard(item: Item, isTop: boolean) {
 
   const handleDragEnd = async (_e: unknown, info: PanInfo) => {
     if (longPressTimer.current) clearTimeout(longPressTimer.current)
+
+    if (swipeState === 'down' && onSwipeDown) {
+      onSwipeDown() // Включаем сетку
+      // Возвращаем карточку на место (визуально), чтобы при выходе из сетки она была тут
+      animate(x, 0, { duration: 0.2 })
+      animate(y, 0, { duration: 0.2 })
+      setIsHeld(false)
+      return // Прерываем функцию, чтобы не сработала логика полета
+    }
 
     if (swipeState !== 'idle') {
       const exitX = (info.offset.x > 0 ? 1 : -1) * 200

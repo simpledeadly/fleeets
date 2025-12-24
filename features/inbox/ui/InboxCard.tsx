@@ -12,10 +12,16 @@ interface InboxCardProps {
   isTop: boolean
   index: number
   total: number
+  onSwipeDown: () => void
 }
 
-export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
-  // Подключаем логику
+export function InboxCard({
+  item,
+  isTop,
+  index,
+  total,
+  onSwipeDown,
+}: InboxCardProps) {
   const {
     x,
     y,
@@ -30,7 +36,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
     isSearching,
     hasSimilar,
     handlers,
-  } = useInboxCard(item, isTop)
+  } = useInboxCard(item, isTop, onSwipeDown)
 
   const animateState = isFlipped
     ? {
@@ -64,7 +70,7 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
       <motion.div
         key={item.id}
         className="absolute"
-        style={{ perspective: 1000, zIndex: isTop ? 100 : 30 }}
+        style={{ perspective: 1000, zIndex: isTop ? 80 : 30 }}
         // layout
         // layoutId={`card-${item.id}`}
         initial={{
@@ -76,17 +82,17 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
           minHeight: '24rem',
           maxWidth: '100%',
           maxHeight: '100%',
-          zIndex: 30
+          zIndex: 30,
         }}
-        // transition={{
-        //   // Пружина для движения и вращения
-        //   default: { type: 'spring', stiffness: 260, damping: 20 },
-        //   // Плавная кривая для размеров (чтобы не дрыгалось)
-        //   width: { duration: 0.3, ease: 'easeInOut' },
-        //   height: { duration: 0.3, ease: 'easeInOut' },
-        //   maxWidth: { duration: 0.3, ease: 'easeInOut' },
-        //   maxHeight: { duration: 0.3, ease: 'easeInOut' },
-        // }}
+        transition={{
+          // Пружина для движения и вращения
+          default: { type: 'spring', stiffness: 1000, damping: 40 },
+          // Плавная кривая для размеров (чтобы не дрыгалось)
+          width: { duration: 0.2 },
+          height: { duration: 0.2 },
+          maxWidth: { duration: 0.2 },
+          maxHeight: { duration: 0.2 },
+        }}
         animate={animateState}
         exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.15 } }}
       >
@@ -105,7 +111,9 @@ export function InboxCard({ item, isTop, index, total }: InboxCardProps) {
             className="absolute w-full h-full"
             style={{ transformStyle: 'preserve-3d' }}
             animate={{ rotateY: isFlipped ? 180 : 0 }}
-            transition={{ duration: 0.5, type: 'spring' }}
+            transition={{
+              default: { type: 'spring', stiffness: 440, damping: 32 },
+            }}
           >
             <CardFace
               item={item}
