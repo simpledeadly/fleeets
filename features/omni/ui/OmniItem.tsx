@@ -31,7 +31,7 @@ export function OmniItem({ item, filters, onSelect }: OmniItemProps) {
       data-item-id={item.id}
       className="group flex items-center justify-between py-1.5 cursor-pointer aria-selected:bg-accent transition-all duration-75"
     >
-      <div className="flex items-center gap-0 flex-1 min-w-0">
+      <div className="flex items-center gap-0 flex-1 min-w-0 mb-0.5">
         {/* Иконка статуса */}
         <div className="shrink-0 transition-colors">
           <AnimatePresence mode="wait">
@@ -59,7 +59,7 @@ export function OmniItem({ item, filters, onSelect }: OmniItemProps) {
           </span>
 
           {/* Теги и мета */}
-          <div className="flex items-center gap-1 mt-0.5">
+          {/* <div className="flex items-center gap-1 mt-0.5">
             {item.ai_tags?.slice(0, 2).map((tag) => (
               <span
                 key={tag}
@@ -73,7 +73,7 @@ export function OmniItem({ item, filters, onSelect }: OmniItemProps) {
                 ...
               </span>
             )}
-          </div>
+          </div> */}
         </div>
       </div>
 

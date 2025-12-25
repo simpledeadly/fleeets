@@ -23,17 +23,20 @@ import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
 import { OmniItem } from './OmniItem'
 import { toast } from 'sonner'
 import { softDeleteItem, updateItem } from '@/features/item'
+import { useCmdkObserver } from '../model/useCmdkObserver'
+import { OmniPreview } from './OmniPreview'
 
 export function Omni() {
   const {
     setFocusItem,
     setView,
     items,
-    updateItem: updateStoreItem, // <--- Alias
-    removeItem: removeStoreItem, // <--- Alias
-    addItem: addStoreItem, // <--- Alias
+    updateItem: updateStoreItem,
+    removeItem: removeStoreItem,
+    addItem: addStoreItem,
   } = useStore()
   const { isPaletteOpen, closePalette } = useOmniStore()
+  const activeItem = useCmdkObserver(isPaletteOpen)
 
   // Логика фильтров
   const filter = useOmniFilter()
@@ -178,73 +181,86 @@ export function Omni() {
   }, [isPaletteOpen, items, updateStoreItem, removeStoreItem, addStoreItem])
 
   return (
-    <Command shouldFilter={false} className="h-full">
+    <Command shouldFilter={false} className="h-full min-w-0">
       <Dialog open={isPaletteOpen} onOpenChange={closePalette}>
-        <DialogContent className="overflow-hidden p-0 shadow-2xl max-w-200 sm:rounded-2xl border-border/60 bg-background/95 backdrop-blur-xl">
+        <DialogContent className="sm:max-w-225 p-0 gap-0 block overflow-hidden bg-background/95 border-border/60 shadow-2xl">
           <VisuallyHidden>
             <DialogTitle className="sr-only">Командный центр</DialogTitle>
           </VisuallyHidden>
 
-          {/* РЕЖИМ 1: AI CHAT */}
-          {isAiMode ? (
-            <OmniChat initialQuery={filter.searchQuery} />
-          ) : (
-            /* РЕЖИМ 2: СТАНДАРТНЫЙ ПОИСК */
-            <Command shouldFilter={false} className="h-full">
-              <CommandInput
-                placeholder="Куда летим? (? для вопроса AI)"
-                value={filter.searchQuery}
-                onValueChange={filter.setSearchQuery}
-              />
+          <div className="flex h-150 w-full">
+            <div className="flex-1 flex flex-col min-w-0 relative">
+              {/* ЛЕВАЯ ЧАСТЬ: Список (Занимает все место или часть) */}
+              {/* РЕЖИМ 1: AI CHAT */}
+              {isAiMode ? (
+                <OmniChat initialQuery={filter.searchQuery} />
+              ) : (
+                /* РЕЖИМ 2: СТАНДАРТНЫЙ ПОИСК */
+                <Command shouldFilter={false} className="h-full">
+                  <CommandInput
+                    placeholder="Куда летим? (? для вопроса AI)"
+                    value={filter.searchQuery}
+                    onValueChange={filter.setSearchQuery}
+                  />
 
-              <FilterBar {...filter} />
+                  <FilterBar {...filter} />
 
-              <CommandList className="max-h-100">
-                <CommandEmpty>Ничего не найдено.</CommandEmpty>
+                  <CommandList className="max-h-100">
+                    <CommandEmpty>Ничего не найдено.</CommandEmpty>
 
-                {/* Навигация (только в пустом состоянии) */}
-                {filter.isDefaultView && (
-                  <>
-                    <CommandGroup heading="Быстрый переход">
-                      <CommandItem
-                        onSelect={() => run(() => setView('inbox'))}
-                        className="cursor-pointer"
-                      >
-                        <Layers className="h-4 w-4" />
-                        Инбокс
-                      </CommandItem>
-                      <CommandItem
-                        onSelect={() => run(() => setView('focus'))}
-                        className="cursor-pointer"
-                      >
-                        <Focus className="h-4 w-4" />
-                        Фокус
-                      </CommandItem>
+                    {/* Навигация (только в пустом состоянии) */}
+                    {filter.isDefaultView && (
+                      <>
+                        <CommandGroup heading="Быстрый переход">
+                          <CommandItem
+                            onSelect={() => run(() => setView('inbox'))}
+                            className="cursor-pointer"
+                          >
+                            <Layers className="h-4 w-4" />
+                            Инбокс
+                          </CommandItem>
+                          <CommandItem
+                            onSelect={() => run(() => setView('focus'))}
+                            className="cursor-pointer"
+                          >
+                            <Focus className="h-4 w-4" />
+                            Фокус
+                          </CommandItem>
+                        </CommandGroup>
+                        <CommandSeparator />
+                      </>
+                    )}
+
+                    {/* СПИСОК ЗАДАЧ */}
+                    <CommandGroup
+                      heading={
+                        filter.searchQuery
+                          ? `Найдено (показано ${filter.visibleItems.length})`
+                          : `Элементы (показано ${filter.visibleItems.length})`
+                      }
+                    >
+                      {filter.visibleItems.map((item) => (
+                        <OmniItem
+                          key={item.id}
+                          item={item}
+                          filters={filter}
+                          onSelect={() => run(() => setFocusItem(item))}
+                        />
+                      ))}
                     </CommandGroup>
-                    <CommandSeparator />
-                  </>
-                )}
+                  </CommandList>
+                </Command>
+              )}
+            </div>
 
-                {/* СПИСОК ЗАДАЧ */}
-                <CommandGroup
-                  heading={
-                    filter.searchQuery
-                      ? `Найдено (показано ${filter.visibleItems.length})`
-                      : `Элементы (показано ${filter.visibleItems.length})`
-                  }
-                >
-                  {filter.visibleItems.map((item) => (
-                    <OmniItem
-                      key={item.id}
-                      item={item}
-                      filters={filter}
-                      onSelect={() => run(() => setFocusItem(item))}
-                    />
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
-          )}
+            {/* ПРАВАЯ КОЛОНКА (Превью) */}
+            {/* Скрываем на мобилках (hidden), показываем на десктопе (md:flex) */}
+            {!isAiMode && (
+              <div className="hidden md:flex w-80 shrink-0 border-l h-full flex-col">
+                <OmniPreview item={activeItem} />
+              </div>
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </Command>
