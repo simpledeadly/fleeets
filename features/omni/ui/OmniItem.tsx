@@ -1,5 +1,6 @@
 'use client'
 
+import { memo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CommandItem } from '@/components/ui/command'
 import {
@@ -23,7 +24,7 @@ interface OmniItemProps {
   onSelect: () => void
 }
 
-export function OmniItem({ item, filters, onSelect }: OmniItemProps) {
+const OmniItemComponent = ({ item, filters, onSelect }: OmniItemProps) => {
   return (
     <CommandItem
       value={item.content + (item.ai_tags?.join(' ') || '')}
@@ -109,6 +110,21 @@ export function OmniItem({ item, filters, onSelect }: OmniItemProps) {
     </CommandItem>
   )
 }
+
+const propsAreEqual = (
+  prev: Readonly<OmniItemProps>,
+  next: Readonly<OmniItemProps>
+) => {
+  return (
+    prev.item.id === next.item.id &&
+    prev.item.status === next.item.status &&
+    prev.item.content === next.item.content &&
+    prev.item.priority === next.item.priority &&
+    prev.item.ai_tags?.length === next.item.ai_tags?.length
+  )
+}
+
+export const OmniItem = memo<OmniItemProps>(OmniItemComponent, propsAreEqual)
 
 function TaskStatusIcon({ item }: { item: Item }) {
   // Если не задача - ничего не рисуем (или можно добавить иконку типа)

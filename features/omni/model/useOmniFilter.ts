@@ -97,7 +97,7 @@ export function useOmniFilter() {
       return dateB - dateA
     })
 
-    return result.slice(0, 30)
+    return result.slice(0, 50)
   }, [
     items,
     activeStatus,
