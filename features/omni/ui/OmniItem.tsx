@@ -67,7 +67,7 @@ export function OmniItem({ item, filters, onSelect }: OmniItemProps) {
       </div>
 
       {/* БЛОК ШОРТКАТОВ (Виден только при фокусе) */}
-      <div className="hidden group-aria-selected:flex items-center gap-1 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-1 duration-150">
+      <div className="hidden group-aria-selected:flex items-center gap-1 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-1 duration-100">
         {item.status !== 'done' && (
           <>
             {item.type === 'task' ? (
