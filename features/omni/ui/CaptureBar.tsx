@@ -4,7 +4,15 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Mic, ArrowUp, BrainCircuit, Loader2, Square, Folder } from 'lucide-react'
+import {
+  Expand,
+  Mic,
+  ArrowUp,
+  BrainCircuit,
+  Loader2,
+  Square,
+  Folder,
+} from 'lucide-react'
 import { createItem } from '@/features/item'
 import { searchWithAI, transcribeAudio, askBrain } from '@/features/ai'
 import { useOmniStore } from '../model/store'
@@ -200,7 +208,7 @@ export function CaptureBar() {
   }
 
   return (
-    <div className="fixed bottom-25 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-20">
+    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xl z-20">
       {/* <AnimatePresence>
         {!brainMode && (suggestions.length > 0 || isSearching) && isPro ? (
           <motion.div
@@ -349,7 +357,11 @@ export function CaptureBar() {
                 animate={{ scale: 1 }}
                 exit={{ scale: 0 }}
               >
-                <Plus size={18} className="text-muted-foreground" />
+                <Expand
+                  size={18}
+                  strokeWidth={1.6}
+                  className="text-muted-foreground"
+                />
               </motion.div>
             )}
           </AnimatePresence>
@@ -405,12 +417,13 @@ export function CaptureBar() {
               >
                 {isRecording ? (
                   <Square
-                    size={14}
+                    size={16}
+                    strokeWidth={1.6}
                     className="text-red-500"
                     fill="currentColor"
                   />
                 ) : (
-                  <Mic size={18} strokeWidth={1.8} />
+                  <Mic size={18} strokeWidth={1.6} />
                 )}
               </motion.button>
             )}

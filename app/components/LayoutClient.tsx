@@ -7,7 +7,6 @@ import {
   Omni,
   CaptureBar,
 } from '@/features/omni'
-import BottomNav from './BottomNav'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ItemEditor } from '@/features/item'
 import { FocusModal } from '@/features/focus'
@@ -49,7 +48,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      <BottomNav />
+      {/* <BottomNav /> */}
       <ItemEditor />
     </>
   )

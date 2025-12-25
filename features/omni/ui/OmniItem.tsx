@@ -11,17 +11,18 @@ import {
   Lightbulb,
   ListTodo,
   StickyNote,
+  Zap,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type Item } from '@/lib/store'
 
-interface OmniTaskItemProps {
+interface OmniItemProps {
   item: Item
   filters: any
   onSelect: () => void
 }
 
-export function OmniTaskItem({ item, filters, onSelect }: OmniTaskItemProps) {
+export function OmniItem({ item, filters, onSelect }: OmniItemProps) {
   return (
     <CommandItem
       value={item.content + (item.ai_tags?.join(' ') || '')}
@@ -103,8 +104,15 @@ function TaskStatusIcon({ item }: { item: Item }) {
   if (item.type !== 'task') return null
 
   // Выполнено
-  if (item.status === 'done') {
+  if (item.status === 'done' && item.is_quick !== true) {
     return <CheckCircle2 size={16} className="text-green-500 mr-2" />
+  } else if (item.status === 'done' && item.is_quick === true) {
+    return <Zap size={16} className="text-amber-500 mr-2" />
+  }
+
+  // Блиц
+  if (item.is_quick === true) {
+    return <Zap size={16} className="mr-2" />
   }
 
   const priorityColor =
@@ -137,17 +145,11 @@ function Kbd({ keys }: { keys: string[] }) {
 const TypeIcon = ({ type }: { type: string }) => {
   switch (type) {
     case 'note':
-      return (
-        <StickyNote strokeWidth={1.6} size={10} />
-      )
+      return <StickyNote strokeWidth={1.6} size={10} />
     case 'thought':
-      return (
-        <Lightbulb strokeWidth={1.6} size={10} />
-      )
+      return <Lightbulb strokeWidth={1.6} size={10} />
     case 'resource':
-      return (
-        <FileBox strokeWidth={1.6} size={10} />
-      )
+      return <FileBox strokeWidth={1.6} size={10} />
   }
 }
 

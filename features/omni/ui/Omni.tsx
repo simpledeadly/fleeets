@@ -20,7 +20,7 @@ import { useOmniFilter } from '../model/useOmniFilter'
 import { FilterBar } from './FilterBar'
 import { OmniChat } from './OmniChat'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
-import { OmniTaskItem } from './OmniTaskItem'
+import { OmniItem } from './OmniItem'
 import { toast } from 'sonner'
 import { softDeleteItem, updateItem } from '@/features/item'
 
@@ -234,7 +234,7 @@ export function Omni() {
                   }
                 >
                   {filter.visibleItems.map((item) => (
-                    <OmniTaskItem
+                    <OmniItem
                       key={item.id}
                       item={item}
                       filters={filter}
