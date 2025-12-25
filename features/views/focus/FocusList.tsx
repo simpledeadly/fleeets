@@ -16,7 +16,7 @@ export function FocusList() {
 
   // Фильтруем задачи (Today + Planned, например)
   const focusItems = items.filter(
-    (i) => i.status === 'today' && !i.completed_at
+    (i) => i.status === 'today'
   )
 
   const handleAction = async (action: () => Promise<any>) => {
