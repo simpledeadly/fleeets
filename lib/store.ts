@@ -71,6 +71,6 @@ export const useStore = create<AppState>((set) => ({
         total: state.inboxStats.total + 1,
       },
     })),
-  isSnowing: false, // По дефолту выкл (или вкл, если хочешь праздника сразу)
+  isSnowing: true, // По дефолту выкл (или вкл, если хочешь праздника сразу)
   toggleSnow: () => set((state) => ({ isSnowing: !state.isSnowing })),
 }))

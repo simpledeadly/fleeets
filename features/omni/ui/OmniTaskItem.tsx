@@ -4,6 +4,7 @@ import { CommandItem } from '@/components/ui/command'
 import {
   CheckCircle2,
   Circle,
+  CircleDot,
   FileBox,
   Lightbulb,
   StickyNote,
@@ -30,6 +31,8 @@ export function OmniTaskItem({ item, filters, onSelect }: OmniTaskItemProps) {
         <div className="shrink-0 text-muted-foreground group-aria-selected:text-foreground transition-colors">
           {item.status === 'done' && item.type === 'task' ? (
             <CheckCircle2 size={16} className="text-green-500 mr-2" />
+          ) : item.status === 'today' && item.type === 'task' ? (
+            <CircleDot size={16} className="mr-2" />
           ) : item.priority === 'critical' && item.type === 'task' ? (
             <Circle size={16} className="text-red-500 mr-2" />
           ) : item.priority === 'high' && item.type === 'task' ? (

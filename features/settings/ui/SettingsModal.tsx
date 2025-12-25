@@ -2,12 +2,11 @@
 
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { LogOut, CreditCard, Sparkles, Snowflake } from 'lucide-react'
+import { LogOut, CreditCard, Snowflake } from 'lucide-react'
 import { usePaywall, paymentService } from '@/features/paywall'
 import { toast } from 'sonner'
 import { ThemeSelector } from './ThemeSelector'
 
-// 👇 ИМПОРТЫ SHADCN
 import {
   Dialog,
   DialogContent,
@@ -72,6 +71,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               >
                 <Snowflake
                   size={18}
+                  strokeWidth={1.6}
                   className={isSnowing ? 'animate-spin-slow' : ''}
                 />
               </div>
@@ -80,7 +80,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   Новогоднее настроение
                 </span>
                 <span className="text-[10px] text-muted-foreground">
-                  Включает снег в интерфейсе
+                  Да будет снег!
                 </span>
               </div>
             </div>
@@ -100,12 +100,6 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   : 'bg-secondary/50 border-border'
               }`}
             >
-              {isPro && (
-                <div className="absolute -right-4 -top-4 opacity-10 animate-pulse">
-                  <Sparkles size={100} />
-                </div>
-              )}
-
               <div className="flex justify-between items-start relative z-10">
                 <div>
                   <div
