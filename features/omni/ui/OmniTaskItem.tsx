@@ -2,11 +2,14 @@
 
 import { CommandItem } from '@/components/ui/command'
 import {
+  Archive,
   CheckCircle2,
   Circle,
   CircleDot,
   FileBox,
+  Focus,
   Lightbulb,
+  ListTodo,
   StickyNote,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -24,28 +27,18 @@ export function OmniTaskItem({ item, filters, onSelect }: OmniTaskItemProps) {
       value={item.content + (item.ai_tags?.join(' ') || '')}
       onSelect={onSelect}
       data-item-id={item.id}
-      className="group flex items-center justify-between py-1.5 cursor-pointer aria-selected:bg-accent"
+      className="group flex items-center justify-between py-1.5 cursor-pointer aria-selected:bg-accent transition-all duration-75"
     >
       <div className="flex items-center gap-0 flex-1 min-w-0">
         {/* Иконка статуса */}
-        <div className="shrink-0 text-muted-foreground group-aria-selected:text-foreground transition-colors">
-          {item.status === 'done' && item.type === 'task' ? (
-            <CheckCircle2 size={16} className="text-green-500 mr-2" />
-          ) : item.status === 'today' && item.type === 'task' ? (
-            <CircleDot size={16} className="mr-2" />
-          ) : item.priority === 'critical' && item.type === 'task' ? (
-            <Circle size={16} className="text-red-500 mr-2" />
-          ) : item.priority === 'high' && item.type === 'task' ? (
-            <Circle className=" text-red-400 mr-2" size={16} />
-          ) : (
-            item.type === 'task' && <Circle className="mr-2" size={16} />
-          )}
+        <div className="shrink-0 transition-colors">
+          <TaskStatusIcon item={item} />
         </div>
 
         <div className="flex flex-col overflow-hidden">
           <span
             className={cn(
-              'truncate font-medium transition-colors',
+              'truncate font-mono transition-colors',
               item.status === 'done' && 'line-through text-muted-foreground',
               'group-aria-selected:text-primary' // Подсветка при выборе
             )}
@@ -78,56 +71,26 @@ export function OmniTaskItem({ item, filters, onSelect }: OmniTaskItemProps) {
           <>
             {item.type === 'task' ? (
               <>
-                <div className="flex items-center gap-0 bg-card border border-border px-1.5 py-0.5 rounded">
-                  <span className="font-sans">⌘</span>
-                  <span>D</span>
-                  {/* <span className="ml-1 opacity-70">Done</span> */}
-                </div>
-
-                <div className="flex items-center gap-0 bg-card border border-border px-1.5 py-0.5 rounded">
-                  <span className="font-sans">⌘</span>
-                  <span>F</span>
-                  {/* <span className="ml-1 opacity-70">Focus</span> */}
-                </div>
-                
-                <div className="flex items-center gap-0 bg-card border border-border px-1.5 py-0.5 rounded">
-                  <span className="font-sans">⌘</span>
-                  <span>I</span>
-                  {/* <span className="ml-1 opacity-70">Inbox</span> */}
-                </div>
+                <Kbd keys={['⌘', 'D']} />
+                <Kbd keys={['⌘', 'F']} />
+                <Kbd keys={['⌘', 'I']} />
               </>
             ) : (
-              item.status === 'archived' && (
-                <div className="flex items-center gap-0 bg-card border border-border px-1.5 py-0.5 rounded">
-                  <span className="font-sans">⌘</span>
-                  <span>I</span>
-                  {/* <span className="ml-1 opacity-70">Inbox</span> */}
-                </div>
-              )
+              item.status === 'archived' && <Kbd keys={['⌘', 'I']} />
             )}
           </>
         )}
-
-        <div className="flex items-center gap-0 bg-card border border-border px-1.5 py-0.5 rounded">
-          <span className="font-sans">⌘</span>
-          <span>Del</span>
-          {/* <span className="ml-1 opacity-70">Delete</span> */}
-        </div>
-
-        {/* <div className="flex items-center gap-0 bg-card border border-border px-1.5 py-0.5 rounded">
-          <span className="font-sans">Enter</span>
-          <span className="ml-1 opacity-70">Open</span>
-        </div> */}
+        <Kbd keys={['⌘', 'Del']} />
       </div>
 
       {/* Если не в фокусе - показываем статус текстом (как было раньше) */}
       {!filters.activeStatus && (
         <span className="text-xs text-muted-foreground/50 group-aria-selected:hidden">
-          {item.status}
+          <StatusIcon status={item.status!} />
         </span>
       )}
-      {filters.activeStatus && item.status === 'archived' && (
-        <span className="text-xs text-muted-foreground group-aria-selected:hidden">
+      {filters.activeStatus && item.type !== 'task' && (
+        <span className="text-xs text-muted-foreground/50 group-aria-selected:hidden">
           <TypeIcon type={item.type!} />
         </span>
       )}
@@ -135,19 +98,68 @@ export function OmniTaskItem({ item, filters, onSelect }: OmniTaskItemProps) {
   )
 }
 
+function TaskStatusIcon({ item }: { item: Item }) {
+  // Если не задача - ничего не рисуем (или можно добавить иконку типа)
+  if (item.type !== 'task') return null
+
+  // Выполнено
+  if (item.status === 'done') {
+    return <CheckCircle2 size={16} className="text-green-500 mr-2" />
+  }
+
+  const priorityColor =
+    item.priority === 'critical'
+      ? 'text-red-600'
+      : item.priority === 'high'
+      ? 'text-red-400'
+      : 'text-muted-foreground' // Обычный серый для medium/low
+
+  // Сегодня (Фокус) - Точка в центре
+  if (item.status === 'today') {
+    return <CircleDot size={16} className={cn('mr-2', priorityColor)} />
+  }
+
+  return <Circle size={16} className={cn('mr-2', priorityColor)} />
+}
+
+function Kbd({ keys }: { keys: string[] }) {
+  return (
+    <div className="flex items-center gap-0.5 bg-card border border-border px-1.5 py-0.5 rounded shadow-xs min-w-5 justify-center">
+      {keys.map((k, i) => (
+        <span key={i} className={k === '⌘' ? 'font-sans' : ''}>
+          {k}
+        </span>
+      ))}
+    </div>
+  )
+}
+
 const TypeIcon = ({ type }: { type: string }) => {
   switch (type) {
     case 'note':
       return (
-        <StickyNote strokeWidth={1.6} size={10} className="text-blue-500/80" />
+        <StickyNote strokeWidth={1.6} size={10} />
       )
     case 'thought':
       return (
-        <Lightbulb strokeWidth={1.6} size={10} className="text-purple-500/80" />
+        <Lightbulb strokeWidth={1.6} size={10} />
       )
     case 'resource':
       return (
-        <FileBox strokeWidth={1.6} size={10} className="text-orange-500/80" />
+        <FileBox strokeWidth={1.6} size={10} />
       )
+  }
+}
+
+const StatusIcon = ({ status }: { status: string }) => {
+  switch (status) {
+    case 'today':
+      return <Focus strokeWidth={1.6} size={10} />
+    case 'planned':
+      return <ListTodo strokeWidth={1.6} size={10} />
+    case 'done':
+      return <CheckCircle2 strokeWidth={1.6} size={10} />
+    case 'archived':
+      return <Archive strokeWidth={1.6} size={10} />
   }
 }

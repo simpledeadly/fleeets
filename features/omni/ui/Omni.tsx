@@ -206,11 +206,17 @@ export function Omni() {
                 {filter.isDefaultView && (
                   <>
                     <CommandGroup heading="Быстрый переход">
-                      <CommandItem onSelect={() => run(() => setView('inbox'))}>
+                      <CommandItem
+                        onSelect={() => run(() => setView('inbox'))}
+                        className="cursor-pointer"
+                      >
                         <Layers className="h-4 w-4" />
                         Инбокс
                       </CommandItem>
-                      <CommandItem onSelect={() => run(() => setView('focus'))}>
+                      <CommandItem
+                        onSelect={() => run(() => setView('focus'))}
+                        className="cursor-pointer"
+                      >
                         <Focus className="h-4 w-4" />
                         Фокус
                       </CommandItem>
