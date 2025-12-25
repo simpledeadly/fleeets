@@ -123,3 +123,7 @@
     @apply bg-background text-foreground;
   }
 }
+
+.animate-spin-slow {
+  animation: spin 8s linear infinite;
+}

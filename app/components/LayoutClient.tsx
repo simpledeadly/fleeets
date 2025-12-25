@@ -13,6 +13,7 @@ import { ItemEditor } from '@/features/item'
 import { FocusModal } from '@/features/focus'
 import { useStore } from '@/lib/store'
 import { getHotkeys } from '@/features/hotkeys'
+import { SnowLayer } from '@/features/appearance'
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
   const { isPaletteOpen } = useOmniStore()
@@ -23,6 +24,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
   return (
     <>
       {children}
+      <SnowLayer />
       <Omni />
 
       <FocusModal

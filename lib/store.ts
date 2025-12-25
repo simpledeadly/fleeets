@@ -28,6 +28,8 @@ interface AppState {
   inboxStats: InboxStats
   setInboxStats: (stats: Omit<InboxStats, 'lastUpdated'>) => void
   incrementInboxStats: () => void // Чтобы увеличивать на +1 при свайпе
+  isSnowing: boolean
+  toggleSnow: () => void
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -69,4 +71,6 @@ export const useStore = create<AppState>((set) => ({
         total: state.inboxStats.total + 1,
       },
     })),
+  isSnowing: false, // По дефолту выкл (или вкл, если хочешь праздника сразу)
+  toggleSnow: () => set((state) => ({ isSnowing: !state.isSnowing })),
 }))
