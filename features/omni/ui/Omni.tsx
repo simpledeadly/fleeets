@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { Layers, Focus } from 'lucide-react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
   Command,
@@ -11,9 +12,13 @@ import {
   CommandList,
   CommandSeparator,
 } from '@/components/ui/command'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from '@/components/ui/resizable'
 import { useStore } from '@/lib/store'
 import { useOmniStore } from '../model/store'
-import { Layers, Focus } from 'lucide-react'
 
 // Импорт декомпозированных частей
 import { useOmniFilter } from '../model/useOmniFilter'
@@ -35,8 +40,15 @@ export function Omni() {
     removeItem: removeStoreItem,
     addItem: addStoreItem,
   } = useStore()
-  const { isPaletteOpen, closePalette } = useOmniStore()
+  const { isPaletteOpen, closePalette, layout, setLayout } = useOmniStore()
   const activeItem = useCmdkObserver(isPaletteOpen)
+
+  const handleLayoutChange = (sizes: number[]) => {
+    // Сохраняем только если на экране реально две панели
+    if (!isAiMode && sizes.length === 2) {
+      setLayout(sizes)
+    }
+  }
 
   // Логика фильтров
   const filter = useOmniFilter()
@@ -183,84 +195,101 @@ export function Omni() {
   return (
     <Command shouldFilter={false} className="h-full min-w-0">
       <Dialog open={isPaletteOpen} onOpenChange={closePalette}>
-        <DialogContent className="sm:max-w-225 p-0 gap-0 block overflow-hidden bg-background/95 border-border/60 shadow-2xl">
+        <DialogContent className="h-150 sm:max-w-225 p-0 gap-0 block overflow-hidden bg-card border-border/60 shadow-2xl">
           <VisuallyHidden>
             <DialogTitle className="sr-only">Командный центр</DialogTitle>
           </VisuallyHidden>
 
-          <div className="flex h-150 w-full">
-            <div className="flex-1 flex flex-col min-w-0 relative">
-              {/* ЛЕВАЯ ЧАСТЬ: Список (Занимает все место или часть) */}
-              {/* РЕЖИМ 1: AI CHAT */}
-              {isAiMode ? (
-                <OmniChat initialQuery={filter.searchQuery} />
-              ) : (
-                /* РЕЖИМ 2: СТАНДАРТНЫЙ ПОИСК */
-                <Command shouldFilter={false} className="h-full">
-                  <CommandInput
-                    placeholder="Куда летим? (? для вопроса AI)"
-                    value={filter.searchQuery}
-                    onValueChange={filter.setSearchQuery}
-                  />
+          <ResizablePanelGroup
+            direction="horizontal"
+            className="w-full rounded-lg border-none"
+            onLayout={handleLayoutChange}
+          >
+            <ResizablePanel defaultSize={layout[0]} minSize={30}>
+              <div className="flex-1 flex flex-col min-w-0 relative">
+                {/* ЛЕВАЯ ЧАСТЬ: Список (Занимает все место или часть) */}
+                {/* РЕЖИМ 1: AI CHAT */}
+                {isAiMode ? (
+                  <OmniChat initialQuery={filter.searchQuery} />
+                ) : (
+                  /* РЕЖИМ 2: СТАНДАРТНЫЙ ПОИСК */
+                  <Command shouldFilter={false} className="h-full">
+                    <CommandInput
+                      placeholder="Куда летим? (? для вопроса AI)"
+                      value={filter.searchQuery}
+                      onValueChange={filter.setSearchQuery}
+                    />
 
-                  <FilterBar {...filter} />
+                    <FilterBar {...filter} />
 
-                  <CommandList className="max-h-100">
-                    <CommandEmpty>Ничего не найдено.</CommandEmpty>
+                    <CommandList className="max-h-100">
+                      <CommandEmpty>Ничего не найдено.</CommandEmpty>
 
-                    {/* Навигация (только в пустом состоянии) */}
-                    {filter.isDefaultView && (
-                      <>
-                        <CommandGroup heading="Быстрый переход">
-                          <CommandItem
-                            onSelect={() => run(() => setView('inbox'))}
-                            className="cursor-pointer"
-                          >
-                            <Layers className="h-4 w-4" />
-                            Инбокс
-                          </CommandItem>
-                          <CommandItem
-                            onSelect={() => run(() => setView('focus'))}
-                            className="cursor-pointer"
-                          >
-                            <Focus className="h-4 w-4" />
-                            Фокус
-                          </CommandItem>
-                        </CommandGroup>
-                        <CommandSeparator />
-                      </>
-                    )}
+                      {/* Навигация (только в пустом состоянии) */}
+                      {filter.isDefaultView && (
+                        <>
+                          <CommandGroup heading="Быстрый переход">
+                            <CommandItem
+                              onSelect={() => run(() => setView('inbox'))}
+                              className="cursor-pointer"
+                            >
+                              <Layers className="h-4 w-4" />
+                              Инбокс
+                            </CommandItem>
+                            <CommandItem
+                              onSelect={() => run(() => setView('focus'))}
+                              className="cursor-pointer"
+                            >
+                              <Focus className="h-4 w-4" />
+                              Фокус
+                            </CommandItem>
+                          </CommandGroup>
+                          <CommandSeparator />
+                        </>
+                      )}
 
-                    {/* СПИСОК ЗАДАЧ */}
-                    <CommandGroup
-                      heading={
-                        filter.searchQuery
-                          ? `Найдено (показано ${filter.visibleItems.length})`
-                          : `Элементы (показано ${filter.visibleItems.length})`
-                      }
-                    >
-                      {filter.visibleItems.map((item) => (
-                        <OmniItem
-                          key={item.id}
-                          item={item}
-                          filters={filter}
-                          onSelect={() => run(() => setFocusItem(item))}
-                        />
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              )}
-            </div>
+                      {/* СПИСОК ЗАДАЧ */}
+                      <CommandGroup
+                        heading={
+                          filter.searchQuery
+                            ? `Найдено (показано ${filter.visibleItems.length})`
+                            : `Элементы (показано ${filter.visibleItems.length})`
+                        }
+                      >
+                        {filter.visibleItems.map((item) => (
+                          <OmniItem
+                            key={item.id}
+                            item={item}
+                            filters={filter}
+                            onSelect={() => run(() => setFocusItem(item))}
+                          />
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                )}
+              </div>
+            </ResizablePanel>
 
             {/* ПРАВАЯ КОЛОНКА (Превью) */}
             {/* Скрываем на мобилках (hidden), показываем на десктопе (md:flex) */}
             {!isAiMode && (
-              <div className="hidden md:flex w-80 shrink-0 border-l h-full flex-col">
-                <OmniPreview item={activeItem} />
-              </div>
+              <>
+                <ResizableHandle withHandle className="bg-border" />
+
+                <ResizablePanel
+                  defaultSize={layout[1]}
+                  minSize={30}
+                  maxSize={70}
+                  className="hidden md:block"
+                >
+                  <div className="h-full w-full bg-muted/5 overflow-hidden">
+                    <OmniPreview item={activeItem} />
+                  </div>
+                </ResizablePanel>
+              </>
             )}
-          </div>
+          </ResizablePanelGroup>
         </DialogContent>
       </Dialog>
     </Command>
