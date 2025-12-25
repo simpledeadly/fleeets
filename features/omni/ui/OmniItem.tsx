@@ -1,5 +1,6 @@
 'use client'
 
+import { AnimatePresence, motion } from 'framer-motion'
 import { CommandItem } from '@/components/ui/command'
 import {
   Archive,
@@ -33,13 +34,23 @@ export function OmniItem({ item, filters, onSelect }: OmniItemProps) {
       <div className="flex items-center gap-0 flex-1 min-w-0">
         {/* Иконка статуса */}
         <div className="shrink-0 transition-colors">
-          <TaskStatusIcon item={item} />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={item.status} // Перерисовка при смене статуса
+              initial={{ scale: 0.9, opacity: 0.5 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0.5 }}
+              transition={{ duration: 0.05 }}
+            >
+              <TaskStatusIcon item={item} />
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         <div className="flex flex-col overflow-hidden">
           <span
             className={cn(
-              'truncate font-mono transition-colors',
+              'truncate font-mono transition-all duration-150',
               item.status === 'done' && 'line-through text-muted-foreground',
               'group-aria-selected:text-primary' // Подсветка при выборе
             )}
