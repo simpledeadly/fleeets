@@ -18,6 +18,8 @@ interface FilterBarProps {
   setActiveStatus: (s: string | null) => void
   isQuick: boolean | null
   setIsQuick: (s: boolean | null) => void
+  isTask: boolean | null
+  setIsTask: (s: boolean | null) => void
   isThought: boolean | null
   setIsThought: (s: boolean | null) => void
   isNote: boolean | null
@@ -34,6 +36,8 @@ export function FilterBar({
   setActiveStatus,
   isQuick,
   setIsQuick,
+  isTask,
+  setIsTask,
   isThought,
   setIsThought,
   isNote,
@@ -120,6 +124,19 @@ export function FilterBar({
         >
           <Zap />
           Блиц
+        </Badge>
+        <Badge
+          variant={isTask ? 'default' : 'outline'}
+          className={cn(
+            'cursor-pointer text-[10px] h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            isTask
+              ? 'hover:bg-primary hover:text-primary-foreground'
+              : 'bg-transparent'
+          )}
+          onClick={() => setIsTask(!isTask)}
+        >
+          <CheckCircle2 />
+          Задача
         </Badge>
         <Badge
           variant={isThought ? 'default' : 'outline'}

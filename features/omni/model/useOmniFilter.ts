@@ -10,6 +10,7 @@ export function useOmniFilter() {
   const [activeStatus, setActiveStatus] = useState<string | null>(null)
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [isQuick, setIsQuick] = useState<boolean | null>(false)
+  const [isTask, setIsTask] = useState<boolean | null>(false)
   const [isThought, setIsThought] = useState<boolean | null>(false)
   const [isNote, setIsNote] = useState<boolean | null>(false)
   const [isResource, setIsResource] = useState<boolean | null>(false)
@@ -51,6 +52,10 @@ export function useOmniFilter() {
 
     if (isQuick) {
       result = result.filter((item) => item.is_quick === isQuick)
+    }
+
+    if (isTask) {
+      result = result.filter((item) => item.type === 'task')
     }
 
     if (isThought) {
@@ -97,6 +102,7 @@ export function useOmniFilter() {
     items,
     activeStatus,
     isQuick,
+    isTask,
     isThought,
     isNote,
     isResource,
@@ -117,6 +123,8 @@ export function useOmniFilter() {
     setActiveStatus,
     isQuick,
     setIsQuick,
+    isTask,
+    setIsTask,
     isThought,
     setIsThought,
     isNote,
