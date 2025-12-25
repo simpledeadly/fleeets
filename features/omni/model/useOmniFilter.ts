@@ -10,6 +10,9 @@ export function useOmniFilter() {
   const [activeStatus, setActiveStatus] = useState<string | null>(null)
   const [activeTags, setActiveTags] = useState<string[]>([])
   const [isQuick, setIsQuick] = useState<boolean | null>(false)
+  const [isThought, setIsThought] = useState<boolean | null>(false)
+  const [isNote, setIsNote] = useState<boolean | null>(false)
+  const [isResource, setIsResource] = useState<boolean | null>(false)
 
   // Сброс при закрытии
   useEffect(() => {
@@ -17,6 +20,7 @@ export function useOmniFilter() {
       const t = setTimeout(() => {
         setActiveStatus(null)
         setIsQuick(null)
+        setIsThought(null)
         setActiveTags([])
         setSearchQuery('')
       }, 300)
@@ -49,6 +53,18 @@ export function useOmniFilter() {
       result = result.filter((item) => item.is_quick === isQuick)
     }
 
+    if (isThought) {
+      result = result.filter((item) => item.type === 'thought')
+    }
+
+    if (isNote) {
+      result = result.filter((item) => item.type === 'note')
+    }
+
+    if (isResource) {
+      result = result.filter((item) => item.type === 'resource')
+    }
+
     if (activeTags.length > 0) {
       result = result.filter((item) => {
         if (!item.ai_tags) return false
@@ -77,7 +93,16 @@ export function useOmniFilter() {
     })
 
     return result.slice(0, 8)
-  }, [items, activeStatus, isQuick, activeTags, searchQuery])
+  }, [
+    items,
+    activeStatus,
+    isQuick,
+    isThought,
+    isNote,
+    isResource,
+    activeTags,
+    searchQuery,
+  ])
 
   const toggleTag = (tag: string) => {
     setActiveTags((prev) =>
@@ -92,6 +117,12 @@ export function useOmniFilter() {
     setActiveStatus,
     isQuick,
     setIsQuick,
+    isThought,
+    setIsThought,
+    isNote,
+    setIsNote,
+    isResource,
+    setIsResource,
     activeTags,
     toggleTag,
     // foundItems,

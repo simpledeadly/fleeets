@@ -7,6 +7,9 @@ import {
   Tag,
   Zap,
   Filter,
+  Lightbulb,
+  StickyNote,
+  FileBox,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -15,6 +18,12 @@ interface FilterBarProps {
   setActiveStatus: (s: string | null) => void
   isQuick: boolean | null
   setIsQuick: (s: boolean | null) => void
+  isThought: boolean | null
+  setIsThought: (s: boolean | null) => void
+  isNote: boolean | null
+  setIsNote: (s: boolean | null) => void
+  isResource: boolean | null
+  setIsResource: (s: boolean | null) => void
   activeTags: string[]
   toggleTag: (t: string) => void
   topTags: string[]
@@ -25,6 +34,12 @@ export function FilterBar({
   setActiveStatus,
   isQuick,
   setIsQuick,
+  isThought,
+  setIsThought,
+  isNote,
+  setIsNote,
+  isResource,
+  setIsResource,
   activeTags,
   toggleTag,
   topTags,
@@ -105,6 +120,45 @@ export function FilterBar({
         >
           <Zap />
           Блиц
+        </Badge>
+        <Badge
+          variant={isThought ? 'default' : 'outline'}
+          className={cn(
+            'cursor-pointer text-[10px] h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            isThought
+              ? 'hover:bg-primary hover:text-primary-foreground'
+              : 'bg-transparent'
+          )}
+          onClick={() => setIsThought(!isThought)}
+        >
+          <Lightbulb />
+          Идея
+        </Badge>
+        <Badge
+          variant={isNote ? 'default' : 'outline'}
+          className={cn(
+            'cursor-pointer text-[10px] h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            isNote
+              ? 'hover:bg-primary hover:text-primary-foreground'
+              : 'bg-transparent'
+          )}
+          onClick={() => setIsNote(!isNote)}
+        >
+          <StickyNote />
+          Заметка
+        </Badge>
+        <Badge
+          variant={isResource ? 'default' : 'outline'}
+          className={cn(
+            'cursor-pointer text-[10px] h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            isResource
+              ? 'hover:bg-primary hover:text-primary-foreground'
+              : 'bg-transparent'
+          )}
+          onClick={() => setIsResource(!isResource)}
+        >
+          <FileBox />
+          Ресурс
         </Badge>
       </div>
     </div>
