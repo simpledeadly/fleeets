@@ -222,7 +222,7 @@ export function Omni() {
 
                     <FilterBar {...filter} />
 
-                    <CommandList className="max-h-100">
+                    <CommandList className="max-h-113">
                       <CommandEmpty>Ничего не найдено.</CommandEmpty>
 
                       {/* Навигация (только в пустом состоянии) */}
