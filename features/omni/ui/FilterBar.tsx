@@ -1,5 +1,13 @@
 import { Badge } from '@/components/ui/badge'
-import { ListTodo, Focus, CheckCircle2, Archive, Tag, Zap, Filter } from 'lucide-react'
+import {
+  ListTodo,
+  Focus,
+  CheckCircle2,
+  Archive,
+  Tag,
+  Zap,
+  Filter,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface FilterBarProps {
@@ -30,7 +38,7 @@ export function FilterBar({
           onClick={() => setActiveStatus(null)}
         />
         <FilterChip
-          label="Focus"
+          label="Фокус"
           icon={<Focus size={12} />}
           active={activeStatus === 'today'}
           onClick={() =>
@@ -38,7 +46,7 @@ export function FilterBar({
           }
         />
         <FilterChip
-          label="Plan"
+          label="План"
           icon={<ListTodo size={12} />}
           active={activeStatus === 'planned'}
           onClick={() =>
@@ -46,7 +54,7 @@ export function FilterBar({
           }
         />
         <FilterChip
-          label="Done"
+          label="Выполнено"
           icon={<CheckCircle2 size={12} />}
           active={activeStatus === 'done'}
           onClick={() =>
@@ -54,7 +62,7 @@ export function FilterBar({
           }
         />
         <FilterChip
-          label="Archived"
+          label="Архивировано"
           icon={<Archive size={12} />}
           active={activeStatus === 'archived'}
           onClick={() =>
@@ -108,7 +116,7 @@ function FilterChip({ label, icon, active, onClick }: any) {
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all border shrink-0',
+        'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all border shrink-0 cursor-pointer',
         active
           ? 'bg-primary text-primary-foreground border-primary'
           : 'bg-background text-muted-foreground border-border hover:bg-muted'

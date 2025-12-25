@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import {
   Command,
@@ -12,22 +13,30 @@ import {
 } from '@/components/ui/command'
 import { useStore } from '@/lib/store'
 import { useOmniStore } from '../model/store'
-import { Layers, Focus, CheckCircle2, Circle } from 'lucide-react'
-import { cn } from '@/lib/utils'
+import { Layers, Focus } from 'lucide-react'
 
 // Импорт декомпозированных частей
 import { useOmniFilter } from '../model/useOmniFilter'
 import { FilterBar } from './FilterBar'
 import { OmniChat } from './OmniChat'
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden'
+import { OmniTaskItem } from './OmniTaskItem'
+import { toast } from 'sonner'
+import { softDeleteItem, updateItem } from '@/features/item'
 
 export function Omni() {
-  const { setFocusItem, setView } = useStore()
+  const {
+    setFocusItem,
+    setView,
+    items,
+    updateItem: updateStoreItem, // <--- Alias
+    removeItem: removeStoreItem, // <--- Alias
+    addItem: addStoreItem, // <--- Alias
+  } = useStore()
   const { isPaletteOpen, closePalette } = useOmniStore()
 
   // Логика фильтров
   const filter = useOmniFilter()
-
   // Режим AI: Если запрос начинается с ?
   const isAiMode = filter.searchQuery.startsWith('?')
 
@@ -35,6 +44,138 @@ export function Omni() {
     closePalette()
     action()
   }
+
+  useEffect(() => {
+    if (!isPaletteOpen) return
+
+    const handleKeyDown = async (e: KeyboardEvent) => {
+      if (!e.metaKey && !e.ctrlKey) return
+
+      if (e.key === 'd') {
+        e.preventDefault()
+        await triggerAction('toggleDone')
+      }
+      if (e.key === 'f') {
+        e.preventDefault()
+        await triggerAction('toggleFocused')
+      }
+      if (e.key === 'i') {
+        e.preventDefault()
+        await triggerAction('toggleInbox')
+      }
+      if (e.key === 'Delete') {
+        e.preventDefault()
+        await triggerAction('delete')
+      }
+    }
+
+    const triggerAction = async (
+      action: 'toggleDone' | 'toggleFocused' | 'toggleInbox' | 'delete'
+    ) => {
+      const selectedEl = document.querySelector(
+        '[data-item-id][aria-selected="true"]'
+      ) as HTMLElement
+      if (!selectedEl) return
+
+      const id = selectedEl.dataset.itemId
+      if (!id) return
+
+      const item = items.find((i) => i.id === id)
+      if (!item) return
+
+      if (action === 'toggleDone') {
+        const newStatus = item.status === 'done' ? 'planned' : 'done'
+        const previousItem = { ...item }
+
+        // 1. Optimistic UI (через алиас стора)
+        updateStoreItem({ ...item, status: newStatus })
+
+        // 2. Undo Logic
+        const undo = async () => {
+          updateStoreItem(previousItem)
+          await updateItem(item.id, previousItem)
+        }
+
+        toast.success(newStatus === 'done' ? 'Завершено' : 'Возвращено', {
+          action: { label: 'Отмена', onClick: undo },
+        })
+
+        // 3. Server Action (2 аргумента: ID и данные)
+        await updateItem(item.id, { status: newStatus })
+      }
+
+      if (action === 'toggleFocused') {
+        const newStatus = item.status === 'today' ? 'planned' : 'today'
+        const previousItem = { ...item }
+
+        // 1. Optimistic UI (через алиас стора)
+        updateStoreItem({ ...item, status: newStatus })
+
+        // 2. Undo Logic
+        const undo = async () => {
+          updateStoreItem(previousItem)
+          await updateItem(item.id, previousItem)
+        }
+
+        toast.success(
+          newStatus === 'today' ? 'Назначено в фокус' : 'Возвращено',
+          {
+            action: { label: 'Отмена', onClick: undo },
+          }
+        )
+
+        // 3. Server Action (2 аргумента: ID и данные)
+        await updateItem(item.id, { status: newStatus })
+      }
+
+      if (action === 'toggleInbox') {
+        const newStatus = item.status === 'inbox' ? item.status : 'inbox'
+        const previousItem = { ...item }
+
+        // 1. Optimistic UI (через алиас стора)
+        updateStoreItem({ ...item, status: newStatus })
+
+        // 2. Undo Logic
+        const undo = async () => {
+          updateStoreItem(previousItem)
+          await updateItem(item.id, previousItem)
+        }
+
+        toast.success(
+          newStatus === 'inbox' ? 'Перенесено во Входящие' : 'Возвращено',
+          {
+            action: { label: 'Отмена', onClick: undo },
+          }
+        )
+
+        // 3. Server Action (2 аргумента: ID и данные)
+        await updateItem(item.id, { status: newStatus })
+      }
+
+      if (action === 'delete') {
+        const previousItem = { ...item }
+
+        // UI
+        removeStoreItem(item.id)
+
+        // Undo
+        const undo = async () => {
+          addStoreItem(previousItem)
+          await updateItem(item.id, { status: previousItem.status })
+        }
+
+        toast.success('Удалено', {
+          action: { label: 'Вернуть', onClick: undo },
+        })
+
+        // Server Action (1 аргумент: ID)
+        await softDeleteItem(item.id)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isPaletteOpen, items, updateStoreItem, removeStoreItem, addStoreItem])
 
   return (
     <Command shouldFilter={false} className="h-full">
@@ -87,49 +228,12 @@ export function Omni() {
                   }
                 >
                   {filter.visibleItems.map((item) => (
-                    <CommandItem
+                    <OmniTaskItem
                       key={item.id}
-                      value={item.content} // value нужен для ключа, хоть фильтрация отключена
+                      item={item}
+                      filters={filter}
                       onSelect={() => run(() => setFocusItem(item))}
-                      className="cursor-pointer"
-                    >
-                      {item.type === 'task' && item.status === 'done' ? (
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      ) : (
-                        item.type === 'task' &&
-                        item.status !== 'done' && (
-                          <Circle className="h-4 w-4 text-muted-foreground" />
-                        )
-                      )}
-
-                      <span
-                        className={cn(
-                          'flex-1 truncate',
-                          item.status === 'done' &&
-                            'line-through text-muted-foreground'
-                        )}
-                      >
-                        {item.content}
-                      </span>
-
-                      <div className="ml-auto flex gap-1">
-                        {item.ai_tags && (
-                          <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
-                            {item.ai_tags[0]}
-                          </span>
-                        )}
-                        {item.ai_tags && item.ai_tags.length > 1 && (
-                          <span className="text-[10px] text-muted-foreground bg-muted px-1 rounded">
-                            ...
-                          </span>
-                        )}
-                      </div>
-                      {!filter.activeStatus && (
-                        <div className="flex text-xs text-muted-foreground">
-                          {item.status}
-                        </div>
-                      )}
-                    </CommandItem>
+                    />
                   ))}
                 </CommandGroup>
               </CommandList>
