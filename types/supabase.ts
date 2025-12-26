@@ -467,7 +467,13 @@ export type Database = {
         | "done"
         | "archived"
         | "deleted"
-      item_type: "task" | "note" | "resource" | "thought"
+      item_type:
+        | "task"
+        | "note"
+        | "resource"
+        | "thought"
+        | "objective"
+        | "key_result"
       pricing_plan_interval: "day" | "week" | "month" | "year"
       priority_level: "low" | "medium" | "high" | "critical"
       subscription_status:
@@ -607,7 +613,14 @@ export const Constants = {
     Enums: {
       app_scope: ["fleeets", "randona", "flode"],
       item_status: ["inbox", "planned", "today", "done", "archived", "deleted"],
-      item_type: ["task", "note", "resource", "thought"],
+      item_type: [
+        "task",
+        "note",
+        "resource",
+        "thought",
+        "objective",
+        "key_result",
+      ],
       pricing_plan_interval: ["day", "week", "month", "year"],
       priority_level: ["low", "medium", "high", "critical"],
       subscription_status: [
