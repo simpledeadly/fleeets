@@ -24,6 +24,7 @@ export function LoginForm() {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-6 relative z-10 overflow-hidden min-h-screen w-full">
+      {/* <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.02)_0%,transparent_100%)] pointer-events-none" /> */}
       <AuroraBackground hue={aurora.hue} sat={aurora.sat} />
 
       <div className="w-full max-w-95 flex flex-col items-center relative z-20">
@@ -34,7 +35,7 @@ export function LoginForm() {
         >
           <div
             onClick={randomizeAurora}
-            className="cursor-pointer mb-4 relative flex items-center justify-center w-18 h-18 rounded-2xl bg-[#121214] border border-[#27272a] shadow-2xl transition-transform duration-150 hover:scale-105 active:scale-95 group animate-float"
+            className="cursor-pointer mb-4 relative flex items-center justify-center w-18 h-18 rounded-2xl bg-[#121214] border border-[#27272a] shadow-sm transition-transform duration-150 hover:scale-105 active:scale-95 group animate-float"
           >
             <div className="absolute inset-0 rounded-2xl bg-linear-to-tr from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
             <Zap className="w-8 h-8 text-[#fbbf24] drop-shadow-[0_0:10px_rgba(251,191,36,0.2)]" />
@@ -51,32 +52,31 @@ export function LoginForm() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
-          className="w-full bg-[#0a0a0a]/40 backdrop-blur-2xl border border-white/8 rounded-3xl p-6 shadow-2xl"
+          className="w-full bg-[#0a0a0a]/40 backdrop-blur-2xl border border-white/8 rounded-3xl p-6 shadow-sm"
         >
-          <div className="mb-2">
-            <TelegramButton url={botLink} isLoading={!sessionId || isSyncing} />
-          </div>
-
-          <div className="relative flex py-2 items-center mb-2">
-            <div className="grow border-t border-white/10" />
-            <span className="mx-4 text-[12px] text-white/40 uppercase tracking-widest font-semibold">
-              или по QR
-            </span>
-            <div className="grow border-t border-white/10" />
-          </div>
-
           <div className="relative flex justify-center">
             <AnimatePresence mode="wait">
-              <div className="bg-white p-2 rounded-xl border border-border shadow-xs">
+              <div className="bg-white p-2 rounded-xl border border-border shadow-none">
                 <QRCodeSVG
                   value={botLink}
                   size={180}
                   level="M" // Средний уровень коррекции ошибок
                   marginSize={1}
+                  bgColor="transparent"
                 />
               </div>
             </AnimatePresence>
           </div>
+
+          <div className="relative flex py-2 items-center">
+            <div className="grow border-t border-white/10" />
+            <span className="my-2 mx-4 text-xs text-white/40 uppercase tracking-widest font-semibold">
+              или
+            </span>
+            <div className="grow border-t border-white/10" />
+          </div>
+
+          <TelegramButton url={botLink} isLoading={!sessionId || isSyncing} />
         </motion.div>
 
         <motion.p

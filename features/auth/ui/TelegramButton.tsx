@@ -27,11 +27,11 @@ export function TelegramButton({ url, isLoading }: TelegramButtonProps) {
 
       <div className="relative flex items-center justify-center gap-3 py-4">
         {isLoading ? (
-          <Loader2 className="w-6 h-6 text-white/70 animate-spin" />
+          <Loader2 className="w-5 h-5 text-white/70 animate-spin" />
         ) : (
           <>
-            <Send className="w-6 h-6 text-white drop-shadow-sm transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-            <span className="text-lg font-semibold text-white tracking-wide drop-shadow-sm">
+            <Send className="w-5 h-5 text-white drop-shadow-sm transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            <span className="text-lg font-medium text-white tracking-wide drop-shadow-sm">
               Войти через Telegram
             </span>
           </>
