@@ -16,7 +16,7 @@ export function Sidebar() {
   }))
 
   return (
-    <aside className="hidden md:flex flex-col w-64 h-screen border-r border-border/40 bg-card/30 backdrop-blur-xl p-4 sticky top-0">
+    <aside className="hidden md:flex flex-col w-64 h-screen border-r border-border dark:border-border/40 bg-card/30 backdrop-blur-xl p-4 sticky top-0">
       {/* Лого */}
       <div className="px-4 py-6 mb-8">
         <h1 className="text-2xl font-bold tracking-tighter">Fleeets</h1>
@@ -31,7 +31,7 @@ export function Sidebar() {
               key={item.id}
               onClick={() => setView(item.id)}
               className={cn(
-                'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group relative',
+                'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all group relative cursor-pointer',
                 isActive
                   ? 'bg-primary text-primary-foreground shadow-lg'
                   : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
