@@ -1,17 +1,19 @@
-"use client"
+'use client'
 
-import { createClient } from "@/lib/supabase/client"
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { useStore } from "@/lib/store" // <--- Достаем стор
-import { fetchActiveItems } from "@/lib/data" // <--- Достаем функцию загрузки
+import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useStore } from '@/lib/store' // <--- Достаем стор
+import { fetchActiveItems } from '@/lib/data' // <--- Достаем функцию загрузки
 
 export default function LoginPage() {
   // 1. ИСПРАВЛЕНИЕ ГИДРАТАЦИИ:
   // Инициализируем null, генерируем только на клиенте
   const [sessionId, setSessionId] = useState<string | null>(null)
 
-  const [status, setStatus] = useState<"loading" | "waiting" | "success" | "timeout">("waiting")
+  const [status, setStatus] = useState<
+    'loading' | 'waiting' | 'success' | 'timeout'
+  >('waiting')
   const router = useRouter()
   const supabase = createClient()
   const setItems = useStore((state) => state.setItems) // Прямой доступ к экшену
@@ -32,7 +34,7 @@ export default function LoginPage() {
     const interval = setInterval(async () => {
       if (Date.now() - startTime > MAX_POLLING_TIME) {
         clearInterval(interval)
-        setStatus("timeout") // Можно добавить такое состояние в UI
+        setStatus('timeout') // Можно добавить такое состояние в UI
         return
       }
 
@@ -40,8 +42,8 @@ export default function LoginPage() {
         const res = await fetch(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/telegram-auth-poll`,
           {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ session_id: sessionId }),
           }
         )
@@ -51,7 +53,7 @@ export default function LoginPage() {
 
         if (data.access_token && data.refresh_token) {
           clearInterval(interval)
-          setStatus("success")
+          setStatus('success')
 
           // А. Устанавливаем сессию
           const { error } = await supabase.auth.setSession({
@@ -62,17 +64,18 @@ export default function LoginPage() {
           if (!error) {
             // Б. 🔥 ПРЕДЗАГРУЗКА ДАННЫХ (Magic Moment)
             // Мы загружаем данные, пока юзер видит "Успех! Входим..."
-            console.log("Session set. Prefetching data...")
+            console.log('Session set. Prefetching data...')
             try {
               const items = await fetchActiveItems(supabase)
               setItems(items) // Заполняем стор данными!
-              console.log("Store hydrated manually.")
+              console.log('Store hydrated manually.')
             } catch (e) {
-              console.error("Prefetch error", e)
+              console.error('Prefetch error', e)
             }
 
             // В. Редирект. Данные уже в памяти, перерисовка будет мгновенной.
-            router.push("/")
+            router.push('/')
+            router.refresh()
           }
         }
       } catch (e) {
@@ -105,12 +108,12 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {status === "success" ? (
+        {status === 'success' ? (
           <div className="text-green-500 font-bold animate-pulse flex flex-col items-center gap-2">
             <span>Успех! Синхронизация...</span>
             {/* Можно добавить маленький спиннер здесь */}
           </div>
-        ) : status === "timeout" ? (
+        ) : status === 'timeout' ? (
           <div className="text-red-500 font-bold animate-pulse flex flex-col items-center gap-2">
             <span>Timeout</span>
             {/* Можно добавить маленький спиннер здесь */}

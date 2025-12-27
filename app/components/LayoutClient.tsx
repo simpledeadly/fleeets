@@ -13,6 +13,7 @@ import { FocusModal } from '@/features/focus'
 import { useStore } from '@/lib/store'
 import { getHotkeys } from '@/features/hotkeys'
 import { SnowLayer } from '@/features/appearance'
+import BottomNav from './BottomNav'
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
   const { isPaletteOpen } = useOmniStore()
@@ -48,7 +49,9 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
         )}
       </AnimatePresence>
 
-      {/* <BottomNav /> */}
+      <div className="md:hidden">
+        <BottomNav />
+      </div>
       <ItemEditor />
     </>
   )

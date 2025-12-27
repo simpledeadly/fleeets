@@ -6,17 +6,24 @@ import StoreInitializer from './components/StoreInitializer'
 import { PaywallModal } from '@/features/paywall'
 import { ThemeProvider } from './components/ThemeProvider'
 import { LayoutClient } from './components/LayoutClient'
+import { createClient } from '@/lib/supabase/server'
+import { Sidebar } from '@/features/navigation'
 
 export const metadata: Metadata = {
   title: 'Fleeets',
   description: 'Inbox Zero Protocol',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   return (
     <html lang="ru" suppressHydrationWarning>
       <body className={`min-h-screen bg-background font-sans antialiased`}>
@@ -27,7 +34,18 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <StoreInitializer />
-          <LayoutClient>{children}</LayoutClient>
+
+          {user ? (
+            <div className="flex min-h-screen">
+              <Sidebar />
+              <main className="flex-1 relative">
+                <LayoutClient>{children}</LayoutClient>
+              </main>
+            </div>
+          ) : (
+            <div className="min-h-screen w-full">{children}</div>
+          )}
+
           <PaywallModal />
           <Toaster position="bottom-right" />
         </ThemeProvider>
