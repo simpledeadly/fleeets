@@ -22,7 +22,7 @@ export function ActivityFeed({ logs }: { logs: any[] }) {
               </span>
               <Badge
                 variant="outline"
-                className="text-[10px] h-5 font-mono opacity-70 group-hover:opacity-100 transition-opacity"
+                className="text-xs h-5 font-mono opacity-70 group-hover:opacity-100 transition-opacity"
               >
                 {log.category}
               </Badge>

@@ -62,7 +62,7 @@ function StatCard({ title, value, highlight, icon }: any) {
       >
         {value}
       </div>
-      <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">
+      <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">
         {title}
       </div>
     </Card>

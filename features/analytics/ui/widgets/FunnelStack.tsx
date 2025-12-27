@@ -17,7 +17,7 @@ export function FunnelStack({ data }: { data: any[] }) {
             style={{ backgroundColor: item.color }}
           >
             {/* Тултип при наведении на сегмент */}
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
               {item.name}: {item.value}
             </div>
           </motion.div>

@@ -98,7 +98,7 @@ export function FilterBar({
               key={tag}
               variant={activeTags.includes(tag) ? 'default' : 'outline'}
               className={cn(
-                'cursor-pointer text-[10px] h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+                'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
                 activeTags.includes(tag)
                   ? 'hover:bg-primary hover:text-primary-foreground'
                   : 'bg-transparent'
@@ -115,7 +115,7 @@ export function FilterBar({
         <Badge
           variant={isQuick ? 'default' : 'outline'}
           className={cn(
-            'cursor-pointer text-[10px] h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
             isQuick
               ? 'hover:bg-primary hover:text-primary-foreground'
               : 'bg-transparent'
@@ -128,7 +128,7 @@ export function FilterBar({
         <Badge
           variant={isTask ? 'default' : 'outline'}
           className={cn(
-            'cursor-pointer text-[10px] h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
             isTask
               ? 'hover:bg-primary hover:text-primary-foreground'
               : 'bg-transparent'
@@ -141,7 +141,7 @@ export function FilterBar({
         <Badge
           variant={isThought ? 'default' : 'outline'}
           className={cn(
-            'cursor-pointer text-[10px] h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
             isThought
               ? 'hover:bg-primary hover:text-primary-foreground'
               : 'bg-transparent'
@@ -154,7 +154,7 @@ export function FilterBar({
         <Badge
           variant={isNote ? 'default' : 'outline'}
           className={cn(
-            'cursor-pointer text-[10px] h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
             isNote
               ? 'hover:bg-primary hover:text-primary-foreground'
               : 'bg-transparent'
@@ -167,7 +167,7 @@ export function FilterBar({
         <Badge
           variant={isResource ? 'default' : 'outline'}
           className={cn(
-            'cursor-pointer text-[10px] h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
             isResource
               ? 'hover:bg-primary hover:text-primary-foreground'
               : 'bg-transparent'

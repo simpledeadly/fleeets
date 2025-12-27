@@ -12,7 +12,7 @@ import { CHART_COLORS, COMMON_TOOLTIP_STYLE } from '../../config'
 
 export function VelocityLineChart({ data }: { data: any[] }) {
   return (
-    <div className="h-62.5 w-full text-[10px]">
+    <div className="h-62.5 w-full text-xs">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
           <CartesianGrid

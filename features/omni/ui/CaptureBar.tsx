@@ -301,7 +301,7 @@ export function CaptureBar() {
                     )}
                   </span>
                   {item.isProjectSuggestion && (
-                    <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                    <span className="text-xs text-muted-foreground uppercase tracking-wider">
                       {item.status === 'today' ? 'Focus' : item.status}
                     </span>
                   )}
@@ -309,7 +309,7 @@ export function CaptureBar() {
               </div>
 
               {item.isProjectSuggestion && (
-                <span className="text-[10px] text-muted-foreground border border-border px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-xs text-muted-foreground border border-border px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                   Enter
                 </span>
               )}

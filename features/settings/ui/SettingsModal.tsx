@@ -79,7 +79,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <span className="text-sm font-medium">
                   Новогоднее настроение
                 </span>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-xs text-muted-foreground">
                   Да будет снег!
                 </span>
               </div>
@@ -120,7 +120,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   </div>
                 </div>
                 {isPro ? (
-                  <div className="bg-white/20 dark:bg-black/10 px-2 py-1 rounded text-[10px] font-bold text-white dark:text-black uppercase">
+                  <div className="bg-white/20 dark:bg-black/10 px-2 py-1 rounded text-xs font-bold text-white dark:text-black uppercase">
                     PRO
                   </div>
                 ) : (
@@ -131,7 +131,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               {isPro && (
                 <button
                   onClick={handleCancelSub}
-                  className="mt-4 text-[10px] text-zinc-400 hover:text-white dark:text-zinc-500 dark:hover:text-black underline underline-offset-2 transition-colors cursor-pointer"
+                  className="mt-4 text-xs text-zinc-400 hover:text-white dark:text-zinc-500 dark:hover:text-black underline underline-offset-2 transition-colors cursor-pointer"
                 >
                   Управлять подпиской
                 </button>

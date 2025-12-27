@@ -70,7 +70,7 @@ export function AdminDashboard({ totalCost, totalRequests, modelUsage, rawLogs, 
                   </div>
                   <div className="flex flex-col items-end">
                     <span className="font-bold text-red-400">${u.cost.toFixed(5)}</span>
-                    <span className="text-[10px] text-muted-foreground">{u.requests} req</span>
+                    <span className="text-xs text-muted-foreground">{u.requests} req</span>
                   </div>
                 </div>
               ))}

@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@import 'tailwindcss';
+@import 'tw-animate-css';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -119,11 +119,19 @@
   * {
     @apply border-border outline-ring/50;
   }
+  :root {
+    /* Вместо стандартных 16px (100%), ставим 18px или 20px */
+    font-size: 125%; /* Это сделает базу 18px */
+  }
+  /* @media (min-width: 1440px) {
+    :root {
+      font-size: 133%;
+    }
+  }*/
   body {
     @apply bg-background text-foreground;
   }
 }
-
 .animate-spin-slow {
   animation: spin 8s linear infinite;
 }

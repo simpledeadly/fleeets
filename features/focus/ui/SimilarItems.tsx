@@ -97,7 +97,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
                   {/* ТИП ЭЛЕМЕНТА (Мини-бэйджик) */}
                   <div className="flex items-center gap-1.5">
                     {item.type && (
-                      <div className="flex items-center gap-1 bg-background/50 px-1.5 py-0.5 rounded text-[10px] font-medium text-muted-foreground border border-border/50">
+                      <div className="flex items-center gap-1 bg-background/50 px-1.5 py-0.5 rounded text-xs font-medium text-muted-foreground border border-border/50">
                         <TypeIcon type={item.type} />
                         <span className="capitalize">{item.type}</span>
                       </div>
@@ -109,7 +109,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
                       {/* 1. Если это было голосовое (source: 'voice' или 'telegram') */}
                       {(typeof item.metadata === 'object' && item.metadata && ('source' in item.metadata || 'duration' in item.metadata)) && (
                         ((item.metadata?.source === 'voice' || item.metadata?.duration) && (
-                          <div className="flex items-center gap-1 text-[10px] bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded border border-blue-500/20">
+                          <div className="flex items-center gap-1 text-xs bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded border border-blue-500/20">
                             <Mic size={10} />
                             <span>Voice</span>
                           </div>
@@ -117,7 +117,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
 
                       {/* 2. Теги (первые 2, чтобы не захламлять) */}
                       {item.ai_tags?.slice(0, 2).map((tag: string) => (
-                        <div key={tag} className="flex items-center gap-1 text-[10px] bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
+                        <div key={tag} className="flex items-center gap-1 text-xs bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
                           <Hash size={9} />
                           <span>{tag}</span>
                         </div>
@@ -125,7 +125,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
 
                       {/* 3. Сниппет лога (если есть) */}
                       {item.execution_log && (
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground/80 italic">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground/80 italic">
                           <FileText size={10} />
                           <span className="max-w-37 truncate">
                             {item.execution_log}
@@ -146,7 +146,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
 
               {/* Footer */}
               <div className="mt-2 flex items-center justify-between border-t border-border/30 pt-2">
-                <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
                   <CalendarDays size={10} />
                   <span>
                     {item.completed_at
@@ -156,7 +156,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
                   </span>
                 </div>
 
-                <span className="text-[10px] font-mono text-amber-500/80 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                <span className="text-xs font-mono text-amber-500/80 bg-amber-500/10 px-1.5 py-0.5 rounded">
                   {(item.similarity * 100).toFixed(0)}%
                 </span>
               </div>

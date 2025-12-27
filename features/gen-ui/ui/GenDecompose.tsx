@@ -73,7 +73,7 @@ export function GenDecompose({ data }: { data?: string[] }) {
           </motion.div>
         ))}
         {tasks.length > 0 && (
-          <button onClick={addTask} className="text-[10px] text-muted-foreground hover:text-primary transition-colors duration-150 flex items-center gap-1 pl-3.5">
+          <button onClick={addTask} className="text-xs text-muted-foreground hover:text-primary transition-colors duration-150 flex items-center gap-1 pl-3.5">
             <Plus size={10} /> Добавить шаг
           </button>
         )}

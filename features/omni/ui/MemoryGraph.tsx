@@ -178,7 +178,7 @@ export function MemoryGraph() {
 
   if (loading)
     return (
-      <div className="h-full flex items-center justify-center font-mono text-[10px] uppercase tracking-widest opacity-20 text-white">
+      <div className="h-full flex items-center justify-center font-mono text-xs uppercase tracking-widest opacity-20 text-white">
         Neural mapping...
       </div>
     )
@@ -193,7 +193,7 @@ export function MemoryGraph() {
 
       {/* Header Info */}
       <div className="absolute top-6 left-6 pointer-events-none space-y-1">
-        <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
+        <h2 className="text-xs font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shadow-[0_0_8px_#f59e0b]" />
           Neural Synapse Map
         </h2>
@@ -211,7 +211,7 @@ export function MemoryGraph() {
             exit={{ opacity: 0, y: 10 }}
             className="absolute bottom-16 right-10 p-4 bg-black/80 backdrop-blur-md border border-white/10 rounded-2xl max-w-60 shadow-2xl pointer-events-none z-50"
           >
-            <div className="text-[10px] font-bold uppercase text-white/40 mb-1">
+            <div className="text-xs font-bold uppercase text-white/40 mb-1">
               {hoveredNode.type}
             </div>
             <div className="text-sm font-medium leading-tight text-white">

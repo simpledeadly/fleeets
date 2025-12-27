@@ -52,7 +52,7 @@ export function ThemeSelector() {
               <t.icon size={20} strokeWidth={2} />
             </motion.div>
 
-            <span className="text-[10px] font-medium tracking-wide">
+            <span className="text-xs font-medium tracking-wide">
               {t.label}
             </span>
 

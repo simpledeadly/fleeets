@@ -148,11 +148,11 @@ export function InboxDeck() {
                   {task.content}
                 </span>
                 <div className="flex justify-between items-end">
-                  <span className="text-[10px] text-muted-foreground uppercase">
+                  <span className="text-xs text-muted-foreground uppercase">
                     {task.type}
                   </span>
                   {task.is_quick && (
-                    <span className="text-[10px] text-amber-500">⚡️</span>
+                    <span className="text-xs text-amber-500">⚡️</span>
                   )}
                 </div>
               </motion.div>
