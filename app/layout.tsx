@@ -43,7 +43,9 @@ export default async function RootLayout({
               </main>
             </div>
           ) : (
-            <div className="min-h-screen w-full">{children}</div>
+            <div className="min-h-screen w-full flex items-center justify-center">
+              {children}
+            </div>
           )}
 
           <PaywallModal />
