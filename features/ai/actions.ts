@@ -361,6 +361,8 @@ export async function askBrain(question: string) {
           ? 'Заметка'
           : item.type === 'thought'
           ? 'Мысль'
+          : item.type === 'resource'
+          ? 'Ресурс'
           : 'Задача'
       const quickTag = item.is_quick ? '⚡️ [БЛИЦ/Быстрое]' : ''
       const aiTags =
