@@ -45,7 +45,7 @@ export function FocusList() {
   if (focusItems.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-center animate-in fade-in space-y-2">
-        <h2 className="text-xl font-bold">Фокус на сегодня пуст</h2>
+        <h2 className="text-xl font-bold">Фокус пуст</h2>
         <p className="text-muted-foreground text-sm max-w-xs">
           Позволь AI проанализировать твои цели и задачи, чтобы составить
           оптимальный план.
@@ -77,7 +77,7 @@ export function FocusList() {
   return (
     <div className="w-full space-y-4">
       <div className="flex justify-between items-center px-2">
-        <h2 className="font-bold">Фокус на сегодня</h2>
+        <h2 className="font-bold">Фокус</h2>
         <button
           onClick={() => handleAction(resetTodayView)}
           disabled={isLoading}

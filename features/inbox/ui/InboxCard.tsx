@@ -46,7 +46,7 @@ export function InboxCard({
         maxWidth: '800px',
         maxHeight: '900px',
         x: 0,
-        y: -50,
+        y: 0,
         rotate: 0,
         zIndex: 100,
         opacity: 1,

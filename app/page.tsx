@@ -5,7 +5,8 @@ import { VIEW_REGISTRY } from '@/features/views'
 import { SettingsModal } from '@/features/settings'
 
 export default function Home() {
-  const { isLoading, currentView, isSettingsOpen, setIsSettingsOpen } = useStore()
+  const { isLoading, currentView, isSettingsOpen, setIsSettingsOpen } =
+    useStore()
 
   const CurrentViewComponent = VIEW_REGISTRY[currentView].component
 
@@ -26,13 +27,6 @@ export default function Home() {
       />
 
       <div className="w-full max-w-md space-y-8 flex flex-col items-center">
-        <div className="text-center space-y-2 mb-8 animate-in fade-in">
-          <h1 className="text-4xl font-bold tracking-tighter">Fleeets</h1>
-          <p className="text-muted-foreground text-sm">
-            {currentView === 'inbox' ? 'Разбери хаос' : 'Твой план действий'}
-          </p>
-        </div>
-
         {CurrentViewComponent ? (
           <CurrentViewComponent />
         ) : (
