@@ -31,7 +31,7 @@ export function useTelegramAuth() {
     if (!sessionId) return
 
     const startTime = Date.now()
-    const MAX_POLLING_TIME = 1000 * 60 * 5 // 5 минут макс
+    const MAX_POLLING_TIME = 1000 * 60 * 2 // 5 минут макс
 
     const interval = setInterval(async () => {
       if (Date.now() - startTime > MAX_POLLING_TIME) {
@@ -83,7 +83,7 @@ export function useTelegramAuth() {
       } catch (e) {
         console.error(e)
       }
-    }, 2000)
+    }, 1000)
 
     return () => clearInterval(interval)
   }, [sessionId, router, supabase, setItems])
