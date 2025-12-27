@@ -11,7 +11,6 @@ import {
   BrainCircuit,
   Loader2,
   Square,
-  Folder,
 } from 'lucide-react'
 import { createItem } from '@/features/item'
 import { searchWithAI, transcribeAudio, askBrain } from '@/features/ai'
@@ -136,17 +135,17 @@ export function CaptureBar() {
   }, [text, items, brainMode])
 
   const handleSuggestionClick = (item: any) => {
-    setText(`${item.content} > `)
-    // if (item.isProjectSuggestion) {
-    //   // 🔥 АВТОДОПОЛНЕНИЕ ПРОЕКТА
-    //   setText(`${item.content} > `)
-    //   // Оставляем фокус в инпуте (в идеале найти ref инпута и вызвать focus)
-    // } else {
-    //   // Старое поведение (открыть задачу)
-    //   // setText('')
-    //   setSuggestions([])
-    //   setFocusItem(item)
-    // }
+    // setText(`${item.content} > `)
+    if (item.isProjectSuggestion) {
+      // 🔥 АВТОДОПОЛНЕНИЕ ПРОЕКТА
+      setText(`${item.content} > `)
+      // Оставляем фокус в инпуте (в идеале найти ref инпута и вызвать focus)
+    } else {
+      // Старое поведение (открыть задачу)
+      // setText('')
+      setSuggestions([])
+      setFocusItem(item)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -209,7 +208,7 @@ export function CaptureBar() {
 
   return (
     <div className="fixed bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xl z-20">
-      {/* <AnimatePresence>
+      <AnimatePresence>
         {!brainMode && (suggestions.length > 0 || isSearching) && isPro ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -268,9 +267,9 @@ export function CaptureBar() {
             />
           </motion.div>
         )}
-      </AnimatePresence> */}
+      </AnimatePresence>
 
-      {!brainMode && suggestions.length > 0 && (
+      {/* {!brainMode && suggestions.length > 0 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -284,7 +283,6 @@ export function CaptureBar() {
               className="w-full flex items-center justify-between text-left p-3 text-sm bg-card/90 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg hover:bg-accent transition-colors group"
             >
               <div className="flex items-center gap-3 overflow-hidden">
-                {/* Иконка папки для проектов */}
                 <div className="p-1.5 rounded-md bg-primary/10 text-primary shrink-0">
                   {item.isProjectSuggestion ? (
                     <Folder size={18} />
@@ -296,14 +294,12 @@ export function CaptureBar() {
                 <div className="flex flex-col truncate">
                   <span className="font-medium truncate">
                     {item.content}
-                    {/* Подсказка синтаксиса */}
                     {item.isProjectSuggestion && (
                       <span className="text-muted-foreground opacity-50 ml-1">
                         &gt;
                       </span>
                     )}
                   </span>
-                  {/* Показываем статус, чтобы было понятно, откуда проект */}
                   {item.isProjectSuggestion && (
                     <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                       {item.status === 'today' ? 'Focus' : item.status}
@@ -312,7 +308,6 @@ export function CaptureBar() {
                 </div>
               </div>
 
-              {/* Подсказка клавиши (опционально) */}
               {item.isProjectSuggestion && (
                 <span className="text-[10px] text-muted-foreground border border-border px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                   Enter
@@ -321,7 +316,7 @@ export function CaptureBar() {
             </button>
           ))}
         </motion.div>
-      )}
+      )} */}
 
       <form
         onSubmit={handleSubmit}

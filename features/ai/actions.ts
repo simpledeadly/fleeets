@@ -64,6 +64,24 @@ export async function createItem(text: string) {
   }
 }
 
+export async function getAllItemsWithEmbeddings() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return []
+
+  const { data, error } = await supabase
+    .from('items')
+    .select('id, content, type, status, embedding')
+    .eq('user_id', user.id)
+    .not('embedding', 'is', null)
+    .not('status', 'eq', 'deleted')
+
+  if (error) return []
+  return data
+}
+
 export async function findSimilarItems(itemId: string) {
   const supabase = await createClient()
 

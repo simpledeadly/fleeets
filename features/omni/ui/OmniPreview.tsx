@@ -90,6 +90,15 @@ export function OmniPreview({ item }: { item: Item | null }) {
           <div className="flex items-center justify-center h-full text-muted-foreground text-xs">
             Выберите элемент
           </div>
+          // <motion.div
+          //   key="graph"
+          //   initial={{ opacity: 0 }}
+          //   animate={{ opacity: 1 }}
+          //   exit={{ opacity: 0 }}
+          //   className="h-full w-full"
+          // >
+          //   <MemoryGraph />
+          // </motion.div>
         )}
       </AnimatePresence>
     </div>

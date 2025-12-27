@@ -1,4 +1,5 @@
 export {
+  getAllItemsWithEmbeddings,
   findSimilarItems,
   createItem,
   transcribeAudio,
