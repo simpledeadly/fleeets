@@ -56,13 +56,23 @@ export function LoginForm() {
         >
           <div className="relative flex justify-center">
             <AnimatePresence mode="wait">
-              <div className="bg-white p-2 rounded-xl border border-border shadow-none">
+              <div className="relative bg-white/5 backdrop-blur-md p-3 rounded-3xl border border-white/10 shadow-2xl">
                 <QRCodeSVG
                   value={botLink}
-                  size={180}
-                  level="M" // Средний уровень коррекции ошибок
-                  marginSize={1}
+                  size={200}
+                  level="Q" // Высокий уровень для безопасности при наложении логотипа
                   bgColor="transparent"
+                  fgColor="#ffffffcc" // Твой фирменный желтый (или "white" для минимализма)
+                  marginSize={1}
+                  // imageSettings={{
+                  //   // В качестве src можно передать путь к иконке или саму SVG-строку
+                  //   src: '/zap-icon.png', // Или экспортируй SVG молнии как data-url
+                  //   x: undefined,
+                  //   y: undefined,
+                  //   height: 40,
+                  //   width: 40,
+                  //   excavate: true, // Это "вырезает" квадратики под иконкой, чтобы они не просвечивали
+                  // }}
                 />
               </div>
             </AnimatePresence>
