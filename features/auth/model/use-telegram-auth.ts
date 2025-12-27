@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useStore } from '@/lib/store'
-import { fetchActiveItems } from '@/lib/data'
+import { finalizeLogin } from './auth-utils'
 
 export function useTelegramAuth() {
   // 1. ИСПРАВЛЕНИЕ ГИДРАТАЦИИ:
@@ -64,20 +64,10 @@ export function useTelegramAuth() {
           })
 
           if (!error) {
-            // Б. 🔥 ПРЕДЗАГРУЗКА ДАННЫХ (Magic Moment)
-            // Мы загружаем данные, пока юзер видит "Успех! Входим..."
-            console.log('Session set. Prefetching data...')
-            try {
-              const items = await fetchActiveItems(supabase)
-              setItems(items) // Заполняем стор данными!
-              console.log('Store hydrated manually.')
-            } catch (e) {
-              console.error('Prefetch error', e)
-            }
-
-            // В. Редирект. Данные уже в памяти, перерисовка будет мгновенной.
-            router.push('/')
-            router.refresh()
+            await finalizeLogin(supabase, setItems, router, {
+              access_token: data.access_token,
+              refresh_token: data.refresh_token,
+            })
           }
         }
       } catch (e) {
