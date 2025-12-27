@@ -1,14 +1,11 @@
 'use client'
 
-import { useState } from 'react'
-import { Settings } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { VIEW_REGISTRY } from '@/features/views'
 import { SettingsModal } from '@/features/settings'
 
 export default function Home() {
-  const { isLoading, currentView } = useStore()
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const { isLoading, currentView, isSettingsOpen, setIsSettingsOpen } = useStore()
 
   const CurrentViewComponent = VIEW_REGISTRY[currentView].component
 
@@ -22,13 +19,6 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-4">
-      <button
-        onClick={() => setIsSettingsOpen(true)}
-        className="fixed top-4 left-4 p-2 rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors z-40"
-      >
-        <Settings className="text-neutral-600 dark:text-neutral-300" />
-      </button>
-
       {/* Модалка */}
       <SettingsModal
         isOpen={isSettingsOpen}

@@ -10,21 +10,21 @@ export interface ThemeOption {
 export const THEME_PRESETS: ThemeOption[] = [
   {
     id: 'light',
-    label: 'Light',
+    label: 'Светлая',
     icon: Sun,
     // Чистый белый с легкой тенью
     previewClass: 'bg-white text-black border border-gray-200',
   },
   {
     id: 'dark',
-    label: 'Dark',
+    label: 'Тёмная',
     icon: Moon,
     // Глубокий серый (не черный), как в iOS
     previewClass: 'bg-[#1C1C1E] text-white border border-white/10',
   },
   {
     id: 'system',
-    label: 'Auto',
+    label: 'Авто',
     icon: Laptop,
     // Элегантный градиент
     previewClass:
@@ -32,7 +32,7 @@ export const THEME_PRESETS: ThemeOption[] = [
   },
   {
     id: 'cyberpunk',
-    label: 'Neon',
+    label: 'Неон',
     icon: Zap,
     // Ядовитый лайм, а не горчица
     previewClass: 'bg-[#CCFF00] text-black border-none font-bold',
