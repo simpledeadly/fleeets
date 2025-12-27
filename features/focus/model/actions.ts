@@ -83,8 +83,8 @@ export async function getFocusViewData(itemId: string) {
 
     const { data } = await supabase.rpc('match_items', {
       query_embedding: currentItem.embedding,
-      match_threshold: 0.5,
-      match_count: 10,
+      match_threshold: 0.4,
+      match_count: 16,
       user_id_input: user.id,
     })
 
