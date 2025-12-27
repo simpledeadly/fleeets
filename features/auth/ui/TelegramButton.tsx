@@ -13,7 +13,7 @@ export function TelegramButton({ url, isLoading }: TelegramButtonProps) {
     <a
       href={url}
       className={cn(
-        'block relative overflow-hidden rounded-3xl transition-all duration-150 active:scale-[0.98] shadow-[0_4px_20px_rgba(36,161,222,0.1),inset_0_1px_0_rgba(255,255,255,0.05)] group',
+        'block relative overflow-hidden rounded-xl transition-all duration-150 active:scale-[0.98] shadow-[0_4px_20px_rgba(36,161,222,0.1),inset_0_1px_0_rgba(255,255,255,0.05)] group',
         isLoading && 'pointer-events-none opacity-80'
       )}
       target="_blank"

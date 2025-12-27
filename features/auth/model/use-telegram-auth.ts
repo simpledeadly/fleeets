@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { useStore } from '@/lib/store'
-import { finalizeLogin } from './auth-utils'
+import { fetchActiveItems } from '@/lib/data'
 
 export function useTelegramAuth() {
   // 1. ИСПРАВЛЕНИЕ ГИДРАТАЦИИ:
@@ -64,10 +64,17 @@ export function useTelegramAuth() {
           })
 
           if (!error) {
-            await finalizeLogin(supabase, setItems, router, {
-              access_token: data.access_token,
-              refresh_token: data.refresh_token,
-            })
+            console.log('Session set. Prefetching data...')
+            try {
+              const items = await fetchActiveItems(supabase)
+              setItems(items)
+              console.log('Store hydrated manually.')
+            } catch (e) {
+              console.error('Prefetch error', e)
+            }
+
+            router.push('/')
+            router.refresh()
           }
         }
       } catch (e) {
