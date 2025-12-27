@@ -1,15 +1,15 @@
 // app/layout.tsx
-import type { Metadata } from "next"
-import "./globals.css"
-import { Toaster } from "sonner"
-import StoreInitializer from "./components/StoreInitializer"
-import { PaywallModal } from "@/features/paywall"
+import './globals.css'
+import type { Metadata } from 'next'
+import { Toaster } from 'sonner'
+import StoreInitializer from './components/StoreInitializer'
+import { PaywallModal } from '@/features/paywall'
 import { ThemeProvider } from './components/ThemeProvider'
 import { LayoutClient } from './components/LayoutClient'
 
 export const metadata: Metadata = {
-  title: "Fleeets",
-  description: "Inbox Zero Protocol",
+  title: 'Fleeets',
+  description: 'Inbox Zero Protocol',
 }
 
 export default function RootLayout({
@@ -27,9 +27,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <StoreInitializer />
-          <LayoutClient>
-            {children}
-          </LayoutClient>
+          <LayoutClient>{children}</LayoutClient>
           <PaywallModal />
           <Toaster position="bottom-right" />
         </ThemeProvider>
