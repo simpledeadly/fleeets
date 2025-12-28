@@ -173,6 +173,7 @@ export type Database = {
           scope: Database["public"]["Enums"]["app_scope"] | null
           sentiment: string | null
           status: Database["public"]["Enums"]["item_status"] | null
+          triaged_at: string | null
           type: Database["public"]["Enums"]["item_type"] | null
           updated_at: string | null
           user_id: string
@@ -198,6 +199,7 @@ export type Database = {
           scope?: Database["public"]["Enums"]["app_scope"] | null
           sentiment?: string | null
           status?: Database["public"]["Enums"]["item_status"] | null
+          triaged_at?: string | null
           type?: Database["public"]["Enums"]["item_type"] | null
           updated_at?: string | null
           user_id: string
@@ -223,6 +225,7 @@ export type Database = {
           scope?: Database["public"]["Enums"]["app_scope"] | null
           sentiment?: string | null
           status?: Database["public"]["Enums"]["item_status"] | null
+          triaged_at?: string | null
           type?: Database["public"]["Enums"]["item_type"] | null
           updated_at?: string | null
           user_id?: string
@@ -427,7 +430,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_daily_report: {
+        Args: { target_date: string; user_uuid: string }
+        Returns: Json
+      }
       get_item_total_duration: { Args: { item_uuid: string }; Returns: number }
+      get_weekly_summary: { Args: { user_uuid: string }; Returns: Json }
       match_items: {
         Args: {
           match_count: number

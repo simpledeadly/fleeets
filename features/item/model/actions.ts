@@ -121,6 +121,18 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
   // но data типизирована
   const updates: any = { ...data }
 
+  if (
+    currentItem.status === 'inbox' &&
+    data.status &&
+    data.status !== 'inbox'
+  ) {
+    updates.triaged_at = new Date().toISOString()
+  }
+
+  if (data.status === 'inbox') {
+    updates.triaged_at = null
+  }
+
   // --- ЛОГИКА СЧЕТЧИКОВ ---
   updates.interaction_count = (currentItem.interaction_count || 0) + 1
   updates.updated_at = new Date().toISOString()

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use server'
 
 import OpenAI from 'openai'
@@ -11,6 +12,15 @@ const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
   baseURL: 'https://openrouter.ai/api/v1',
 })
+
+const groq = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: 'https://api.groq.com/openai/v1',
+})
+
+const llmModelOR_8b = 'meta-llama/llama-3.1-8b-instruct'
+const llmModelOR_70b = 'meta-llama/llama-3.1-8b-instruct'
+const llmModelGroq_70b = 'llama-3.3-70b-versatile'
 
 export async function createItem(text: string) {
   const supabase = await createClient()
@@ -276,16 +286,6 @@ export async function askBrain(question: string) {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Auth required' }
 
-  const isRetrospectiveRequest =
-    /делал|занимался|статистика|активность|итоги|ретроспектива|мой прогресс/i.test(
-      question.toLowerCase()
-    )
-
-  if (isRetrospectiveRequest) {
-    console.log('🧠 [Dispatcher] Перенаправляю запрос в Аналитик-модуль')
-    return await performActivityRetrospective(question)
-  }
-
   // 1. Поиск контекста (RAG)
   const embeddingModel = 'openai/text-embedding-3-small'
 
@@ -437,21 +437,13 @@ export async function askBrain(question: string) {
     ${contextString}
   `
 
-  // 3. Генерация ответа (через Groq Llama-3 для скорости)
-  // const groq = new OpenAI({
-  //   apiKey: process.env.GROQ_API_KEY,
-  //   baseURL: 'https://api.groq.com/openai/v1',
-  // })
-
-  const llmModel = 'meta-llama/llama-3.1-8b-instruct'
-
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await groq.chat.completions.create({
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: question },
       ],
-      model: llmModel,
+      model: llmModelGroq_70b,
       temperature: 0.7,
     })
 
@@ -459,7 +451,7 @@ export async function askBrain(question: string) {
     if (completion.usage) {
       logTokenUsage({
         userId: user.id,
-        model: llmModel,
+        model: llmModelGroq_70b,
         action: 'rag_query',
         inputTokens: completion.usage.prompt_tokens,
         outputTokens: completion.usage.completion_tokens,
@@ -477,21 +469,44 @@ export async function askBrain(question: string) {
         const jsonString = content.substring(firstBrace, lastBrace + 1)
         const parsed = JSON.parse(jsonString)
 
-        // Проверяем, что это наш формат и там есть данные
-        if (
-          parsed.type &&
-          Array.isArray(parsed.data) &&
-          parsed.data.length > 0
-        ) {
+        // 1. Обработка ДЕКОМПОЗИЦИИ (данные уже в ответе ИИ)
+        if (parsed.type === 'decomposition' && Array.isArray(parsed.data)) {
           return {
             answer: null,
             genUI: parsed,
             sources: contextItems,
           }
         }
+
+        // 2. 🔥 ОБРАБОТКА ОТЧЕТА (данные берем из SQL по дате от ИИ)
+        if (parsed.type === 'daily_report') {
+          console.log(`📊 Запрос отчета за дату: ${parsed.data?.date}`)
+
+          const { data: reportData, error: reportError } = await supabase.rpc(
+            'get_daily_report',
+            {
+              user_uuid: user.id,
+              target_date:
+                parsed.data?.date || new Date().toISOString().split('T')[0],
+            }
+          )
+
+          if (reportError) throw reportError
+
+          return {
+            answer: null,
+            genUI: {
+              type: 'daily_report',
+              data: reportData, // Передаем в компонент "жирные" данные из БД
+            },
+            sources: [], // Для отчета источники не нужны, они внутри отчета
+          }
+        }
       }
     } catch (e) {
-      console.error('JSON Parse Error:', e)
+      console.error('GenUI Parsing or Data Fetch Error:', e)
+      // Если что-то пошло не так (например, даты нет),
+      // просто выведем текст, который прислал ИИ
     }
 
     return {
@@ -546,18 +561,10 @@ export async function performActivityRetrospective(customUserQuery?: string) {
     - Будь прямолинеен как Дитер Рамс.
   `
 
-  const groq = new OpenAI({
-    apiKey: process.env.GROQ_API_KEY,
-    baseURL: 'https://api.groq.com/openai/v1',
-  })
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const llmModel = 'meta-llama/llama-3.1-8b-instruct' // for openai.chat.co... below
-
   // Используем мощную модель 70b, так как тут нужен глубокий анализ паттернов
   const completion = await groq.chat.completions.create({
     messages: [{ role: 'system', content: systemPrompt }],
-    model: 'llama-3.3-70b-versatile',
+    model: llmModelGroq_70b,
     temperature: 0.7,
   })
 
