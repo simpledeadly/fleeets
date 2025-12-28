@@ -2,19 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
-import {
-  ArrowUp,
-  CheckCircle2,
-  CornerDownRight,
-  Save,
-  X,
-} from 'lucide-react'
+import { ArrowUp, CheckCircle2, CornerDownRight, Save, X } from 'lucide-react'
 import { useStore, type Item } from '@/lib/store'
 import { useDebounce } from '@/lib/hooks'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { SimilarItems } from './SimilarItems'
 import { Timer as FocusTimer } from './Timer'
-import { updateExecutionLog, completeItem } from '@/features/item'
+import { updateExecutionLog, updateItem } from '@/features/item'
 import { getFocusViewData } from '../model/actions'
 import { cn } from '@/lib/utils'
 
@@ -27,7 +21,12 @@ interface FocusModalProps {
 // type FocusData = { totalDuration: number; similarItems: any[] }
 
 export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
-  const { items, focusItem, setFocusItem } = useStore()
+  const {
+    items,
+    focusItem,
+    setFocusItem,
+    updateItem: updateStoreItem,
+  } = useStore()
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   const [logText, setLogText] = useState('')
@@ -104,22 +103,24 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
     await updateExecutionLog(itemId, '')
   }
 
-  const handleComplete = async () => {
-    // 1. Салют!
+  const handleComplete = async (item: Item) => {
     confetti({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.8 },
-      zIndex: 9999, // Поверх модалки
+      zIndex: 999,
     })
 
-    // 2. Логика
-    await completeItem(item!.id)
+    // 1. Optimistic UI (через алиас стора)
+    updateStoreItem({ ...item, status: 'done' })
+
+    // 3. Server Action (2 аргумента: ID и данные)
+    await updateItem(item.id, { status: 'done' })
 
     // 3. Закрываем через мгновение
     setTimeout(() => {
       onClose()
-    }, 1000)
+    }, 500)
   }
 
   return (
@@ -136,7 +137,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
               {parentTask && (
                 <button
                   onClick={() => setFocusItem(parentTask)}
-                  className="flex items-center text-xs text-muted-foreground hover:text-primary font-medium transition-colors mb-4 cursor-pointer"
+                  className="flex gap-1 items-center text-xs text-muted-foreground hover:text-primary font-medium transition-colors mb-3 cursor-pointer"
                 >
                   <ArrowUp size={18} />
                   <span>{parentTask.content}</span>
@@ -205,7 +206,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
               <div className="space-y-2 relative">
                 <div className="flex justify-between items-center">
                   <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Ход выполнения
+                    Доп. сведения
                   </label>
                   {/* Индикатор сохранения */}
                   {isSaving ? (
@@ -231,7 +232,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
                   value={logText}
                   onChange={(e) => setLogText(e.target.value)}
                   className="text-sm caret-accented w-full bg-secondary/30 rounded-xl p-3 min-h-37 resize-none focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all duration-100 placeholder:text-muted-foreground/50"
-                  placeholder="Пиши сюда мысли, заметки, код... Это уйдет в базу знаний."
+                  placeholder="Пиши сюда мысли, заметки, что угодно по теме. Это уйдет в базу знаний."
                 />
               </div>
 
@@ -246,19 +247,21 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
                 </div>
               )}
 
-              <div className="h-6" />
+              <div className="h-12" />
             </div>
 
             {/* Footer Actions */}
-            <div className="p-2 border-t border-border/50 bg-card/80 backdrop-blur-lg absolute bottom-0 w-full flex gap-4">
-              <button
-                onClick={handleComplete}
-                className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-lg opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <CheckCircle2 size={22} strokeWidth={2.4} />
-                Завершить задачу
-              </button>
-            </div>
+            {item.type === 'task' && (
+              <div className="p-2 border-t border-border/50 bg-card/80 backdrop-blur-lg absolute bottom-0 w-full flex gap-4">
+                <button
+                  onClick={() => handleComplete(item)}
+                  className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-lg opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <CheckCircle2 size={22} strokeWidth={2.4} />
+                  Завершить задачу
+                </button>
+              </div>
+            )}
           </>
         )}
       </DialogContent>

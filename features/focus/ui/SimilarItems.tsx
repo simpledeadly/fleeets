@@ -167,7 +167,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
 
               {/* Footer */}
               <div className="mt-2 flex items-center justify-between border-t border-border/30 pt-2">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground/70">
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
                   <CalendarDays size={12} />
                   <span>
                     {item.completed_at
