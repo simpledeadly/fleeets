@@ -8,8 +8,6 @@ import {
   Target,
   TrendingUp,
   LucideIcon,
-  Send,
-  Loader2,
 } from 'lucide-react'
 import { toPng } from 'html-to-image'
 import { motion } from 'framer-motion'
@@ -51,7 +49,7 @@ function StatBlock({
           {label}
         </span>
       </div>
-      <div className="text-2xl font-bold tabular-nums tracking-tighter text-foreground">
+      <div className="text-2xl font-black tabular-nums tracking-tighter text-foreground">
         {value}
       </div>
       <div className="text-xs text-muted-foreground opacity-70 font-semibold">
@@ -103,7 +101,8 @@ function ReportSection({
 // --- 3. Главный компонент ---
 
 export function GenDailyReport({ data }: { data: any }) {
-  const reportRef = useRef<HTMLDivElement>(null) // 👈 Реф на весь отчет
+  const reportRef = useRef<HTMLDivElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isSharing, setIsSharing] = useState(false)
 
   const handleShare = async () => {
@@ -173,7 +172,7 @@ export function GenDailyReport({ data }: { data: any }) {
           <h3 className="text-xl font-bold tracking-tight text-foreground">
             Дневной итог
           </h3>
-          <p className="text-xs text-muted-foreground font-bold uppercase tracking-[0.2em]">
+          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">
             {new Date(date).toLocaleDateString('ru-RU', {
               weekday: 'long',
               day: 'numeric',
@@ -181,7 +180,10 @@ export function GenDailyReport({ data }: { data: any }) {
             })}
           </p>
         </div>
-        <div className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-black uppercase tracking-tighter">
+        <div
+          onClick={handleShare}
+          className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-black uppercase tracking-tighter cursor-pointer"
+        >
           Fleeets Recap
         </div>
       </div>
@@ -318,7 +320,8 @@ export function GenDailyReport({ data }: { data: any }) {
           </span>
         </div>
       )}
-      <button
+
+      {/* <button
         onClick={handleShare}
         disabled={isSharing}
         className="p-2 hover:bg-cyan-500/15 rounded-full transition-colors duration-150 flex items-center gap-3 bg-cyan-500/10 border border-cyan-500/10 cursor-pointer"
@@ -328,7 +331,7 @@ export function GenDailyReport({ data }: { data: any }) {
         ) : (
           <Send size={16} className="text-cyan-300" />
         )}
-      </button>
+      </button> */}
     </div>
   )
 }

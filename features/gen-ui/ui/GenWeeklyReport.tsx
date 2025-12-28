@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, useMemo } from 'react'
 import {
   LineChart,
   Line,
@@ -12,30 +12,41 @@ import {
   YAxis,
 } from 'recharts'
 import {
-  Send,
-  Loader2,
   Zap,
   Target,
   TrendingUp,
   CheckCircle2,
+  Layers,
+  PlusCircle,
 } from 'lucide-react'
 import { sendPhotoToTelegram } from '@/features/notifications/model/actions'
 import { toPng } from 'html-to-image'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 export function GenWeeklyReport({ data }: { data: any }) {
   const reportRef = useRef<HTMLDivElement>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isSharing, setIsSharing] = useState(false)
 
   const {
     range,
-    daily_flow,
+    daily_flow = [],
     focus_by_tags,
     total_focus_hours,
     total_completed,
   } = data
 
-  console.log('📊 Weekly Flow Data:', data.daily_flow)
+  // --- МАТЕМАТИКА ПЕРИОДА ---
+  const totalStats = useMemo(() => {
+    return daily_flow.reduce(
+      (acc: any, curr: any) => ({
+        input: acc.input + (curr.input || 0),
+        output: acc.output + (curr.output || 0),
+      }),
+      { input: 0, output: 0 }
+    )
+  }, [daily_flow])
 
   const handleShare = async () => {
     if (!reportRef.current) return
@@ -46,11 +57,18 @@ export function GenWeeklyReport({ data }: { data: any }) {
         backgroundColor: '#09090b',
         pixelRatio: 2,
       })
-      const res = await sendPhotoToTelegram(
+      await sendPhotoToTelegram(
         dataUrl,
-        `Недельный отчет:\n${range.start} — ${range.end}`
+        `Недельный отчет:\n${new Date(range.start).toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'short',
+        })} — ${new Date(range.end).toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric',
+        })}`
       )
-      if (res?.success) toast.success('Отчет в Telegram!')
+      toast.success('Отчет в Telegram!')
     } catch {
       toast.error('Ошибка скриншота')
     } finally {
@@ -69,51 +87,58 @@ export function GenWeeklyReport({ data }: { data: any }) {
           <h3 className="text-xl font-bold tracking-tight text-foreground">
             Недельный дайджест
           </h3>
-          <p className="text-xs text-muted-foreground font-bold uppercase tracking-[0.2em]">
+          <p className="text-xs text-muted-foreground font-bold uppercase tracking-widest">
             {new Date(range.start).toLocaleDateString('ru-RU', {
               day: 'numeric',
               month: 'short',
-            })}{' '}
-            —{' '}
+            })}
+            {' — '}
             {new Date(range.end).toLocaleDateString('ru-RU', {
               day: 'numeric',
               month: 'short',
             })}
           </p>
         </div>
-
-        <button
+        <div
           onClick={handleShare}
-          disabled={isSharing}
-          className="p-2 hover:bg-cyan-500/15 rounded-full transition-colors duration-150 flex items-center gap-3 bg-cyan-500/10 border border-cyan-500/10 cursor-pointer"
+          className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-black uppercase tracking-tighter cursor-pointer"
         >
-          {isSharing ? (
-            <Loader2 size={16} className="text-cyan-300 animate-spin" />
-          ) : (
-            <Send size={16} className="text-cyan-300" />
-          )}
-        </button>
+          Fleeets Recap
+        </div>
       </div>
 
-      <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/20">
-        <div className="flex items-center gap-2 mb-1 opacity-70 text-emerald-500">
-          <CheckCircle2 size={16} />
-          <span className="text-xs uppercase font-bold tracking-widest text-muted-foreground">
-            Завершено
-          </span>
-        </div>
-        <div className="text-2xl font-bold tabular-nums text-emerald-500">
-          {total_completed}
-        </div>
+      {/* --- ГЛАВНЫЕ KPI (3 колонки) --- */}
+      <div className="grid grid-cols-3 gap-3">
+        <SummaryCard
+          label="Элементов создано"
+          value={totalStats.input}
+          icon={PlusCircle}
+          colorClass="text-blue-500"
+          bgClass="bg-blue-500/5 border-blue-500/20"
+        />
+        <SummaryCard
+          label="Добавлено в Память"
+          value={totalStats.output}
+          icon={Layers}
+          colorClass="text-green-500"
+          bgClass="bg-green-500/5 border-green-500/20"
+        />
+        <SummaryCard
+          label="Выполнено"
+          value={total_completed}
+          icon={CheckCircle2}
+          colorClass="text-emerald-400"
+          bgClass="bg-emerald-400/5 border-emerald-400/20"
+        />
       </div>
 
       {/* Velocity Chart */}
-      <div className="space-y-4">
+      <div className="space-y-4 pt-2">
         <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-widest">
           <TrendingUp size={16} className="text-emerald-500" />
-          <span>Скорость потока (Velocity)</span>
+          <span>Скорость потока</span>
         </div>
-        <div className="h-45 w-full pr-4">
+        <div className="h-48 w-full pr-0">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={daily_flow}>
               <CartesianGrid
@@ -127,10 +152,10 @@ export function GenWeeklyReport({ data }: { data: any }) {
                   new Date(str).toLocaleDateString('ru-RU', { day: 'numeric' })
                 }
                 stroke="#444"
-                fontSize={10}
+                fontSize={12}
                 tickLine={false}
                 axisLine={false}
-                dy={10}
+                dy={8}
               />
               <YAxis hide domain={[0, 'auto']} />
               <Tooltip
@@ -139,16 +164,25 @@ export function GenWeeklyReport({ data }: { data: any }) {
                   border: '1px solid #333',
                   borderRadius: '12px',
                 }}
-                labelFormatter={(label) =>
-                  new Date(label).toLocaleDateString('ru-RU', {
+                labelFormatter={(l) =>
+                  new Date(l).toLocaleDateString('ru-RU', {
                     day: 'numeric',
                     month: 'long',
                   })
                 }
               />
-              <Legend verticalAlign="top" height={36} iconType="circle" />
+              <Legend
+                verticalAlign="top"
+                height={36}
+                iconType="circle"
+                wrapperStyle={{
+                  fontSize: '12px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  fontWeight: 'bold',
+                }}
+              />
 
-              {/* Линия Вход */}
               <Line
                 type="monotone"
                 dataKey="input"
@@ -156,11 +190,9 @@ export function GenWeeklyReport({ data }: { data: any }) {
                 stroke="#3b82f6"
                 strokeWidth={3}
                 dot={{ r: 3, fill: '#3b82f6', strokeWidth: 0 }}
-                activeDot={{ r: 4 }}
-                animationDuration={1000}
+                activeDot={{ r: 5 }}
+                animationDuration={1200}
               />
-
-              {/* Линия Выход */}
               <Line
                 type="monotone"
                 dataKey="output"
@@ -168,17 +200,17 @@ export function GenWeeklyReport({ data }: { data: any }) {
                 stroke="#10b981"
                 strokeWidth={3}
                 dot={{ r: 3, fill: '#10b981', strokeWidth: 0 }}
-                activeDot={{ r: 4 }}
-                animationDuration={1000}
+                activeDot={{ r: 5 }}
+                animationDuration={1200}
               />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Middle Grid */}
+      {/* Focus & Tags Grid */}
       <div className="grid grid-cols-2 gap-4">
-        <div className="p-4 rounded-2xl bg-secondary/20 border border-border/40">
+        <div className="p-4 rounded-2xl bg-secondary/10 border border-border/40">
           <div className="flex items-center gap-2 mb-1 opacity-70 text-amber-500">
             <Zap size={16} fill="currentColor" />
             <span className="text-xs uppercase font-bold tracking-widest text-muted-foreground">
@@ -190,7 +222,7 @@ export function GenWeeklyReport({ data }: { data: any }) {
           </div>
         </div>
 
-        <div className="p-4 rounded-2xl bg-secondary/20 border border-border/40 overflow-hidden">
+        <div className="p-4 rounded-2xl bg-secondary/10 border border-border/40 overflow-hidden">
           <div className="flex items-center gap-2 mb-2 opacity-70 text-blue-500">
             <Target size={16} />
             <span className="text-xs uppercase font-bold tracking-widest text-muted-foreground">
@@ -218,9 +250,29 @@ export function GenWeeklyReport({ data }: { data: any }) {
         </div>
       </div>
 
-      <p className="text-xs text-muted-foreground leading-relaxed italic text-center px-4 opacity-70 font-medium">
-        Система проанализировала твой путь. Двигайся дальше.
+      <p className="text-xs text-muted-foreground leading-relaxed italic text-center px-4 opacity-50 font-medium">
+        Система проанализировала твой путь. Ты в игре.
       </p>
+    </div>
+  )
+}
+
+// Мини-компонент для верхних карточек
+function SummaryCard({ label, value, icon: Icon, colorClass, bgClass }: any) {
+  return (
+    <div
+      className={cn(
+        'p-3 rounded-2xl border flex flex-col items-center justify-center gap-1 transition-all',
+        bgClass
+      )}
+    >
+      <Icon size={20} className={colorClass} />
+      <div className={cn('text-xl font-black tabular-nums', colorClass)}>
+        {value}
+      </div>
+      <span className="text-xs uppercase font-bold tracking-tighter text-primary/40">
+        {label}
+      </span>
     </div>
   )
 }
