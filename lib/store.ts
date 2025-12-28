@@ -32,6 +32,8 @@ interface AppState {
   toggleSnow: () => void
   isSettingsOpen: boolean
   setIsSettingsOpen: (state: boolean) => void
+  reorderItems: (newOrder: Item[]) => void
+  promoteToHero: (id: string) => void
 }
 
 export const useStore = create<AppState>((set) => ({
@@ -77,4 +79,14 @@ export const useStore = create<AppState>((set) => ({
   toggleSnow: () => set((state) => ({ isSnowing: !state.isSnowing })),
   isSettingsOpen: false,
   setIsSettingsOpen: (state) => set({ isSettingsOpen: state }),
+  reorderItems: (newOrder) => set({ items: newOrder }),
+  promoteToHero: (id) =>
+    set((state) => {
+      const itemIndex = state.items.findIndex((i) => i.id === id)
+      if (itemIndex === -1) return state
+
+      const newItems = [...state.items]
+      const [item] = newItems.splice(itemIndex, 1)
+      return { items: [item, ...newItems] }
+    }),
 }))

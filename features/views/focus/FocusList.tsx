@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import { Reorder } from 'framer-motion'
 import { useStore } from '@/lib/store'
 import { BrainCircuit, Loader2, RefreshCw } from 'lucide-react'
-import { generateDailyPlan, resetTodayView } from '@/features/planning'
 import { toast } from 'sonner'
-import { Input } from '@/components/ui/input'
+import { generateDailyPlan, resetTodayView } from '@/features/planning'
 import { cn } from '@/lib/utils'
+import { Input } from '@/components/ui/input'
 
 export function FocusList() {
-  const { items, setFocusItem } = useStore()
+  const { items, setFocusItem, reorderItems, promoteToHero } = useStore()
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [theme, setTheme] = useState('')
@@ -17,6 +18,15 @@ export function FocusList() {
   const focusItems = items.filter(
     (i) => i.status === 'today' && !i.completed_at
   )
+
+  const handleReorder = (newOrderIds: string[]) => {
+    const reordered = newOrderIds.map((id) => items.find((i) => i.id === id)!)
+    // Нам нужно сохранить остальные задачи (не из фокуса) в массиве
+    const nonFocusItems = items.filter(
+      (i) => i.status !== 'today' || i.completed_at
+    )
+    reorderItems([...reordered, ...nonFocusItems])
+  }
 
   const handleAction = async (action: () => Promise<any>) => {
     setIsLoading(true)
@@ -80,7 +90,12 @@ export function FocusList() {
         <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
       </button>
 
-      <div className="flex flex-col items-start w-full space-y-16">
+      <Reorder.Group
+        axis="y"
+        values={focusItems.map((i) => i.id)}
+        onReorder={handleReorder}
+        className="flex flex-col items-start w-full space-y-16"
+      >
         {/* СТЕК ЗАДАЧ (СВЕРХУ ВНИЗ) */}
         <div className="w-full flex flex-col space-y-10">
           {displayTasks.map((item, index) => {
@@ -89,11 +104,12 @@ export function FocusList() {
             const isNext = index === 1
 
             return (
-              <div
+              <Reorder.Item
                 key={item.id}
+                value={item.id}
                 onClick={() => setFocusItem(item)}
                 className={cn(
-                  'cursor-pointer transition-all duration-100 hover:opacity-100 group text-left outline-none',
+                  'cursor-pointer transition-all duration-500 hover:opacity-100 group text-left outline-none',
                   isMain
                     ? 'opacity-100'
                     : isNext
@@ -101,7 +117,17 @@ export function FocusList() {
                     : 'opacity-10 hover:opacity-30'
                 )}
               >
-                <div className="space-y-3 pb-2 border-b border-border dark:border-border/80">
+                <div
+                  className="space-y-3 pb-2 border-b border-border dark:border-border/80"
+                  onClick={(e) => {
+                    if (!isMain) {
+                      e.stopPropagation()
+                      promoteToHero(item.id)
+                    } else {
+                      setFocusItem(item)
+                    }
+                  }}
+                >
                   <h1
                     className={cn(
                       'font-bold tracking-tighter leading-[0.9] transition-all duration-150 line-clamp-3',
@@ -121,11 +147,11 @@ export function FocusList() {
                     </p>
                   )}
                 </div>
-              </div>
+              </Reorder.Item>
             )
           })}
         </div>
-      </div>
+      </Reorder.Group>
 
       {/* ОСТАЛЬНЫЕ ЗАДАЧИ (В самом низу, как визуальный "хвост") */}
       {otherTasksCount > 0 && (
