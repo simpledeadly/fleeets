@@ -19,7 +19,7 @@ import {
   Layers,
   PlusCircle,
 } from 'lucide-react'
-import { sendPhotoToTelegram } from '@/features/notifications/model/actions'
+import { sendPhotoToTelegram } from '@/features/notifications'
 import { toPng } from 'html-to-image'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
