@@ -1,5 +1,6 @@
 'use client'
 
+import { useRef, useState } from 'react'
 import {
   CheckCircle2,
   PlusCircle,
@@ -7,9 +8,14 @@ import {
   Target,
   TrendingUp,
   LucideIcon,
+  Send,
+  Loader2,
 } from 'lucide-react'
+import { toPng } from 'html-to-image'
 import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
+import { sendPhotoToTelegram } from '@/features/notifications'
+import { toast } from 'sonner'
 
 // --- 1. Утилиты ---
 
@@ -97,6 +103,46 @@ function ReportSection({
 // --- 3. Главный компонент ---
 
 export function GenDailyReport({ data }: { data: any }) {
+  const reportRef = useRef<HTMLDivElement>(null) // 👈 Реф на весь отчет
+  const [isSharing, setIsSharing] = useState(false)
+
+  const handleShare = async () => {
+    if (!reportRef.current) return
+    setIsSharing(true)
+    console.log('📸 [UI] Начинаю скриншот...')
+
+    try {
+      // quality: 0.8 немного уменьшит вес файла
+      const dataUrl = await toPng(reportRef.current, {
+        cacheBust: true,
+        backgroundColor: '#09090b', // Твой темный фон
+        pixelRatio: 2, // Хорошее качество
+      })
+
+      console.log('🌐 [UI] Скриншот готов, отправляю на сервер...')
+
+      const res = await sendPhotoToTelegram(
+        dataUrl,
+        `Отчёт за ${new Date(date).toLocaleDateString('ru-RU', {
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        })}`
+      )
+
+      if (res?.success) {
+        toast.success('Отчет отправлен в Telegram!')
+      } else {
+        toast.error(res?.error || 'Ошибка сервера')
+      }
+    } catch (err: any) {
+      console.error('❌ [UI] html-to-image error:', err)
+      toast.error('Не удалось создать скриншот: ' + err.message)
+    } finally {
+      setIsSharing(false)
+    }
+  }
+
   const {
     input_count = 0,
     output_count = 0,
@@ -110,14 +156,17 @@ export function GenDailyReport({ data }: { data: any }) {
   // Расчеты
   const throughputRatio =
     input_count > 0 ? output_count / input_count : output_count > 0 ? 1 : 0
-  const percentage = Math.min(Math.round(throughputRatio * 100), 100)
+  const percentage = Math.min(Math.round(throughputRatio * 100))
   const isOverDrive = output_count > input_count && input_count > 0
 
   const newTriaged = created_today?.filter((i: any) => i.is_triaged) || []
   const newStillInInbox = created_today?.filter((i: any) => !i.is_triaged) || []
 
   return (
-    <div className="p-6 rounded-3xl bg-card border border-border/60 shadow-2xl space-y-8 font-sans animate-in fade-in zoom-in-95 duration-500">
+    <div
+      ref={reportRef}
+      className="p-6 rounded-3xl bg-card border border-border/60 shadow-2xl space-y-8 font-sans animate-in fade-in zoom-in-95 duration-500"
+    >
       {/* HEADER */}
       <div className="flex justify-between items-start border-b border-border/40 pb-4">
         <div className="space-y-1">
@@ -269,6 +318,17 @@ export function GenDailyReport({ data }: { data: any }) {
           </span>
         </div>
       )}
+      <button
+        onClick={handleShare}
+        disabled={isSharing}
+        className="p-2 hover:bg-cyan-500/15 rounded-full transition-colors duration-150 flex items-center gap-3 bg-cyan-500/10 border border-cyan-500/10 cursor-pointer"
+      >
+        {isSharing ? (
+          <Loader2 size={16} className="text-cyan-300 animate-spin" />
+        ) : (
+          <Send size={16} className="text-cyan-300" />
+        )}
+      </button>
     </div>
   )
 }

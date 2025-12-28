@@ -13,6 +13,11 @@ const nextConfig: NextConfig = {
       ],
     },
   ],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '10mb', // Ставим 10МБ, чтобы любая картинка пролезла
+    },
+  },
 }
 
 export default nextConfig
