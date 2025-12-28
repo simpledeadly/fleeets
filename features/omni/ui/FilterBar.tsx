@@ -58,7 +58,7 @@ export function FilterBar({
         />
         <FilterChip
           label="Фокус"
-          icon={<Focus size={12} />}
+          icon={<Focus size={16} />}
           active={activeStatus === 'today'}
           onClick={() =>
             setActiveStatus(activeStatus === 'today' ? null : 'today')
@@ -66,7 +66,7 @@ export function FilterBar({
         />
         <FilterChip
           label="План"
-          icon={<ListTodo size={12} />}
+          icon={<ListTodo size={16} />}
           active={activeStatus === 'planned'}
           onClick={() =>
             setActiveStatus(activeStatus === 'planned' ? null : 'planned')
@@ -74,7 +74,7 @@ export function FilterBar({
         />
         <FilterChip
           label="Выполнено"
-          icon={<CheckCircle2 size={12} />}
+          icon={<CheckCircle2 size={16} />}
           active={activeStatus === 'done'}
           onClick={() =>
             setActiveStatus(activeStatus === 'done' ? null : 'done')
@@ -82,7 +82,7 @@ export function FilterBar({
         />
         <FilterChip
           label="Архивировано"
-          icon={<Archive size={12} />}
+          icon={<Archive size={16} />}
           active={activeStatus === 'archived'}
           onClick={() =>
             setActiveStatus(activeStatus === 'archived' ? null : 'archived')
@@ -92,16 +92,16 @@ export function FilterBar({
 
       {topTags.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center">
-          <Tag size={12} className="text-muted-foreground shrink-0 mr-1" />
+          <Tag size={14} className="text-muted-foreground shrink-0 mr-1" />
           {topTags.map((tag) => (
             <Badge
               key={tag}
               variant={activeTags.includes(tag) ? 'default' : 'outline'}
               className={cn(
-                'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+                'cursor-pointer text-xs h-5 px-2 font-normal transition-all duration-100 hover:bg-primary/20 hover:text-primary',
                 activeTags.includes(tag)
                   ? 'hover:bg-primary hover:text-primary-foreground'
-                  : 'bg-transparent'
+                  : 'bg-card/20 text-primary border-border hover:bg-muted'
               )}
               onClick={() => toggleTag(tag)}
             >
@@ -111,14 +111,14 @@ export function FilterBar({
         </div>
       )}
       <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center">
-        <Filter size={12} className="text-muted-foreground shrink-0 mr-1" />
+        <Filter size={14} className="text-muted-foreground shrink-0 mr-1" />
         <Badge
           variant={isQuick ? 'default' : 'outline'}
           className={cn(
-            'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            'cursor-pointer text-xs h-5 px-2 font-normal transition-all duration-100 hover:bg-primary/20 hover:text-primary',
             isQuick
               ? 'hover:bg-primary hover:text-primary-foreground'
-              : 'bg-transparent'
+              : 'bg-card/20 text-primary border-border hover:bg-muted'
           )}
           onClick={() => setIsQuick(!isQuick)}
         >
@@ -128,10 +128,10 @@ export function FilterBar({
         <Badge
           variant={isTask ? 'default' : 'outline'}
           className={cn(
-            'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            'cursor-pointer text-xs h-5 px-2 font-normal transition-all duration-100 hover:bg-primary/20 hover:text-primary',
             isTask
               ? 'hover:bg-primary hover:text-primary-foreground'
-              : 'bg-transparent'
+              : 'bg-card/20 text-primary border-border hover:bg-muted'
           )}
           onClick={() => setIsTask(!isTask)}
         >
@@ -141,10 +141,10 @@ export function FilterBar({
         <Badge
           variant={isThought ? 'default' : 'outline'}
           className={cn(
-            'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            'cursor-pointer text-xs h-5 px-2 font-normal transition-all duration-100 hover:bg-primary/20 hover:text-primary',
             isThought
               ? 'hover:bg-primary hover:text-primary-foreground'
-              : 'bg-transparent'
+              : 'bg-card/20 text-primary border-border hover:bg-muted'
           )}
           onClick={() => setIsThought(!isThought)}
         >
@@ -154,10 +154,10 @@ export function FilterBar({
         <Badge
           variant={isNote ? 'default' : 'outline'}
           className={cn(
-            'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            'cursor-pointer text-xs h-5 px-2 font-normal transition-all duration-100 hover:bg-primary/20 hover:text-primary',
             isNote
               ? 'hover:bg-primary hover:text-primary-foreground'
-              : 'bg-transparent'
+              : 'bg-card/20 text-primary border-border hover:bg-muted'
           )}
           onClick={() => setIsNote(!isNote)}
         >
@@ -167,10 +167,10 @@ export function FilterBar({
         <Badge
           variant={isResource ? 'default' : 'outline'}
           className={cn(
-            'cursor-pointer text-xs h-5 px-2 font-normal transition-all hover:bg-primary/20 hover:text-primary',
+            'cursor-pointer text-xs h-5 px-2 font-normal transition-all duration-100 hover:bg-primary/20 hover:text-primary',
             isResource
               ? 'hover:bg-primary hover:text-primary-foreground'
-              : 'bg-transparent'
+              : 'bg-card/20 text-primary border-border hover:bg-muted'
           )}
           onClick={() => setIsResource(!isResource)}
         >
@@ -187,10 +187,10 @@ function FilterChip({ label, icon, active, onClick }: any) {
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all border shrink-0 cursor-pointer',
+        'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-100 border shrink-0 cursor-pointer',
         active
           ? 'bg-primary text-primary-foreground border-primary'
-          : 'bg-background text-muted-foreground border-border hover:bg-muted'
+          : 'bg-card/20 text-primary border-border hover:bg-muted'
       )}
     >
       {icon}

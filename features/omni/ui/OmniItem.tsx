@@ -3,28 +3,17 @@
 import { memo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CommandItem } from '@/components/ui/command'
-import {
-  Archive,
-  CheckCircle2,
-  Circle,
-  CircleDot,
-  FileBox,
-  Focus,
-  Lightbulb,
-  ListTodo,
-  StickyNote,
-  Zap,
-} from 'lucide-react'
+import { CheckCircle2, Circle, CircleDot, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type Item } from '@/lib/store'
 
 interface OmniItemProps {
   item: Item
-  filters: any
+  // filters: any
   onSelect: () => void
 }
 
-const OmniItemComponent = ({ item, filters, onSelect }: OmniItemProps) => {
+const OmniItemComponent = ({ item, onSelect }: OmniItemProps) => {
   return (
     <CommandItem
       value={item.content + (item.ai_tags?.join(' ') || '')}
@@ -32,7 +21,7 @@ const OmniItemComponent = ({ item, filters, onSelect }: OmniItemProps) => {
       data-item-id={item.id}
       className="group flex items-center justify-between py-1.5 cursor-pointer aria-selected:bg-accent transition-all duration-75"
     >
-      <div className="flex items-center gap-0 flex-1 min-w-0 mb-0.5">
+      <div className="flex items-center gap-0 flex-1 min-w-0 my-px">
         {/* Иконка статуса */}
         <div className="shrink-0 transition-colors">
           <AnimatePresence mode="wait">
@@ -58,23 +47,6 @@ const OmniItemComponent = ({ item, filters, onSelect }: OmniItemProps) => {
           >
             {item.content}
           </span>
-
-          {/* Теги и мета */}
-          {/* <div className="flex items-center gap-1 mt-0.5">
-            {item.ai_tags?.slice(0, 2).map((tag) => (
-              <span
-                key={tag}
-                className="text-xs text-muted-foreground bg-secondary/50 px-1 rounded"
-              >
-                #{tag}
-              </span>
-            ))}
-            {item.ai_tags && item.ai_tags?.length > 2 && (
-              <span className="text-xs text-muted-foreground bg-secondary/50 px-1 rounded">
-                ...
-              </span>
-            )}
-          </div> */}
         </div>
       </div>
 
@@ -95,18 +67,6 @@ const OmniItemComponent = ({ item, filters, onSelect }: OmniItemProps) => {
         )}
         <Kbd keys={['⌘', 'Del']} />
       </div>
-
-      {/* Если не в фокусе - показываем статус текстом (как было раньше) */}
-      {!filters.activeStatus && (
-        <span className="text-xs text-muted-foreground/50 group-aria-selected:hidden">
-          <StatusIcon status={item.status!} />
-        </span>
-      )}
-      {filters.activeStatus && item.type !== 'task' && (
-        <span className="text-xs text-muted-foreground/50 group-aria-selected:hidden">
-          <TypeIcon type={item.type!} />
-        </span>
-      )}
     </CommandItem>
   )
 }
@@ -167,28 +127,4 @@ function Kbd({ keys }: { keys: string[] }) {
       ))}
     </div>
   )
-}
-
-const TypeIcon = ({ type }: { type: string }) => {
-  switch (type) {
-    case 'note':
-      return <StickyNote strokeWidth={1.6} size={10} />
-    case 'thought':
-      return <Lightbulb strokeWidth={1.6} size={10} />
-    case 'resource':
-      return <FileBox strokeWidth={1.6} size={10} />
-  }
-}
-
-const StatusIcon = ({ status }: { status: string }) => {
-  switch (status) {
-    case 'today':
-      return <Focus strokeWidth={1.6} size={10} />
-    case 'planned':
-      return <ListTodo strokeWidth={1.6} size={10} />
-    case 'done':
-      return <CheckCircle2 strokeWidth={1.6} size={10} />
-    case 'archived':
-      return <Archive strokeWidth={1.6} size={10} />
-  }
 }

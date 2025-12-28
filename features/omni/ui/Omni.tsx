@@ -260,7 +260,7 @@ export function Omni() {
                           <OmniItem
                             key={item.id}
                             item={item}
-                            filters={filter}
+                            // filters={filter}
                             onSelect={() => run(() => setFocusItem(item))}
                           />
                         ))}
