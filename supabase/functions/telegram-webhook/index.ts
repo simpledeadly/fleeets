@@ -134,6 +134,56 @@ serve(async (req) => {
     }
 
     // ==========================================
+    // НОВАЯ ЛОГИКА: КОМАНДЫ ОТЧЕТОВ
+    // ==========================================
+
+    // 1. ДНЕВНОЙ ОТЧЕТ (/daily)
+    if (text.startsWith('/daily')) {
+      await sendTypingAction(chatId)
+
+      // Можно передать дату: /daily 2025-12-28, иначе берем сегодня
+      const dateParts = text.split(' ')
+      const targetDate = dateParts[1] || new Date().toISOString().split('T')[0]
+
+      const { data: report, error } = await supabaseAdmin.rpc(
+        'get_daily_report',
+        {
+          user_uuid: userId,
+          target_date: targetDate,
+        }
+      )
+
+      if (error || !report) {
+        await sendMessage(chatId, '❌ Ошибка БД')
+      } else {
+        await sendMessage(chatId, formatDailyMsg(report), 'HTML')
+      }
+      return new Response('OK')
+    }
+
+    // 2. НЕДЕЛЬНЫЙ ОТЧЕТ (/weekly)
+    if (text.startsWith('/weekly')) {
+      await sendTypingAction(chatId)
+
+      const { data: report, error } = await supabaseAdmin.rpc(
+        'get_weekly_report',
+        {
+          user_uuid: userId,
+        }
+      )
+
+      if (error || !report) {
+        await sendMessage(
+          chatId,
+          '❌ Ошибка при генерации недельного дайджеста.'
+        )
+      } else {
+        await sendMessage(chatId, formatWeeklyMsg(report), 'HTML')
+      }
+      return new Response('OK')
+    }
+
+    // ==========================================
     // 3. ОБРАБОТКА ГОЛОСОВЫХ (VOICE)
     // ==========================================
     if (message.voice) {
@@ -259,12 +309,24 @@ serve(async (req) => {
 })
 
 // Хелперы
-async function sendMessage(chatId: number, text: string) {
-  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text }),
-  })
+async function sendMessage(chatId: number, text: string, parseMode?: string) {
+  const res = await fetch(
+    `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: parseMode,
+        disable_web_page_preview: true,
+      }),
+    }
+  )
+  if (!res.ok) {
+    const error = await res.json()
+    console.error('❌ [Telegram API Error]:', error)
+  }
 }
 async function sendTypingAction(chatId: number) {
   await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendChatAction`, {
@@ -283,4 +345,105 @@ async function setReaction(chatId: number, messageId: number, emoji: string) {
       reaction: [{ type: 'emoji', emoji }],
     }),
   })
+}
+
+function escape(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
+function formatDailyMsg(data: any) {
+  const {
+    input_count,
+    output_count,
+    triage_stats,
+    focus_stats,
+    date,
+    created_today,
+    old_triaged,
+    completed,
+  } = data
+
+  const ratio =
+    input_count > 0 ? Math.round((output_count / input_count) * 100) : 0
+  const statusEmoji = output_count > input_count ? '🚀' : '⚖️'
+
+  // Используем HTML теги <b>, <i>, <code>
+  let msg = `<b>📊 ИТОГИ ДНЯ (${new Date(date).toLocaleDateString(
+    'ru-RU'
+  )})</b>\n\n`
+
+  msg += `${statusEmoji} <b>Пропускная способность:</b> ${output_count}/${input_count} (${ratio}%)\n`
+  msg += `⏱ <b>В потоке:</b> ${focus_stats.total_mins} мин\n`
+  msg += `🧬 <b>Доминанта:</b> #${escape(focus_stats.top_tag || 'нет')}\n\n`
+
+  if (old_triaged?.length > 0) {
+    msg += `<b>🟠 Закрытие долгов (${old_triaged.length}):</b>\n`
+    msg +=
+      old_triaged
+        .slice(0, 7)
+        .map((t: any) => `• ${escape(t.content)}`)
+        .join('\n') +
+      (old_triaged.length > 7 ? '\n...' : '') +
+      '\n\n'
+  }
+
+  if (created_today?.length > 0) {
+    msg += `<b>🔵 Свежие мысли (${created_today.length}):</b>\n`
+    msg +=
+      created_today
+        .slice(0, 7)
+        .map((t: any) => `• ${escape(t.content)}`)
+        .join('\n') +
+      (created_today.length > 7 ? '\n...' : '') +
+      '\n\n'
+  }
+
+  if (completed?.length > 0) {
+    msg += `<b>🟢 Выполнено (${completed.length}):</b>\n`
+    msg +=
+      completed
+        .slice(0, 7)
+        .map((t: any) => `• ${escape(t.content)}`)
+        .join('\n') +
+      (completed.length > 7 ? '\n...' : '') +
+      '\n\n'
+  }
+
+  msg += `<i>Разбери хаос: <a href="https://fleeets.vercel.app/stats">fleeets.vercel.app/stats</a></i>`
+  return msg
+}
+
+function formatWeeklyMsg(data: any) {
+  const {
+    range,
+    total_focus_hours,
+    total_completed,
+    daily_flow,
+    focus_by_tags,
+  } = data
+  const totalInput =
+    daily_flow?.reduce(
+      (acc: number, curr: any) => acc + (curr.input || 0),
+      0
+    ) || 0
+  const totalOutput =
+    daily_flow?.reduce(
+      (acc: number, curr: any) => acc + (curr.output || 0),
+      0
+    ) || 0
+  const tags = Object.keys(focus_by_tags || {})
+    .map((t) => `#${escape(t)}`)
+    .join(' ')
+
+  return `
+<b>📅 НЕДЕЛЬНЫЙ ДАЙДЖЕСТ</b>
+<i>${range.start} — ${range.end}</i>
+
+📈 <b>Скорость потока:</b> ${totalOutput}/${totalInput}
+✅ <b>Всего выполнено:</b> ${total_completed} задач
+🔥 <b>Глубокий фокус:</b> ${total_focus_hours}ч
+🧬 <b>Главные темы:</b> ${tags || 'нет данных'}
+
+<i>Твой прогресс сохранен в базе знаний.</i>
+  `.trim()
 }
