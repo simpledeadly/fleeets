@@ -92,8 +92,8 @@ export function useOmniFilter() {
     }
 
     result.sort((a, b) => {
-      const dateA = a.created_at ? new Date(a.created_at).getTime() : 0
-      const dateB = b.created_at ? new Date(b.created_at).getTime() : 0
+      const dateA = a.triaged_at ? new Date(a.triaged_at).getTime() : 0
+      const dateB = b.triaged_at ? new Date(b.triaged_at).getTime() : 0
       return dateB - dateA
     })
 
