@@ -207,7 +207,7 @@ export function CaptureBar() {
   }
 
   return (
-    <div className="absolute bottom-5 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-xl z-20">
+    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl z-20">
       <AnimatePresence>
         {!brainMode && (suggestions.length > 0 || isSearching) && isPro ? (
           <motion.div
@@ -325,7 +325,7 @@ export function CaptureBar() {
           suggestions.length > 0 ? 'rounded-t-0 rounded-b-3xl' : 'rounded-full',
           brainMode
             ? 'border-amber-500/30 bg-amber-500/10' // Стиль Мозга
-            : 'border-border' // Обычный стиль
+            : 'border-border dark:border-border/60' // Обычный стиль
         )}
       >
         {/* Кнопка Плюс (будущий Cmd+K) */}

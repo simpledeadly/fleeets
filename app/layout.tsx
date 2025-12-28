@@ -38,7 +38,7 @@ export default async function RootLayout({
           {user ? (
             <div className="flex min-h-screen">
               <Sidebar />
-              <main className="flex-1 relative overflow-hidden">
+              <main className="w-full relative overflow-hidden">
                 <LayoutClient>{children}</LayoutClient>
               </main>
             </div>

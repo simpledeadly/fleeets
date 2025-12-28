@@ -6,17 +6,16 @@ import { BrainCircuit, Loader2, RefreshCw } from 'lucide-react'
 import { generateDailyPlan, resetTodayView } from '@/features/planning'
 import { toast } from 'sonner'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 
 export function FocusList() {
   const { items, setFocusItem } = useStore()
-   
   const [isGenerating, setIsGenerating] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [theme, setTheme] = useState('')
 
-  // Фильтруем задачи (Today + Planned, например)
   const focusItems = items.filter(
-    (i) => i.status === 'today'
+    (i) => i.status === 'today' && !i.completed_at
   )
 
   const handleAction = async (action: () => Promise<any>) => {
@@ -29,85 +28,119 @@ export function FocusList() {
     setIsGenerating(true)
     const result = await generateDailyPlan(theme)
     setIsGenerating(false)
-
-    if (result?.error) {
-      toast.error('Ошибка планирования', {
-        description: result.error,
-        duration: 10000,
-      })
-    } else {
-      toast.success(`План готов! Задач: ${result.planned}`, {
-        description: result.reasoning,
-      })
-    }
+    if (result?.error) toast.error('Ошибка', { description: result.error })
   }
 
   if (focusItems.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 text-center animate-in fade-in space-y-2">
-        <h2 className="text-xl font-bold">Фокус пуст</h2>
-        <p className="text-muted-foreground text-sm max-w-xs">
-          Позволь AI проанализировать твои цели и задачи, чтобы составить
-          оптимальный план.
-        </p>
-        <div className="flex w-full max-w-sm items-center mt-2 space-x-2">
+      <div className=" flex flex-col items-center justify-center h-[60vh] text-center space-y-6 animate-in fade-in duration-150">
+        <div className="space-y-1">
+          <h2 className="text-xl font-medium tracking-tight text-foreground">
+            Чистый лист
+          </h2>
+          <p className="text-muted-foreground text-xs uppercase tracking-widest opacity-50">
+            Спланируй день
+          </p>
+        </div>
+        <div className="flex w-full max-w-xs items-center gap-2">
           <Input
-            type="text"
-            placeholder="Тема дня (опционально)..."
+            className="border-none bg-secondary/50 rounded-full px-4 h-10 text-sm focus-visible:ring-1 focus-visible:ring-primary/20"
+            placeholder="Контекст дня..."
             value={theme}
             onChange={(e) => setTheme(e.target.value)}
           />
           <button
             onClick={handleGenerate}
             disabled={isGenerating}
-            className="flex items-center bg-primary text-primary-foreground px-2 py-2 rounded-md font-semibold hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer"
+            className="flex items-center justify-center bg-foreground text-background w-10 h-10 rounded-full hover:opacity-80 transition-all disabled:opacity-30 cursor-pointer"
           >
             {isGenerating ? (
-              <Loader2 size={20} className="animate-spin h-4 w-4" />
+              <Loader2 size={16} className="animate-spin" />
             ) : (
-              <BrainCircuit size={20} className="h-4 w-4" />
+              <BrainCircuit size={16} />
             )}
-            {/* <span>Спланировать</span> */}
           </button>
         </div>
       </div>
     )
   }
 
+  // Основной стек: берем первые 3 задачи
+  const displayTasks = focusItems.slice(0, 3)
+  const otherTasksCount = Math.max(0, focusItems.length - 3)
+
   return (
-    <div className="w-full space-y-4">
-      <div className="flex justify-between items-center px-2">
-        <h2 className="font-bold">Фокус</h2>
-        <button
-          onClick={() => handleAction(resetTodayView)}
-          disabled={isLoading}
-          className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-          title="Сбросить план"
-        >
-          <RefreshCw
-            strokeWidth={1.6}
-            size={12}
-            className={isLoading ? 'animate-spin' : ''}
-          />
-          <span>Сбросить</span>
-        </button>
-      </div>
-      <div className="w-full space-y-3">
-        {focusItems.map((item) => (
-          <div
-            key={item.id}
-            onClick={() => setFocusItem(item)}
-            className="p-4 bg-card border border-border/60 rounded-xl hover:border-border cursor-pointer active:scale-[0.98] transition-all shadow-sm hover:shadow-md"
-          >
-            <div className="font-medium">{item.content}</div>
-            {item.description && (
-              <div className="text-sm text-muted-foreground mt-1 line-clamp-1">
-                {item.description}
+    <div className="sm:w-lg md:w-lg lg:w-2xl xl:w-3xl min-h-[90vh] flex flex-col justify-center p-6 relative">
+      {/* Кнопка сброса (сверху справа, очень тонко) */}
+      <button
+        onClick={() => handleAction(resetTodayView)}
+        disabled={isLoading}
+        className="absolute top-0 right-0 p-3 text-muted-foreground opacity-20 hover:opacity-100 transition-all cursor-pointer"
+      >
+        <RefreshCw size={20} className={isLoading ? 'animate-spin' : ''} />
+      </button>
+
+      <div className="flex flex-col items-start w-full space-y-16">
+        {/* СТЕК ЗАДАЧ (СВЕРХУ ВНИЗ) */}
+        <div className="w-full flex flex-col space-y-10">
+          {displayTasks.map((item, index) => {
+            // Иерархия: index 0 - Hero, 1 - Next, 2 - Distant
+            const isMain = index === 0
+            const isNext = index === 1
+
+            return (
+              <div
+                key={item.id}
+                onClick={() => setFocusItem(item)}
+                className={cn(
+                  'cursor-pointer transition-all duration-100 hover:opacity-100 group text-left outline-none',
+                  isMain
+                    ? 'opacity-100'
+                    : isNext
+                    ? 'opacity-15 hover:opacity-45'
+                    : 'opacity-10 hover:opacity-30'
+                )}
+              >
+                <div className="space-y-3 pb-2 border-b border-border dark:border-border/80">
+                  <h1
+                    className={cn(
+                      'font-bold tracking-tighter leading-[0.9] transition-all duration-150 line-clamp-3',
+                      isMain
+                        ? 'text-5xl md:text-6xl lg:text-7xl font-black'
+                        : isNext
+                        ? 'text-2xl md:text-3xl'
+                        : 'text-lg md:text-xl'
+                    )}
+                  >
+                    {item.content}
+                  </h1>
+
+                  {isMain && item.description && (
+                    <p className="text-muted-foreground/80 text-base text-md lg:text-lg font-mono leading-snug max-w-[85%] line-clamp-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                      {item.description}
+                    </p>
+                  )}
+                </div>
               </div>
-            )}
-          </div>
-        ))}
+            )
+          })}
+        </div>
       </div>
+
+      {/* ОСТАЛЬНЫЕ ЗАДАЧИ (В самом низу, как визуальный "хвост") */}
+      {otherTasksCount > 0 && (
+        <div className="flex flex-col gap-0 w-50 opacity-5 mt-6 mb-12">
+          <p className="flex flex-row text-xs font-bold uppercase tracking-widest mb-1">
+            ещё {otherTasksCount} в Бэклоге
+          </p>
+          {Array.from({ length: Math.min(otherTasksCount, 8) }).map((_, i) => (
+            <div
+              key={i}
+              className="h-[0.1rem] w-full bg-foreground rounded-full"
+            />
+          ))}
+        </div>
+      )}
     </div>
   )
 }

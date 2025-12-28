@@ -113,7 +113,7 @@ export function CardBack({
 
         {!isSearching && similarItems.length === 0 && (
           <p className="text-xs text-zinc-600 italic">
-            Похожие записи не найдены (отключено).
+            Похожие записи не найдены
           </p>
         )}
       </div>
