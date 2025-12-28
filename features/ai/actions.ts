@@ -276,6 +276,16 @@ export async function askBrain(question: string) {
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Auth required' }
 
+  const isRetrospectiveRequest =
+    /делал|занимался|статистика|активность|итоги|ретроспектива|мой прогресс/i.test(
+      question.toLowerCase()
+    )
+
+  if (isRetrospectiveRequest) {
+    console.log('🧠 [Dispatcher] Перенаправляю запрос в Аналитик-модуль')
+    return await performActivityRetrospective(question)
+  }
+
   // 1. Поиск контекста (RAG)
   const embeddingModel = 'openai/text-embedding-3-small'
 
@@ -491,5 +501,68 @@ export async function askBrain(question: string) {
   } catch (e: any) {
     console.error('🔥 [Brain] Error:', e)
     return { error: e.message }
+  }
+}
+
+/**
+ * Специализированный экшен для глубокого анализа логов активности.
+ * Используется как напрямую из дашборда, так и через диспетчер чата.
+ */
+export async function performActivityRetrospective(customUserQuery?: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  // 1. Получаем "жирную" выжимку данных из SQL
+  const { data: summary, error: rpcError } = await supabase.rpc(
+    'get_weekly_summary',
+    {
+      user_uuid: user.id,
+    }
+  )
+
+  if (rpcError) throw new Error('Ошибка доступа к истории действий')
+
+  console.log('FINAL SUMMARY TO AI:', JSON.stringify(summary, null, 2))
+
+  // 2. Системный промпт "Аналитика" (отдельный от askBrain)
+  const systemPrompt = `
+    ТЫ — СТРАТЕГИЧЕСКИЙ АНАЛИТИК FLEEETS.
+    Пользователь — РАЗРАБОТЧИК этого приложения.
+    
+    ДАННЫЕ: ${JSON.stringify(summary)}
+
+    ТВОЯ ЗАДАЧА:
+    1. Отделяй "сигнал" от "шума". Если ты видишь много действий с одной задачей, это может быть ТЕСТИРОВАНИЕ интерфейса. Не делай на этом акцент, если это не похоже на реальную работу.
+    2. Сфокусируйся на содержательных задачах (где длинные и осмысленные названия).
+    3. Проанализируй "Судьбу входящих". Если удалено в 4 раза больше, чем запланировано, спроси: "Это были тесты или ты реально чистишь мозг от лишнего?".
+    4. Игнорируй технические логи типа "item.update" (type), если они идут пачкой.
+
+    СТИЛЬ:
+    - Никакой "воды". 
+    - Если данных мало или они похожи на мусор — скажи: "Похоже, на этой неделе ты в основном занимался отладкой и тестами, реальных смысловых задач мало".
+    - Будь прямолинеен как Дитер Рамс.
+  `
+
+  const groq = new OpenAI({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: 'https://api.groq.com/openai/v1',
+  })
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const llmModel = 'meta-llama/llama-3.1-8b-instruct' // for openai.chat.co... below
+
+  // Используем мощную модель 70b, так как тут нужен глубокий анализ паттернов
+  const completion = await groq.chat.completions.create({
+    messages: [{ role: 'system', content: systemPrompt }],
+    model: 'llama-3.3-70b-versatile',
+    temperature: 0.7,
+  })
+
+  return {
+    answer: completion.choices[0].message.content,
+    isRetrospective: true,
   }
 }

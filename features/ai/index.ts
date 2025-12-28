@@ -6,6 +6,7 @@ export {
   searchWithAI,
   findSimilarItemsByQuery,
   askBrain,
+  performActivityRetrospective,
   type SearchResult,
 } from './actions'
 export { logTokenUsage } from './analytics'
