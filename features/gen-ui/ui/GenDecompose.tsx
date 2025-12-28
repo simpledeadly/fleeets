@@ -68,13 +68,13 @@ export function GenDecompose({ data }: { data?: string[] }) {
               autoFocus={task === ""} // Фокус на новую задачу
             />
             <button onClick={() => removeTask(i)} className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity duration-150">
-              <X size={14} />
+              <X size={16} />
             </button>
           </motion.div>
         ))}
         {tasks.length > 0 && (
           <button onClick={addTask} className="text-xs text-muted-foreground hover:text-primary transition-colors duration-150 flex items-center gap-1 pl-3.5">
-            <Plus size={10} /> Добавить шаг
+            <Plus size={12} /> Добавить шаг
           </button>
         )}
       </div>
@@ -84,7 +84,7 @@ export function GenDecompose({ data }: { data?: string[] }) {
         disabled={isSaving}
         className="w-full py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:opacity-90 transition-opacity duration-150 flex items-center justify-center gap-2 cursor-pointer"
       >
-        {isSaving ? "Создаю..." : <><Plus size={16} /> Создать задачи</>}
+        {isSaving ? "Создаю..." : <><Plus size={18} /> Создать задачи</>}
       </button>
     </div>
   )

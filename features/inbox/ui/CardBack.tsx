@@ -32,11 +32,11 @@ export function CardBack({
     >
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500">
-          <Text size={12} />
+          <Text size={14} />
           Исходный текст
         </div>
         <div className="flex items-center gap-1.5 mt-1 text-zinc-400">
-          <Calendar strokeWidth={1.6} size={12} />
+          <Calendar strokeWidth={1.6} size={14} />
           <span className="text-xs font-medium font-mono">
             {item.created_at
               ? format(new Date(item.created_at), 'd MMM HH:mm', { locale: ru })
@@ -47,7 +47,7 @@ export function CardBack({
           onClick={onFlip}
           className="p-2 rounded-full text-muted-foreground hover:bg-muted/50 hover:text-primary transition-colors cursor-pointer"
         >
-          <EyeClosed strokeWidth={1.6} size={20} />
+          <EyeClosed strokeWidth={1.6} size={22} />
         </button>
       </div>
 
@@ -77,7 +77,7 @@ export function CardBack({
 
       <div className="mt-2 pt-3 border-t border-border">
         <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
-          <Link size={12} />
+          <Link size={14} />
           <span>Найденные связи ({similarItems.length} лучших)</span>
         </div>
 

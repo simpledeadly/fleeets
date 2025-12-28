@@ -97,9 +97,9 @@ export function Timer({ itemId, initialTotalSeconds, isLoading }: {
         )}
       >
         {isRunning ? (
-          <><Square size={10} fill="currentColor" /> СТОП</>
+          <><Square size={14} fill="currentColor" /> СТОП</>
         ) : (
-          <><Play size={10} fill="currentColor" /> СТАРТ</>
+          <><Play size={18} fill="currentColor" /> СТАРТ</>
         )}
       </button>
     </div>

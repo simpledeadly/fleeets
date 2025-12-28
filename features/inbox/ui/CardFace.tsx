@@ -98,7 +98,7 @@ CardFaceProps) {
                   : 'text-muted-foreground/50 hover:text-muted-foreground'
               )}
             >
-              <t.icon size={16} />
+              <t.icon size={18} strokeWidth={2} />
             </button>
           ))}
         </div>
@@ -106,7 +106,7 @@ CardFaceProps) {
         <div className="flex gap-2 items-center">
           {/* Счетчик */}
           <span className="text-sm font-mono font-medium text-muted-foreground/50">
-            №{total}
+            1/{total}
           </span>
 
           <button
@@ -117,7 +117,7 @@ CardFaceProps) {
             className="p-2 rounded-full text-muted-foreground hover:bg-muted hover:text-primary transition-colors cursor-pointer"
             title="Показать исходник и связи"
           >
-            <Eye strokeWidth={1.6} size={20} />
+            <Eye strokeWidth={1.6} size={22} />
             {/* <BurningEye /> */}
           </button>
         </div>
@@ -166,8 +166,8 @@ CardFaceProps) {
 
         {(item.metadata as any)?.source === 'voice' && (
           <div className="mt-1 flex items-center justify-center gap-1 text-blue-600 dark:text-blue-500 bg-card py-1.5 px-2.5 rounded-full w-fit mx-auto border border-border">
-            <Mic size={14} />
-            <span className="text-xs font-bold">Голос</span>
+            <Mic size={16} />
+            <span className="text-xs font-medium">Голос</span>
           </div>
         )}
       </div>
@@ -189,7 +189,7 @@ CardFaceProps) {
         >
           <Zap
             strokeWidth={1.6}
-            size={20}
+            size={22}
             fill={item.is_quick ? 'currentColor' : 'none'}
           />
         </button>
@@ -198,7 +198,7 @@ CardFaceProps) {
           onClick={async () => completeItem(item.id)}
           className="p-2 rounded-full text-muted-foreground hover:bg-muted  hover:text-primary transition-colors cursor-pointer"
         >
-          <CheckCircle2 strokeWidth={1.6} size={20} />
+          <CheckCircle2 strokeWidth={1.6} size={22} />
         </button>
 
         <button
@@ -208,9 +208,9 @@ CardFaceProps) {
           title="Разбить на шаги (AI)"
         >
           {isDecomposing ? (
-            <Loader2 strokeWidth={1.6} size={20} className="animate-spin" />
+            <Loader2 strokeWidth={1.6} size={22} className="animate-spin" />
           ) : (
-            <GitBranch strokeWidth={1.6} size={20} />
+            <GitBranch strokeWidth={1.6} size={22} />
           )}
         </button>
 
@@ -222,7 +222,7 @@ CardFaceProps) {
           {isProcessing ? (
             <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent hover:text-primary rounded-full animate-spin" />
           ) : (
-            <Sparkles strokeWidth={1.6} size={20} />
+            <Sparkles strokeWidth={1.6} size={22} />
           )}
         </button>
       </div>

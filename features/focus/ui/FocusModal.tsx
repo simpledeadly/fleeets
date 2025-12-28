@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   CornerDownRight,
   Save,
-  Settings,
   X,
 } from 'lucide-react'
 import { useStore, type Item } from '@/lib/store'
@@ -28,7 +27,7 @@ interface FocusModalProps {
 // type FocusData = { totalDuration: number; similarItems: any[] }
 
 export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
-  const { items, focusItem, setFocusItem, setEditingItem } = useStore()
+  const { items, focusItem, setFocusItem } = useStore()
 
   const [status, setStatus] = useState<'idle' | 'loading' | 'success'>('idle')
   const [logText, setLogText] = useState('')
@@ -125,50 +124,32 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
 
   return (
     <Dialog open={!!focusItem} onOpenChange={() => setFocusItem(null)}>
-      <DialogContent className="max-w-2xl h-[85vh] p-0 gap-0 overflow-hidden bg-card flex flex-col sm:rounded-3xl border-border outline-none">
+      <DialogContent className="max-w-2xl h-[90vh] p-0 gap-0 overflow-hidden bg-card flex flex-col sm:rounded-3xl border-border outline-none">
         {item && (
           <>
-            <DialogTitle>Режим фокуса: {item.content}</DialogTitle>
+            <DialogTitle className="sr-only">
+              Режим фокуса: {item.content}
+            </DialogTitle>
 
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-border/50 shrink-0">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setEditingItem(focusItem)}
-                  className="p-2 hover:bg-secondary rounded-full"
-                >
-                  <Settings size={16} />
-                </button>
-                <button onClick={() => setFocusItem(null)} className="p-2 ...">
-                  <X size={20} />
-                </button>
-
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                  Focus Mode
-                </span>
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-8">
+            <div className="flex-1 overflow-y-auto p-4 pt-12 space-y-8">
               {/* "ХЛЕБНЫЕ КРОШКИ" (Breadcrumbs) */}
               {parentTask && (
                 <button
                   onClick={() => setFocusItem(parentTask)}
                   className="flex items-center text-xs text-muted-foreground hover:text-primary font-medium transition-colors mb-4 cursor-pointer"
                 >
-                  <ArrowUp size={20} />
+                  <ArrowUp size={18} />
                   <span>{parentTask.content}</span>
                 </button>
               )}
 
               {/* Main Task */}
               <div className="space-y-2">
-                <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+                <h1 className="text-3xl font-bold leading-tight">
                   {item.content}
                 </h1>
                 {item.description && (
-                  <p className="text-lg text-muted-foreground leading-normal">
+                  <p className="text-md text-muted-foreground leading-normal">
                     {item.description}
                   </p>
                 )}
@@ -176,19 +157,20 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
 
               {/* ПОДЗАДАЧИ */}
               {subtasks.length > 0 && (
-                <div className="space-y-3 pt-4 border-t border-dashed">
-                  <h3 className="text-xs font-bold uppercase text-muted-foreground">
+                <div className="space-y-3 pt-3 border-t border-dashed">
+                  <h3 className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Задачи проекта
                   </h3>
+
                   <div className="space-y-2">
                     {subtasks.map((task) => (
                       <button
                         key={task.id}
                         onClick={() => setFocusItem(task)}
-                        className="w-full text-left flex items-center gap-3 p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer"
+                        className="w-full text-sm text-left flex items-center gap-2 p-2 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer"
                       >
                         <CornerDownRight
-                          size={14}
+                          size={18}
                           className="text-muted-foreground"
                         />
                         <span
@@ -222,8 +204,8 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
               {/* Execution Log (Input) */}
               <div className="space-y-2 relative">
                 <div className="flex justify-between items-center">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">
-                    Execution Log
+                  <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Ход выполнения
                   </label>
                   {/* Индикатор сохранения */}
                   {isSaving ? (
@@ -248,29 +230,32 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
                 <textarea
                   value={logText}
                   onChange={(e) => setLogText(e.target.value)}
-                  className="caret-accented w-full bg-secondary/30 rounded-xl p-4 min-h-37 resize-none focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50"
+                  className="text-sm caret-accented w-full bg-secondary/30 rounded-xl p-3 min-h-37 resize-none focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all duration-100 placeholder:text-muted-foreground/50"
                   placeholder="Пиши сюда мысли, заметки, код... Это уйдет в базу знаний."
                 />
               </div>
 
-              <div className="flex flex-col gap-1">
-                <p className="text-md text-muted-foreground font-medium">
-                  Исходный текст:
-                </p>
-                <p className="text-sm text-muted-foreground/70">
-                  {item.raw_content}
-                </p>
-              </div>
-              <div className="h-20" />
+              {item.raw_content && (
+                <div className="flex flex-col gap-1">
+                  <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Исходный текст:
+                  </p>
+                  <p className="text-sm text-muted-foreground/70">
+                    {item.raw_content}
+                  </p>
+                </div>
+              )}
+
+              <div className="h-6" />
             </div>
 
             {/* Footer Actions */}
-            <div className="p-4 border-t border-border/50 bg-card/80 backdrop-blur-sm absolute bottom-0 w-full flex gap-4">
+            <div className="p-2 border-t border-border/50 bg-card/80 backdrop-blur-lg absolute bottom-0 w-full flex gap-4">
               <button
                 onClick={handleComplete}
-                className="flex-1 py-4 rounded-xl bg-primary text-primary-foreground font-bold text-lg opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 py-2 rounded-xl bg-primary text-primary-foreground font-semibold text-lg opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
               >
-                <CheckCircle2 size={20} />
+                <CheckCircle2 size={22} strokeWidth={2.4} />
                 Завершить задачу
               </button>
             </div>

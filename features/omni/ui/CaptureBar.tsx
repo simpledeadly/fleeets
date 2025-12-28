@@ -342,7 +342,11 @@ export function CaptureBar() {
                 animate={{ scale: 1 }}
                 exit={{ scale: 0 }}
               >
-                <BrainCircuit size={18} className="text-amber-400" />
+                <BrainCircuit
+                  size={20}
+                  strokeWidth={1.8}
+                  className="text-amber-400"
+                />
               </motion.div>
             ) : (
               <motion.div
@@ -353,8 +357,8 @@ export function CaptureBar() {
                 exit={{ scale: 0 }}
               >
                 <Expand
-                  size={18}
-                  strokeWidth={1.6}
+                  size={20}
+                  strokeWidth={1.8}
                   className="text-muted-foreground"
                 />
               </motion.div>
@@ -393,10 +397,10 @@ export function CaptureBar() {
                 exit={{ opacity: 0, scale: 0.5 }}
                 className="bg-foreground text-background absolute inset-0 flex items-center  justify-center rounded-full transition-colors cursor-pointer"
               >
-                <ArrowUp size={18} strokeWidth={2.4} />
+                <ArrowUp size={20} strokeWidth={2.6} />
               </motion.button>
             ) : (
-              <Loader2 className="animate-spin text-amber-400" size={18} />
+              <Loader2 className="animate-spin text-amber-400" size={20} />
             )}
 
             {/* 2. Кнопка "Микрофон / Стоп" (если текста нет) */}
@@ -412,13 +416,13 @@ export function CaptureBar() {
               >
                 {isRecording ? (
                   <Square
-                    size={16}
-                    strokeWidth={1.6}
+                    size={20}
+                    strokeWidth={1.8}
                     className="text-red-500"
                     fill="currentColor"
                   />
                 ) : (
-                  <Mic size={18} strokeWidth={1.6} />
+                  <Mic size={20} strokeWidth={1.8} />
                 )}
               </motion.button>
             )}
@@ -433,7 +437,8 @@ export function CaptureBar() {
                 className="absolute inset-0 flex items-center justify-center"
               >
                 <Loader2
-                  size={18}
+                  size={20}
+                  strokeWidth={1.8}
                   className="animate-spin text-muted-foreground"
                 />
               </motion.div>

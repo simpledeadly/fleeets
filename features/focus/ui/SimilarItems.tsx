@@ -1,12 +1,16 @@
-"use client"
+'use client'
 
 import {
-  CheckCircle2, CalendarDays,
-  StickyNote, Lightbulb, CheckSquare,
-  Mic, Hash, FileText,
-  Sparkles,
-  FileBox
-} from "lucide-react"
+  CheckCircle2,
+  CalendarDays,
+  StickyNote,
+  Lightbulb,
+  CheckSquare,
+  Mic,
+  Hash,
+  FileText,
+  FileBox,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatDistanceToNow } from 'date-fns'
 import { ru } from 'date-fns/locale'
@@ -22,10 +26,14 @@ interface SimilarItemsProps {
 
 const TypeIcon = ({ type }: { type: string }) => {
   switch (type) {
-    case 'note': return <StickyNote size={12} className="text-blue-500" />
-    case 'thought': return <Lightbulb size={12} className="text-purple-500" />
-    case 'resource': return <FileBox size={12} className="text-orange-500" />
-    default: return <CheckSquare size={12} className="text-emerald-500" />
+    case 'note':
+      return <StickyNote size={14} className="text-blue-500" />
+    case 'thought':
+      return <Lightbulb size={14} className="text-purple-500" />
+    case 'resource':
+      return <FileBox size={14} className="text-orange-500" />
+    default:
+      return <CheckSquare size={14} className="text-emerald-500" />
   }
 }
 
@@ -47,9 +55,8 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
 
   return (
     <motion.div layout="position" className="space-y-3">
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        <Sparkles size={12} className="text-amber-500" />
-        <span>Похожее ({items?.length})</span>
+      <div className="flex flex-row items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        <span>Похожее ({items?.length ?? '...'})</span>
       </div>
 
       {/* Показываем скелет, только если isLoading */}
@@ -66,7 +73,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
           initial="hidden"
           animate="visible"
           variants={{
-            visible: { transition: { staggerChildren: 0.05 } }
+            visible: { transition: { staggerChildren: 0.05 } },
           }}
         >
           {items.map((item) => (
@@ -74,7 +81,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
               key={item.id}
               variants={{
                 hidden: { opacity: 0, y: 0 },
-                visible: { opacity: 1, y: 0 }
+                visible: { opacity: 1, y: 0 },
               }}
               onClick={() => setFocusItem(item)}
               className="group relative p-3 rounded-xl bg-secondary/30 border border-border/50 hover:bg-secondary/60 transition-all cursor-pointer" // убираем animate-in, Framer Motion рулит
@@ -82,10 +89,13 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
               <div className="flex justify-between items-start gap-2">
                 <div className="space-y-1">
                   {/* Контент */}
-                  <p className={cn(
-                    "text-md font-medium line-clamp-2",
-                    item.status === 'done' && "line-through text-muted-foreground"
-                  )}>
+                  <p
+                    className={cn(
+                      'text-md font-medium line-clamp-2',
+                      item.status === 'done' &&
+                        'line-through text-muted-foreground'
+                    )}
+                  >
                     {item.content}
                   </p>
                   {item.description && (
@@ -105,20 +115,26 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
 
                     {/* ТЕГИ И АССЕТЫ */}
                     <div className="flex flex-wrap gap-2 items-center">
-
                       {/* 1. Если это было голосовое (source: 'voice' или 'telegram') */}
-                      {(typeof item.metadata === 'object' && item.metadata && ('source' in item.metadata || 'duration' in item.metadata)) && (
-                        ((item.metadata?.source === 'voice' || item.metadata?.duration) && (
+                      {typeof item.metadata === 'object' &&
+                        item.metadata &&
+                        ('source' in item.metadata ||
+                          'duration' in item.metadata) &&
+                        (item.metadata?.source === 'voice' ||
+                          item.metadata?.duration) && (
                           <div className="flex items-center gap-1 text-xs bg-blue-500/10 text-blue-500 px-1.5 py-0.5 rounded border border-blue-500/20">
-                            <Mic size={10} />
+                            <Mic size={14} />
                             <span>Voice</span>
                           </div>
-                        )))}
+                        )}
 
                       {/* 2. Теги (первые 2, чтобы не захламлять) */}
                       {item.ai_tags?.slice(0, 2).map((tag: string) => (
-                        <div key={tag} className="flex items-center gap-1 text-xs bg-secondary px-1.5 py-0.5 rounded text-muted-foreground">
-                          <Hash size={9} />
+                        <div
+                          key={tag}
+                          className="flex items-center gap-0.5 text-xs bg-secondary px-1.5 py-0.5 rounded text-muted-foreground"
+                        >
+                          <Hash size={12} />
                           <span>{tag}</span>
                         </div>
                       ))}
@@ -126,7 +142,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
                       {/* 3. Сниппет лога (если есть) */}
                       {item.execution_log && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground/80 italic">
-                          <FileText size={10} />
+                          <FileText size={12} />
                           <span className="max-w-37 truncate">
                             {item.execution_log}
                           </span>
@@ -137,26 +153,38 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
                 </div>
 
                 {/* Статус (Справа) */}
-                {item.status === 'done' ? (
-                  <CheckCircle2 size={14} className="text-green-500 shrink-0 mt-0.5" />
+                {item.status === 'done' && item.type === 'task' ? (
+                  <CheckCircle2
+                    size={16}
+                    className="text-green-500 shrink-0 mt-0.5"
+                  />
                 ) : (
-                  <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/50 shrink-0 mt-0.5" />
+                  item.type === 'task' && (
+                    <div className="w-3 h-3 rounded-full border-2 border-muted-foreground/50 shrink-0 mt-0.5" />
+                  )
                 )}
               </div>
 
               {/* Footer */}
               <div className="mt-2 flex items-center justify-between border-t border-border/30 pt-2">
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground/70">
-                  <CalendarDays size={10} />
+                <div className="flex items-center gap-1 text-xs text-muted-foreground/70">
+                  <CalendarDays size={12} />
                   <span>
                     {item.completed_at
-                      ? `Завершено ${formatDistanceToNow(new Date(item.completed_at), { addSuffix: true, locale: ru })}`
-                      : item.created_at ? formatDistanceToNow(new Date(item.created_at), { addSuffix: true, locale: ru }) : ''
-                    }
+                      ? `Завершено ${formatDistanceToNow(
+                          new Date(item.completed_at),
+                          { addSuffix: true, locale: ru }
+                        )}`
+                      : item.created_at
+                      ? formatDistanceToNow(new Date(item.created_at), {
+                          addSuffix: true,
+                          locale: ru,
+                        })
+                      : ''}
                   </span>
                 </div>
 
-                <span className="text-xs font-mono text-amber-500/80 bg-amber-500/10 px-1.5 py-0.5 rounded">
+                <span className="text-xs font-medium text-amber-500/80 bg-amber-500/8 px-1.5 py-0.5 rounded">
                   {(item.similarity * 100).toFixed(0)}%
                 </span>
               </div>
@@ -168,7 +196,9 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
       {!isLoading && (!items || items.length === 0) && (
         <div className="p-4 text-center border border-dashed border-border rounded-xl flex flex-col gap-1">
           {/* <p className="text-sm text-muted-foreground font-medium">AI Context пуст</p> */}
-          <p className="text-sm text-muted-foreground/80">Нейросеть не нашла похожие элементы</p>
+          <p className="text-sm text-muted-foreground/80">
+            Нейросеть не нашла похожие элементы
+          </p>
         </div>
       )}
     </motion.div>
