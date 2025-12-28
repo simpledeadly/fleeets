@@ -15,9 +15,7 @@ export function FocusList() {
   const [isLoading, setIsLoading] = useState(false)
   const [theme, setTheme] = useState('')
 
-  const focusItems = items.filter(
-    (i) => i.status === 'today' && !i.completed_at
-  )
+  const focusItems = items.filter((i) => i.status === 'today')
 
   const handleReorder = (newOrderIds: string[]) => {
     const reordered = newOrderIds.map((id) => items.find((i) => i.id === id)!)
