@@ -478,7 +478,7 @@ export async function askBrain(question: string) {
           }
         }
 
-        // 2. 🔥 ОБРАБОТКА ОТЧЕТА (данные берем из SQL по дате от ИИ)
+        // 2. ОБРАБОТКА ОТЧЕТА (данные берем из SQL по дате от ИИ)
         if (parsed.type === 'daily_report') {
           console.log(`📊 Запрос отчета за дату: ${parsed.data?.date}`)
 
@@ -500,6 +500,25 @@ export async function askBrain(question: string) {
               data: reportData, // Передаем в компонент "жирные" данные из БД
             },
             sources: [], // Для отчета источники не нужны, они внутри отчета
+          }
+        }
+
+        if (parsed.type === 'weekly_report') {
+          console.log('📅 Генерация недельного отчета...')
+
+          const { data: reportData, error: reportError } = await supabase.rpc(
+            'get_weekly_report',
+            {
+              user_uuid: user.id,
+            }
+          )
+
+          if (reportError) throw reportError
+
+          return {
+            answer: null,
+            genUI: { type: 'weekly_report', data: reportData },
+            sources: [],
           }
         }
       }

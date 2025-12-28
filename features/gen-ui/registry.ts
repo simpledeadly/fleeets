@@ -1,8 +1,13 @@
 import { GenDecompose } from './ui/GenDecompose'
 import { GenDailyReport } from './ui/GenDailyReport'
+import { GenWeeklyReport } from './ui/GenWeeklyReport'
 
-// 1. Список ключей (для рантайм проверки)
-export const GEN_UI_KEYS = ['decomposition', 'daily_report'] as const
+// 1. Список ключей
+export const GEN_UI_KEYS = [
+  'decomposition',
+  'daily_report',
+  'weekly_report',
+] as const
 
 // 2. Тип на основе ключей
 export type GenUIToolType = (typeof GEN_UI_KEYS)[number]
@@ -27,6 +32,13 @@ export const GEN_UI_REGISTRY: Record<GenUIToolType, ToolDefinition> = {
       'Показать итоги/отчёт дня: созданные и завершенные задачи, время в фокусе.',
     jsonSchema: '{ "type": "daily_report", "data": { "date": "YYYY-MM-DD" } }',
     component: GenDailyReport,
+  },
+  weekly_report: {
+    type: 'weekly_report',
+    description:
+      'Показать аналитический отчет за неделю: графики, фокус и прогресс.',
+    jsonSchema: '{ "type": "weekly_report", "data": {} }',
+    component: GenWeeklyReport,
   },
 }
 
