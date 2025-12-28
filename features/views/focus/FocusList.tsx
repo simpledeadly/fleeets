@@ -132,17 +132,17 @@ export function FocusList() {
                     className={cn(
                       'font-bold tracking-tighter leading-[0.9] transition-all duration-150 line-clamp-3',
                       isMain
-                        ? 'text-5xl md:text-6xl lg:text-7xl font-black'
+                        ? 'text-4xl md:text-5xl lg:text-6xl font-black'
                         : isNext
-                        ? 'text-2xl md:text-3xl'
-                        : 'text-lg md:text-xl'
+                        ? 'text-xl md:text-2xl'
+                        : 'text-md md:text-lg'
                     )}
                   >
                     {item.content}
                   </h1>
 
                   {isMain && item.description && (
-                    <p className="text-muted-foreground/80 text-base text-md lg:text-lg font-mono leading-snug max-w-[85%] line-clamp-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <p className="text-muted-foreground/80 text-base text-md lg:text-lg font-mono leading-snug max-w-[85%] line-clamp-3 animate-in fade-in slide-in-from-top-2 duration-150">
                       {item.description}
                     </p>
                   )}
