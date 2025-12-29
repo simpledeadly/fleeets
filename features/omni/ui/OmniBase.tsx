@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
 import {
   Command,
   CommandEmpty,
@@ -30,13 +31,26 @@ interface OmniBaseProps {
 
 export function OmniBase({ mode }: OmniBaseProps) {
   const {
-    setFocusItem,
-    items,
     updateItem: updateStoreItem,
     removeItem: removeStoreItem,
     addItem: addStoreItem,
   } = useStore()
-  const { isPaletteOpen, closePalette, layout, setLayout } = useOmniStore()
+  const setFocusItem = useStore((state) => state.setFocusItem)
+  const items = useStore((state) => state.items)
+
+  const isPaletteOpen = useOmniStore((state) => state.isPaletteOpen)
+  const closePalette = useOmniStore((state) => state.closePalette)
+  const layout = useOmniStore((state) => state.layout)
+  const setLayout = useOmniStore((state) => state.setLayout)
+
+  const [isReady, setIsReady] = useState(mode === 'modal')
+
+  useEffect(() => {
+    if (mode === 'standalone') {
+      const timer = setTimeout(() => setIsReady(true), 0) // Даем 100мс на маунт лейаута
+      return () => clearTimeout(timer)
+    }
+  }, [mode])
 
   // В standalone моде мы всегда считаем палитру "открытой" для работы обзервера
   const activeItem = useCmdkObserver(
@@ -212,18 +226,52 @@ export function OmniBase({ mode }: OmniBaseProps) {
                     mode === 'modal' ? 'max-h-130' : 'max-h-none flex-1 pb-10'
                   }
                 >
-                  <CommandGroup
-                    heading={`Элементы (${filter.visibleItems.length})`}
-                  >
-                    {filter.visibleItems.map((item) => (
-                      <OmniItem
-                        key={item.id}
-                        item={item}
-                        onSelect={() => run(() => setFocusItem(item))}
-                      />
-                    ))}
-                  </CommandGroup>
-                  <CommandEmpty className="flex items-center justify-center text-muted-foreground text-sm h-30">Ничего не найдено</CommandEmpty>
+                  <AnimatePresence mode="wait">
+                    {isReady ? (
+                      <motion.div
+                        key="results"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <CommandGroup
+                          heading={`Элементы (${filter.visibleItems.length})`}
+                        >
+                          {filter.visibleItems.map((item) => (
+                            <OmniItem
+                              key={item.id}
+                              item={item}
+                              onSelect={() => run(() => setFocusItem(item))}
+                            />
+                          ))}
+                        </CommandGroup>
+                        <CommandEmpty className="flex items-center justify-center text-muted-foreground text-sm h-30">
+                          Ничего не найдено
+                        </CommandEmpty>
+                      </motion.div>
+                    ) : (
+                      <motion.div
+                        key="skeleton"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.1 }}
+                        className="p-2 space-y-1"
+                      >
+                        {/* Рендерим 12 фейковых строк, имитирующих OmniItem */}
+                        {Array.from({ length: 12 }).map((_, i) => (
+                          <div
+                            key={i}
+                            className="flex items-center gap-3 px-2 py-2"
+                          >
+                            <div className="size-4 rounded-full bg-muted/20 animate-pulse shrink-0" />
+                            <div className="h-3 bg-muted/20 animate-pulse rounded-sm w-full max-w-60" />
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </CommandList>
               </Command>
             )}

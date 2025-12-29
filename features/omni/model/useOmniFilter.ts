@@ -46,29 +46,13 @@ export function useOmniFilter() {
       (item) => item.status !== 'inbox' && item.status !== 'deleted'
     )
 
-    if (activeStatus) {
+    if (activeStatus)
       result = result.filter((item) => item.status === activeStatus)
-    }
-
-    if (isQuick) {
-      result = result.filter((item) => item.is_quick === isQuick)
-    }
-
-    if (isTask) {
-      result = result.filter((item) => item.type === 'task')
-    }
-
-    if (isThought) {
-      result = result.filter((item) => item.type === 'thought')
-    }
-
-    if (isNote) {
-      result = result.filter((item) => item.type === 'note')
-    }
-
-    if (isResource) {
-      result = result.filter((item) => item.type === 'resource')
-    }
+    if (isQuick) result = result.filter((item) => item.is_quick === isQuick)
+    if (isTask) result = result.filter((item) => item.type === 'task')
+    if (isThought) result = result.filter((item) => item.type === 'thought')
+    if (isNote) result = result.filter((item) => item.type === 'note')
+    if (isResource) result = result.filter((item) => item.type === 'resource')
 
     if (activeTags.length > 0) {
       result = result.filter((item) => {
