@@ -53,7 +53,7 @@ export function CardBack({
 
       {/* Редактируемый RAW */}
       <div
-        className="flex-1 h-full overflow-y-auto custom-scrollbar"
+        className="flex-1 h-full overflow-y-auto no-scrollbar"
         onClick={(e) => e.stopPropagation()}
       >
         <textarea
@@ -71,7 +71,7 @@ export function CardBack({
           spellCheck="false"
           placeholder="Исходного текста нет, но можно добавить"
           onClick={(e) => e.stopPropagation()}
-          className="w-full h-full bg-transparent text-foreground overflow-y-auto whitespace-pre-wrap resize-none focus:outline-none"
+          className="w-full h-full block bg-transparent text-foreground overflow-y-auto no-scrollbar whitespace-pre-wrap resize-none focus:outline-none"
         />
       </div>
 

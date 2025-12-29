@@ -125,14 +125,14 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
 
   return (
     <Dialog open={!!focusItem} onOpenChange={() => setFocusItem(null)}>
-      <DialogContent className="max-w-2xl h-[90vh] p-0 gap-0 overflow-hidden bg-card flex flex-col sm:rounded-3xl border-border outline-none">
+      <DialogContent className="max-w-2xl h-screen md:h-[90vh] p-0 gap-0 overflow-hidden bg-card flex flex-col rounded-none md:rounded-3xl border-border outline-none">
         {item && (
           <>
             <DialogTitle className="sr-only">
               Режим фокуса: {item.content}
             </DialogTitle>
 
-            <div className="flex-1 overflow-y-auto p-4 pt-12 space-y-8">
+            <div className="flex-1 overflow-y-auto p-2 md:p-4 pt-12 space-y-8">
               {/* "ХЛЕБНЫЕ КРОШКИ" (Breadcrumbs) */}
               {parentTask && (
                 <button

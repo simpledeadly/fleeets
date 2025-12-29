@@ -225,7 +225,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
 
                 <CommandList
                   className={
-                    mode === 'modal' ? 'max-h-130' : 'max-h-none flex-1 pb-10'
+                    mode === 'modal' ? 'max-h-130' : 'max-h-none flex-1 pb-25 md:pb-10'
                   }
                 >
                   <AnimatePresence mode="wait">

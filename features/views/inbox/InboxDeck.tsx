@@ -127,7 +127,7 @@ export function InboxDeck() {
   const visibleTasks = inboxTasks.slice(0, 3).reverse()
 
   return (
-    <div className="relative w-100 h-screen m-auto flex items-center justify-center">
+    <div className="relative w-[94vw] md:w-100 h-screen m-auto flex items-center justify-center">
       {/* РЕЖИМ СЕТКИ (OVERVIEW) */}
       {isGridMode ? (
         <div className="min-w-[96vw] h-screen px-4 pt-20 pb-20 overflow-y-auto custom-scrollbar">

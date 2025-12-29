@@ -132,6 +132,20 @@
     @apply bg-card text-foreground;
   }
 }
+
+@layer utilities {
+  /* Скрываем скроллбар для Chrome, Safari и Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Скрываем скроллбар для IE, Edge и Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+}
+
 .animate-spin-slow {
   animation: spin 8s linear infinite;
 }

@@ -29,6 +29,10 @@ export const HOTKEY_MAP: Record<
     label: 'Перейти в Focus',
     action: () => useStore.getState().setView('focus'),
   },
+  'mod+g': {
+    label: 'Перейти в Vault',
+    action: () => useStore.getState().setView('vault'),
+  },
   'mod+e': {
     label: 'Создать новое входящее',
     action: async () => await createItem(''),

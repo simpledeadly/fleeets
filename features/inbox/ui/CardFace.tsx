@@ -1,24 +1,18 @@
 'use client'
 
-import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { toast } from 'sonner'
 import {
   Mic,
   Sparkles,
   Eye,
-  Zap,
   StickyNote,
   Lightbulb,
   CheckSquare,
   FileBox,
-  CheckCircle2,
-  Loader2,
-  GitBranch,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useStore, type Item } from '@/lib/store'
-import { useItemActions, completeItem, decomposeTask } from '@/features/item'
+import { type Item } from '@/lib/store'
+import { useItemActions } from '@/features/item'
 
 interface CardFaceProps {
   item: Item
@@ -38,34 +32,8 @@ export function CardFace({
   onFlip,
   total,
   setEditing,
-}: // hasSimilar,
-CardFaceProps) {
-  const { update, toggleBlitz, setType } = useItemActions(item)
-  const [isDecomposing, setIsDecomposing] = useState(false)
-
-  // Новый хендлер
-  const handleDecompose = async (e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsDecomposing(true)
-
-    const result = await decomposeTask(item.id)
-
-    setIsDecomposing(false)
-
-    if (result.error) {
-      toast.error(result.error)
-    } else {
-      // Здесь можно показать результат (например, в модалке)
-      // Или просто сказать "Готово, 3 подзадачи в Инбоксе"
-      toast.success(`Задача разбита на шаги!\nШагов: ${result.count}`)
-      // После этого исходная задача должна удалиться или уйти в архив
-    }
-
-    if (result.success && result.newItems) {
-      result.newItems.forEach((newItem) => useStore.getState().addItem(newItem))
-      useStore.getState().removeItem(item.id)
-    }
-  }
+}: CardFaceProps) {
+  const { update, setType } = useItemActions(item)
 
   const types = [
     { id: 'task', icon: CheckSquare },
@@ -141,7 +109,7 @@ CardFaceProps) {
           autoCapitalize="off"
           spellCheck="false"
           placeholder="Заголовок"
-          className="w-full line-clamp-3 bg-transparent text-2xl font-bold leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20"
+          className="w-full line-clamp-3 mt-2 bg-transparent text-2xl font-bold leading-tight text-center text-balance resize-none focus:outline-none placeholder:text-muted-foreground/20"
           rows={2} // Примерная высота
           style={{ fieldSizing: 'content' } as any} // Новый CSS для автовысоты (если поддерживается), иначе фиксированный rows
         />
@@ -165,7 +133,7 @@ CardFaceProps) {
         />
 
         {(item.metadata as any)?.source === 'voice' && (
-          <div className="mt-1 flex items-center justify-center gap-1 text-blue-600 dark:text-blue-500 bg-card py-1.5 px-2.5 rounded-full w-fit mx-auto border border-border">
+          <div className="mt-1 mb-3 flex items-center justify-center gap-1 text-blue-600 dark:text-blue-500 bg-card py-1.5 px-2.5 rounded-full w-fit mx-auto border border-border">
             <Mic size={16} />
             <span className="text-xs font-medium">Голос</span>
           </div>
@@ -174,46 +142,6 @@ CardFaceProps) {
 
       {/* --- Нижняя часть (Кнопки действий) --- */}
       <div className="flex justify-around items-center pt-2 border-t border-border">
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleBlitz()
-          }}
-          className={cn(
-            'p-2 rounded-full transition-colors cursor-pointer',
-            item.is_quick
-              ? 'text-amber-500 bg-amber-500/10'
-              : 'text-muted-foreground hover:bg-muted hover:text-primary'
-          )}
-          title="Блиц (2-5 мин)"
-        >
-          <Zap
-            strokeWidth={1.6}
-            size={22}
-            fill={item.is_quick ? 'currentColor' : 'none'}
-          />
-        </button>
-
-        <button
-          onClick={async () => completeItem(item.id)}
-          className="p-2 rounded-full text-muted-foreground hover:bg-muted  hover:text-primary transition-colors cursor-pointer"
-        >
-          <CheckCircle2 strokeWidth={1.6} size={22} />
-        </button>
-
-        <button
-          onClick={handleDecompose}
-          disabled={isDecomposing || isProcessing}
-          className="p-2 rounded-full text-muted-foreground hover:bg-muted hover:text-primary transition-colors disabled:opacity-50 cursor-pointer"
-          title="Разбить на шаги (AI)"
-        >
-          {isDecomposing ? (
-            <Loader2 strokeWidth={1.6} size={22} className="animate-spin" />
-          ) : (
-            <GitBranch strokeWidth={1.6} size={22} />
-          )}
-        </button>
-
         <button
           onClick={onRefine}
           disabled={isProcessing}
