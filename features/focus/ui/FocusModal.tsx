@@ -125,7 +125,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
 
   return (
     <Dialog open={!!focusItem} onOpenChange={() => setFocusItem(null)}>
-      <DialogContent className="max-w-2xl h-screen md:h-[90vh] p-0.5 gap-0 overflow-hidden bg-card flex flex-col rounded-none md:rounded-3xl border-none md:border border-border outline-none">
+      <DialogContent className="max-w-2xl h-screen md:h-[90vh] p-1 gap-0 overflow-hidden bg-card flex flex-col rounded-none md:rounded-3xl border-none md:border border-border outline-none">
         {item && (
           <>
             <DialogTitle className="sr-only">
@@ -241,7 +241,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
                   <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                     Исходный текст:
                   </p>
-                  <p className="text-sm text-muted-foreground/70">
+                  <p className="text-sm text-muted-foreground/70 mb-10 md:mb-0">
                     {item.raw_content}
                   </p>
                 </div>
@@ -255,7 +255,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
               <div className="p-2 border-t border-border/50 bg-card/80 backdrop-blur-lg absolute bottom-0 w-full flex gap-4">
                 <button
                   onClick={() => handleComplete(item)}
-                  className="flex-1 py-2 mb-5 md:mb-0 rounded-xl bg-primary text-primary-foreground font-semibold text-lg opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full mr-2 py-2.5 mb-7 md:mb-0 rounded-full md:rounded-xl bg-primary text-primary-foreground font-semibold text-lg opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <CheckCircle2 size={22} strokeWidth={2.4} />
                   Завершить задачу

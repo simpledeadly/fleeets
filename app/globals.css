@@ -140,10 +140,6 @@
     width: 100%;
     height: 100%;
 
-    /* Запрещает выделение текста везде (кроме инпутов) */
-    -webkit-user-select: none;
-    user-select: none;
-
     /* Отключает серый квадрат при нажатии на ссылки/кнопки */
     -webkit-tap-highlight-color: transparent;
 
@@ -152,25 +148,18 @@
   }
 
   /* Разрешаем выделение только там, где нужно */
-  input,
-  textarea,
-  [contenteditable='true'] {
-    -webkit-user-select: text;
-    user-select: text;
-  }
 
   /* ФИКС ХОВЕРОВ: Чтобы стили :hover не срабатывали от тапа на телефоне */
-  @media (hover: none) {
-    /* Отключаем все эффекты выделения при наведении для сенсорных экранов */
-    .group:hover,
-    .hover\:bg-accent:hover,
-    .aria-selected\:bg-accent[aria-selected='true'] {
-      background-color: transparent !important;
+  @media (hover: hover) {
+    .hover-effect:hover {
+      /* твои стили ховера только для мышки */
     }
 
-    /* Оставляем подсветку только для активного (нажатого) состояния */
-    .active\:bg-accent:active {
-      background-color: hsl(var(--accent)) !important;
+    input,
+    textarea,
+    [contenteditable='true'] {
+      -webkit-user-select: text;
+      user-select: text;
     }
   }
 }
