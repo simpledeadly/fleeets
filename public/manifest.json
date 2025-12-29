@@ -1,0 +1,9 @@
+{
+  "name": "Fleeets",
+  "short_name": "Fleeets",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#18181B",
+  "theme_color": "#18181B",
+  "icons": []
+}

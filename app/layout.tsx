@@ -1,6 +1,6 @@
 // app/layout.tsx
 import './globals.css'
-import type { Metadata } from 'next'
+import type { Viewport } from 'next'
 import { Toaster } from 'sonner'
 import StoreInitializer from './components/StoreInitializer'
 import { PaywallModal } from '@/features/paywall'
@@ -9,9 +9,12 @@ import { LayoutClient } from './components/LayoutClient'
 import { Sidebar } from '@/features/navigation'
 import { createClient } from '../lib/supabase/server'
 
-export const metadata: Metadata = {
-  title: 'Fleeets',
-  description: 'Inbox Zero Protocol',
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1, // Запрещает зум при клике в инпуты
+  userScalable: false, // Запрещает щипок (pinch-to-zoom)
+  viewportFit: 'cover', // Позволяет контенту заходить под челку
 }
 
 export default async function RootLayout({

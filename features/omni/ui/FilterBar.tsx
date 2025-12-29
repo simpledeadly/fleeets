@@ -170,6 +170,7 @@ function FilterChip({
           ? 'bg-primary text-primary-foreground border-primary'
           : 'bg-card/20 text-primary border-border hover:bg-muted'
       )}
+      type="button"
     >
       {Icon && <Icon size={16} />}
       {label}
