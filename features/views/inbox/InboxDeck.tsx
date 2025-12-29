@@ -99,7 +99,7 @@ export function InboxDeck() {
 
   if (isEmpty) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[50vh] mx-auto my-auto text-center animate-in fade-in space-y-3">
+      <div className="flex flex-col items-center justify-center h-screen mx-auto my-auto text-center animate-in fade-in space-y-3">
         {/* {randomSticker || <CoolEmoji />} */}
 
         <div className="space-y-2">
@@ -127,11 +127,11 @@ export function InboxDeck() {
   const visibleTasks = inboxTasks.slice(0, 3).reverse()
 
   return (
-    <div className="relative w-100 min-h-[90vh] m-auto flex items-center justify-center">
+    <div className="relative w-100 h-screen m-auto flex items-center justify-center">
       {/* РЕЖИМ СЕТКИ (OVERVIEW) */}
       {isGridMode ? (
-        <div className="w-full h-full px-4 pt-20 pb-20 overflow-y-auto custom-scrollbar">
-          <div className="grid grid-cols-2 gap-3 pb-20">
+        <div className="min-w-[96vw] h-screen px-4 pt-20 pb-20 overflow-y-auto custom-scrollbar">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pb-20">
             {inboxTasks.map((task) => (
               <motion.div
                 key={task.id}
@@ -142,7 +142,7 @@ export function InboxDeck() {
                 }}
                 initial={{ scale: 0.8, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="bg-card border border-border p-4 rounded-2xl h-40 flex flex-col justify-between cursor-pointer hover:border-primary/50 transition-colors shadow-sm"
+                className="dark:bg-muted-foreground/3 border border-border/90 p-4 rounded-2xl h-40 flex flex-col justify-between cursor-pointer hover:border-muted-foreground/40 dark:hover:border-muted-foreground/30 dark:hover:bg-muted-foreground/5 transition-colors duration-100 shadow-xs"
               >
                 <span className="text-sm font-bold line-clamp-3">
                   {task.content}
@@ -161,7 +161,7 @@ export function InboxDeck() {
           {/* Кнопка закрытия сетки (на всякий случай) */}
           <button
             onClick={() => setIsGridMode(false)}
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-zinc-900 text-white px-6 py-2 rounded-full shadow-xl text-xs font-bold z-50"
+            className="fixed bottom-20 left-1/2 -translate-x-1/2 border border-border dark:border-border/60 bg-card/80 backdrop-blur-lg text-foreground px-4 py-2 rounded-full shadow-md text-xs font-semibold z-50 cursor-pointer transition-all duration-200 animate-in fade-in"
           >
             Вернуться к колоде
           </button>

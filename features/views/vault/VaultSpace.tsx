@@ -1,3 +1,5 @@
+'use client'
+
 import { OmniBase } from '@/features/omni'
 
 export const VaultSpace = () => {
