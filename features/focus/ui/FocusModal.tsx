@@ -132,7 +132,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
               Режим фокуса: {item.content}
             </DialogTitle>
 
-            <div className="flex-1 overflow-y-auto p-2 md:p-4 pt-12 space-y-8">
+            <div className="flex-1 overflow-y-auto p-2 pt-12 md:p-4 md:pt-12 space-y-8">
               {/* "ХЛЕБНЫЕ КРОШКИ" (Breadcrumbs) */}
               {parentTask && (
                 <button
@@ -146,7 +146,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
 
               {/* Main Task */}
               <div className="space-y-2">
-                <h1 className="text-3xl font-bold leading-tight">
+                <h1 className="text-3xl font-extrabold leading-tight">
                   {item.content}
                 </h1>
                 {item.description && (
