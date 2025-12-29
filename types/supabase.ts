@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       activity_logs: {
@@ -435,6 +460,7 @@ export type Database = {
         Returns: Json
       }
       get_item_total_duration: { Args: { item_uuid: string }; Returns: number }
+      get_weekly_report: { Args: { user_uuid: string }; Returns: Json }
       get_weekly_summary: { Args: { user_uuid: string }; Returns: Json }
       match_items: {
         Args: {
@@ -617,6 +643,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_scope: ["fleeets", "randona", "flode"],

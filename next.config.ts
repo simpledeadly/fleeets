@@ -22,9 +22,8 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: path.resolve(process.cwd()),
   },
-  transpilePackages: ['@/features', '@/lib'],
+  transpilePackages: ['lucide-react'],
   webpack: (config) => {
-    config.resolve.alias['@'] = path.resolve(process.cwd())
     return config
   },
 }
