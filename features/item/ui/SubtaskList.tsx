@@ -5,13 +5,7 @@ import { createItem } from '@/features/item'
 import { toast } from 'sonner'
 import { Item } from '@/lib/store'
 
-export function SubtaskList({
-  parentId,
-  items,
-}: {
-  parentId: string
-  items: Item[]
-}) {
+export function SubtaskList({ items }: { parentId: string; items: Item[] }) {
   const [value, setValue] = useState('')
   const [isCreating, setIsCreating] = useState(false)
 
@@ -19,7 +13,7 @@ export function SubtaskList({
     if (!value.trim()) return
     setIsCreating(true)
 
-    const result = await createItem(value, parentId)
+    const result = await createItem(value)
 
     setIsCreating(false)
     if (result.success) {
