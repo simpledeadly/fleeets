@@ -321,7 +321,7 @@ export function CaptureBar() {
       <form
         onSubmit={handleSubmit}
         className={cn(
-          'relative flex items-center gap-1 p-1 bg-card/80 backdrop-blur-xl border shadow-lg transition-colors duration-150',
+          'flex items-center gap-1 p-1 bg-card/80 backdrop-blur-xl border shadow-lg transition-colors duration-150',
           suggestions.length > 0 ? 'rounded-t-0 rounded-b-3xl' : 'rounded-full',
           brainMode
             ? 'border-amber-500/30 bg-amber-500/10' // Стиль Мозга

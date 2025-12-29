@@ -4,7 +4,7 @@ import { useHotkeys } from '@/lib/hooks'
 import {
   useOmniStore,
   PendingIndicator,
-  Omni,
+  OmniModal,
   CaptureBar,
 } from '@/features/omni'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -25,7 +25,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
     <>
       {children}
       <SnowLayer />
-      <Omni />
+      <OmniModal />
 
       <FocusModal
         // key={focusItem?.id || 'modal-closed'}

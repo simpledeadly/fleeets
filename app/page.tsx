@@ -19,14 +19,14 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-4">
+    <main className="flex min-h-screen flex-col">
       {/* Модалка */}
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
       />
 
-      <div className="w-full max-w-md space-y-8 flex flex-col items-center">
+      <div className="flex flex-1 flex-col">
         {CurrentViewComponent ? (
           <CurrentViewComponent />
         ) : (

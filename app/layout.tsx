@@ -26,7 +26,7 @@ export default async function RootLayout({
 
   return (
     <html lang="ru" suppressHydrationWarning>
-      <body className={`min-h-screen bg-background font-sans antialiased`}>
+      <body className={`min-h-screen bg-card font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

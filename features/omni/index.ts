@@ -1,4 +1,6 @@
 export { CaptureBar } from './ui/CaptureBar'
 export { Omni } from './ui/Omni'
+export { OmniBase } from './ui/OmniBase'
+export { OmniModal } from './ui/OmniModal'
 export { PendingIndicator } from './ui/PendingIndicator'
 export { useOmniStore } from './model/store'

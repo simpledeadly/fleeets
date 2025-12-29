@@ -28,7 +28,7 @@ export function OmniPreview({ item }: { item: Item | null }) {
 
               <div className="flex items-center gap-3 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1">
-                  <Calendar size={12} />
+                  <Calendar size={14} />
                   <span>
                     {format(new Date(item.created_at!), 'd MMM', {
                       locale: ru,
@@ -37,7 +37,7 @@ export function OmniPreview({ item }: { item: Item | null }) {
                 </div>
                 {item.status && (
                   <div className="flex items-center gap-1">
-                    <Activity size={12} />
+                    <Activity size={14} />
                     <span className="capitalize">{item.status}</span>
                   </div>
                 )}
@@ -52,7 +52,7 @@ export function OmniPreview({ item }: { item: Item | null }) {
               {/* Описание */}
               <div className="space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  <AlignLeft size={12} /> Описание
+                  <AlignLeft size={14} /> Описание
                 </div>
                 {item.description ? (
                   <div className="text-sm text-foreground/80">
@@ -69,7 +69,7 @@ export function OmniPreview({ item }: { item: Item | null }) {
               {item.ai_tags && item.ai_tags.length > 0 && (
                 <div className="space-y-2">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                    <Hash size={12} />
+                    <Hash size={14} />
                     Теги
                   </div>
                   <div className="flex flex-wrap gap-1">

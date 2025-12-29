@@ -69,7 +69,7 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
         autoFocus
       />
 
-      <CommandList className="max-h-140 p-4 overflow-y-auto">
+      <CommandList className="max-h-200 p-4 overflow-y-auto">
 
         {/* Индикатор загрузки текстом (опционально) */}
         {isThinking && !brainData && (

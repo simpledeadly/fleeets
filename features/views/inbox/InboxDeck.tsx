@@ -99,7 +99,7 @@ export function InboxDeck() {
 
   if (isEmpty) {
     return (
-      <div className="flex flex-col items-center justify-center h-full min-h-[50vh] text-center animate-in fade-in space-y-3">
+      <div className="flex flex-col items-center justify-center h-full min-h-[50vh] mx-auto my-auto text-center animate-in fade-in space-y-3">
         {/* {randomSticker || <CoolEmoji />} */}
 
         <div className="space-y-2">
@@ -127,7 +127,7 @@ export function InboxDeck() {
   const visibleTasks = inboxTasks.slice(0, 3).reverse()
 
   return (
-    <div className="relative w-full max-w-sm h-96 flex items-center justify-center">
+    <div className="relative w-100 min-h-[90vh] m-auto flex items-center justify-center">
       {/* РЕЖИМ СЕТКИ (OVERVIEW) */}
       {isGridMode ? (
         <div className="w-full h-full px-4 pt-20 pb-20 overflow-y-auto custom-scrollbar">

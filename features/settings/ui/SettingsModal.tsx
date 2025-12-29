@@ -69,11 +69,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                     : 'bg-secondary text-muted-foreground'
                 }`}
               >
-                <Snowflake
-                  size={18}
-                  strokeWidth={1.6}
-                  className={isSnowing ? 'animate-spin-slow' : ''}
-                />
+                <Snowflake size={18} strokeWidth={1.6} />
               </div>
               <div className="flex flex-col">
                 <span className="text-sm font-medium">
