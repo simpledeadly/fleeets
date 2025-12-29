@@ -29,7 +29,7 @@ export function CaptureBar() {
   const [suggestions, setSuggestions] = useState<Item[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const debouncedText = useDebounce(text, 700)
-  const { items, setFocusItem } = useStore()
+  const { currentView, items, setFocusItem } = useStore()
   const { isPro, openPaywall } = usePaywall()
   const [brainMode, setBrainMode] = useState(false)
   const [brainAnswer, setBrainAnswer] = useState<{
@@ -318,134 +318,138 @@ export function CaptureBar() {
         </motion.div>
       )} */}
 
-      <form
-        onSubmit={handleSubmit}
-        className={cn(
-          'flex items-center gap-1 p-1 bg-card/80 backdrop-blur-xl border shadow-lg transition-colors duration-150',
-          suggestions.length > 0 ? 'rounded-t-0 rounded-b-3xl' : 'rounded-full',
-          brainMode
-            ? 'border-amber-500/30 bg-amber-500/10' // Стиль Мозга
-            : 'border-border dark:border-border/60' // Обычный стиль
-        )}
-      >
-        {/* Кнопка Плюс (будущий Cmd+K) */}
-        <button
-          type="button"
-          className="p-2 rounded-full transition-colors cursor-pointer"
-        >
-          {/* Иконка меняется */}
-          <AnimatePresence mode="popLayout">
-            {brainMode ? (
-              <motion.div
-                key="brain"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0 }}
-              >
-                <BrainCircuit
-                  size={20}
-                  strokeWidth={1.8}
-                  className="text-amber-400"
-                />
-              </motion.div>
-            ) : (
-              <motion.div
-                key="plus"
-                onClick={togglePalette}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                exit={{ scale: 0 }}
-              >
-                <Expand
-                  size={20}
-                  strokeWidth={1.8}
-                  className="text-muted-foreground"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </button>
-
-        {/* Инпут */}
-        <input
-          id="capture-bar-input"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          autoComplete="off"
-          autoCorrect="off"
-          autoCapitalize="off"
-          spellCheck="false"
-          placeholder={brainMode ? 'Спроси базу знаний...' : 'Новая мысль...'}
+      {currentView !== 'vault' && (
+        <form
+          onSubmit={handleSubmit}
           className={cn(
-            'flex-1 bg-transparent text-md focus:outline-none transition-colors',
+            'flex items-center gap-1 p-1 bg-card/80 backdrop-blur-xl border shadow-lg transition-colors duration-150',
+            suggestions.length > 0
+              ? 'rounded-t-0 rounded-b-3xl'
+              : 'rounded-full',
             brainMode
-              ? 'text-foreground placeholder:text-secondary'
-              : 'placeholder:text-muted-foreground/80'
+              ? 'border-amber-500/30 bg-amber-500/10' // Стиль Мозга
+              : 'border-border dark:border-border/60' // Обычный стиль
           )}
-        />
-
-        {/* Правые кнопки (Микрофон / Отправить) */}
-        <div className="relative w-8 h-8 flex items-center justify-center">
-          <AnimatePresence>
-            {/* 1. Кнопка "Отправить" (если есть текст) */}
-            {text.trim() && !isRecording && !isTranscribing && !isThinking ? (
-              <motion.button
-                key="send"
-                type="submit"
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-                className="bg-foreground text-background absolute inset-0 flex items-center  justify-center rounded-full transition-colors cursor-pointer"
-              >
-                <ArrowUp size={20} strokeWidth={2.6} />
-              </motion.button>
-            ) : (
-              <Loader2 className="animate-spin text-amber-400" size={20} />
-            )}
-
-            {/* 2. Кнопка "Микрофон / Стоп" (если текста нет) */}
-            {!text.trim() && !isTranscribing && (
-              <motion.button
-                key="mic"
-                type="button"
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-                onClick={handleMicClick}
-                className="p-2 rounded-full text-muted-foreground hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
-              >
-                {isRecording ? (
-                  <Square
+        >
+          {/* Кнопка Плюс (будущий Cmd+K) */}
+          <button
+            type="button"
+            className="p-2 rounded-full transition-colors cursor-pointer"
+          >
+            {/* Иконка меняется */}
+            <AnimatePresence mode="popLayout">
+              {brainMode ? (
+                <motion.div
+                  key="brain"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                >
+                  <BrainCircuit
                     size={20}
                     strokeWidth={1.8}
-                    className="text-red-500"
-                    fill="currentColor"
+                    className="text-amber-400"
                   />
-                ) : (
-                  <Mic size={20} strokeWidth={1.8} />
-                )}
-              </motion.button>
-            )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="plus"
+                  onClick={togglePalette}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                >
+                  <Expand
+                    size={20}
+                    strokeWidth={1.8}
+                    className="text-muted-foreground"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </button>
 
-            {/* 3. Индикатор транскрипции */}
-            {isTranscribing && (
-              <motion.div
-                key="transcribing"
-                initial={{ opacity: 0, scale: 0.5 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.5 }}
-                className="absolute inset-0 flex items-center justify-center"
-              >
-                <Loader2
-                  size={20}
-                  strokeWidth={1.8}
-                  className="animate-spin text-muted-foreground"
-                />
-              </motion.div>
+          {/* Инпут */}
+          <input
+            id="capture-bar-input"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="off"
+            spellCheck="false"
+            placeholder={brainMode ? 'Спроси базу знаний...' : 'Новая мысль...'}
+            className={cn(
+              'flex-1 bg-transparent text-md focus:outline-none transition-colors',
+              brainMode
+                ? 'text-foreground placeholder:text-secondary'
+                : 'placeholder:text-muted-foreground/80'
             )}
-          </AnimatePresence>
-        </div>
-      </form>
+          />
+
+          {/* Правые кнопки (Микрофон / Отправить) */}
+          <div className="relative w-8 h-8 flex items-center justify-center">
+            <AnimatePresence>
+              {/* 1. Кнопка "Отправить" (если есть текст) */}
+              {text.trim() && !isRecording && !isTranscribing && !isThinking ? (
+                <motion.button
+                  key="send"
+                  type="submit"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  className="bg-foreground text-background absolute inset-0 flex items-center  justify-center rounded-full transition-colors cursor-pointer"
+                >
+                  <ArrowUp size={20} strokeWidth={2.6} />
+                </motion.button>
+              ) : (
+                <Loader2 className="animate-spin text-amber-400" size={20} />
+              )}
+
+              {/* 2. Кнопка "Микрофон / Стоп" (если текста нет) */}
+              {!text.trim() && !isTranscribing && (
+                <motion.button
+                  key="mic"
+                  type="button"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  onClick={handleMicClick}
+                  className="p-2 rounded-full text-muted-foreground hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                >
+                  {isRecording ? (
+                    <Square
+                      size={20}
+                      strokeWidth={1.8}
+                      className="text-red-500"
+                      fill="currentColor"
+                    />
+                  ) : (
+                    <Mic size={20} strokeWidth={1.8} />
+                  )}
+                </motion.button>
+              )}
+
+              {/* 3. Индикатор транскрипции */}
+              {isTranscribing && (
+                <motion.div
+                  key="transcribing"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.5 }}
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <Loader2
+                    size={20}
+                    strokeWidth={1.8}
+                    className="animate-spin text-muted-foreground"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </form>
+      )}
     </div>
   )
 }
