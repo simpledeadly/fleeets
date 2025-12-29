@@ -1,7 +1,7 @@
 import { toast } from 'sonner'
 import { useStore, type Item } from '@/lib/store'
 import { updateItem, softDeleteItem } from './actions'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../../../lib/supabase/client'
 import { useRef, useCallback } from 'react'
 
 export function useItemActions(item: Item) {

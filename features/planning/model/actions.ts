@@ -2,8 +2,8 @@
 
 import OpenAI from 'openai'
 import { revalidatePath } from 'next/cache'
-import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createClient } from '../../../lib/supabase/server'
+import { createAdminClient } from '../../../lib/supabase/admin'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,

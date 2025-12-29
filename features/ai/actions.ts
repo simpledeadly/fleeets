@@ -3,7 +3,7 @@
 
 import OpenAI from 'openai'
 import { Item } from '@/lib/store'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '../../lib/supabase/server'
 import { getSystemPromptTools } from '@/features/gen-ui'
 import { logTokenUsage } from './analytics'
 

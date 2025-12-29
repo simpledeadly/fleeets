@@ -1,6 +1,6 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { LogOut, CreditCard, Snowflake } from 'lucide-react'
 import { usePaywall, paymentService } from '@/features/paywall'

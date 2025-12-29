@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../../../lib/supabase/client'
 import { useStore } from '@/lib/store'
 import { finalizeLogin } from './auth-utils'
 import { toast } from 'sonner'

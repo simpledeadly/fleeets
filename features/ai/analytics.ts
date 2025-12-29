@@ -1,6 +1,6 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase/admin'
+import { createAdminClient } from '../../lib/supabase/admin'
 
 // Цены (за 1 млн токенов ИЛИ за 1 минуту аудио)
 const PRICING = {

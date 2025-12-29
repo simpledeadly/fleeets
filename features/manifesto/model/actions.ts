@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '../../../lib/supabase/server'
 import OpenAI from 'openai'
 
 const openai = new OpenAI({

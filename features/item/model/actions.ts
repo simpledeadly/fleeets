@@ -1,7 +1,7 @@
 'use server'
 
-import { createAdminClient } from '@/lib/supabase/admin'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '../../../lib/supabase/admin'
+import { createClient } from '../../../lib/supabase/server'
 import type { Database } from '@/types/supabase'
 import OpenAI from 'openai'
 import { logTokenUsage } from '@/features/ai'

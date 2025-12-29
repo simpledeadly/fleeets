@@ -1,6 +1,6 @@
 import { AdminDashboard } from '@/features/admin'
-import { createAdminClient } from '@/lib/supabase/admin' // 👈 ВАЖНО: Админский клиент
-import { createClient } from '@/lib/supabase/server' // Обычный для проверки аутентификации
+import { createAdminClient } from '../../lib/supabase/admin' // 👈 ВАЖНО: Админский клиент
+import { createClient } from '../../lib/supabase/server' // Обычный для проверки аутентификации
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { redirect } from 'next/navigation'
 

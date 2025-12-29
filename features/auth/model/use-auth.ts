@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../../../lib/supabase/client'
 import { useStore } from '@/lib/store'
 import { fetchActiveItems } from '@/lib/data'
 import { toast } from 'sonner'

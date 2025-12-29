@@ -6,8 +6,8 @@ import StoreInitializer from './components/StoreInitializer'
 import { PaywallModal } from '@/features/paywall'
 import { ThemeProvider } from './components/ThemeProvider'
 import { LayoutClient } from './components/LayoutClient'
-import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/features/navigation'
+import { createClient } from '../lib/supabase/server'
 
 export const metadata: Metadata = {
   title: 'Fleeets',

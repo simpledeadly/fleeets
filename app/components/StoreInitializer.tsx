@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { useStore, type Item } from '@/lib/store'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '../../lib/supabase/client'
 import { fetchActiveItems, fetchUserTier } from '@/lib/data'
 import { usePaywallStore } from '@/features/paywall'
 
