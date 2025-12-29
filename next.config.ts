@@ -1,5 +1,5 @@
 import type { NextConfig } from 'next'
-import path from 'path'
+import path from 'node:path'
 
 const nextConfig: NextConfig = {
   headers: async () => [
@@ -20,11 +20,11 @@ const nextConfig: NextConfig = {
     },
   },
   turbopack: {
-    root: '.',
+    root: path.resolve(process.cwd()),
   },
   transpilePackages: ['@/features', '@/lib'],
   webpack: (config) => {
-    config.resolve.alias['@'] = path.resolve(__dirname)
+    config.resolve.alias['@'] = path.resolve(process.cwd())
     return config
   },
 }
