@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next'
+import path from 'path'
 
 const nextConfig: NextConfig = {
   headers: async () => [
@@ -18,7 +19,14 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '10mb', // Ставим 10МБ, чтобы любая картинка пролезла
     },
   },
+  turbopack: {
+    root: '.',
+  },
   transpilePackages: ['@/features', '@/lib'],
+  webpack: (config) => {
+    config.resolve.alias['@'] = path.resolve(__dirname)
+    return config
+  },
 }
 
 export default nextConfig
