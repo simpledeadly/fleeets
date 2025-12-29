@@ -159,15 +159,23 @@
     user-select: text;
   }
 
-  /* 👇 ФИКС ХОВЕРОВ: Чтобы стили :hover не срабатывали от тапа на телефоне */
-  @media (hover: hover) {
-    .hover-effect:hover {
-      /* твои стили ховера только для мышки */
+  /* ФИКС ХОВЕРОВ: Чтобы стили :hover не срабатывали от тапа на телефоне */
+  @media (hover: none) {
+    /* Отключаем все эффекты выделения при наведении для сенсорных экранов */
+    .group:hover,
+    .hover\:bg-accent:hover,
+    .aria-selected\:bg-accent[aria-selected='true'] {
+      background-color: transparent !important;
+    }
+
+    /* Оставляем подсветку только для активного (нажатого) состояния */
+    .active\:bg-accent:active {
+      background-color: hsl(var(--accent)) !important;
     }
   }
 }
 
-/* 👇 Обработка Safe Areas (Челка и нижняя полоска iOS) */
+/* Обработка Safe Areas (Челка и нижняя полоска iOS) */
 :root {
   --safe-area-top: env(safe-area-inset-top);
   --safe-area-bottom: env(safe-area-inset-bottom);

@@ -14,6 +14,9 @@ const config = {
     // ... твои настройки темы ...
   },
   plugins: [typography],
+  future: {
+    hoverOnlyWhenSupported: true,
+  },
 } satisfies Config
 
 export default config

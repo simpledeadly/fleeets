@@ -163,6 +163,8 @@ function FilterChip({
 }) {
   return (
     <button
+      type="button"
+      onPointerDown={(e) => e.preventDefault()}
       onClick={onClick}
       className={cn(
         'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-100 border shrink-0 cursor-pointer',
@@ -170,7 +172,6 @@ function FilterChip({
           ? 'bg-primary text-primary-foreground border-primary'
           : 'bg-card/20 text-primary border-border hover:bg-muted'
       )}
-      type="button"
     >
       {Icon && <Icon size={16} />}
       {label}

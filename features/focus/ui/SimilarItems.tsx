@@ -114,7 +114,7 @@ export function SimilarItems({ items, isLoading }: SimilarItemsProps) {
                     )}
 
                     {/* ТЕГИ И АССЕТЫ */}
-                    <div className="flex flex-wrap gap-2 items-center">
+                    <div className="flex flex-wrap gap-1.5 items-center">
                       {/* 1. Если это было голосовое (source: 'voice' или 'telegram') */}
                       {typeof item.metadata === 'object' &&
                         item.metadata &&
