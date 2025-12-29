@@ -220,7 +220,9 @@ export function OmniBase({ mode }: OmniBaseProps) {
                   value={filter.searchQuery}
                   onValueChange={filter.setSearchQuery}
                 />
-                <FilterBar {...filter} />
+
+                {mode === 'standalone' && <FilterBar {...filter} />}
+
                 <CommandList
                   className={
                     mode === 'modal' ? 'max-h-130' : 'max-h-none flex-1 pb-10'
@@ -278,7 +280,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
           </div>
         </ResizablePanel>
 
-        {!isAiMode && (
+        {!isAiMode && mode === 'standalone' && (
           <>
             <ResizableHandle withHandle className="bg-border/40" />
             <ResizablePanel
