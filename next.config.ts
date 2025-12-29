@@ -18,6 +18,7 @@ const nextConfig: NextConfig = {
       bodySizeLimit: '10mb', // Ставим 10МБ, чтобы любая картинка пролезла
     },
   },
+  transpilePackages: ['@/features', '@/lib'],
 }
 
 export default nextConfig
