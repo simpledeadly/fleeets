@@ -1,10 +1,10 @@
 'use client'
 
+import { motion } from 'framer-motion'
+import { Settings, User, Zap } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
-import type { ViewType } from '@/features/views'
-import { VIEW_REGISTRY } from '@/features/views/registry'
-import { Settings, User, Zap } from 'lucide-react'
+import { VIEW_REGISTRY, type ViewType } from '@/features/views'
 import { usePaywall } from '@/features/paywall'
 
 export function Sidebar() {
@@ -17,63 +17,70 @@ export function Sidebar() {
   }))
 
   return (
-    <aside className="hidden md:flex flex-col w-56 h-screen border-r border-border dark:border-border/40 bg-background backdrop-blur-xl p-2 sticky top-0">
-      {/* Лого */}
-      <div className="px-2 pt-2 mb-3">
+    <aside className="hidden md:flex flex-col rounded-full ml-2 w-12 h-64 my-auto top-[30vh] border border-border dark:border-border/80 bg-card/50 shadow-lg backdrop-blur-xl p-2 fixed z-50 transition-all duration-200">
+      {/* 1. Лого (Центрировано) */}
+      <div className="flex justify-center mb-6 mt-2">
         <Zap
-          size={26}
-          className="text-[#fbbf24] drop-shadow-[0_0:10px_rgba(251,191,36,0.2)]"
+          size={24}
+          className="text-[#fbbf24] drop-shadow-[0_0_10px_rgba(251,191,36,0.3)]"
         />
       </div>
 
-      {/* Основная навигация */}
-      <nav className="flex-1 space-y-1">
+      {/* 2. Основная навигация */}
+      <nav className="flex-1 flex flex-col items-center gap-1">
         {navItems.map((item) => {
           const isActive = currentView === item.id
           return (
             <button
               key={item.id}
               onClick={() => setView(item.id)}
+              title={item.name} // Всплывающая подсказка при наведении
               className={cn(
-                'w-full flex items-center gap-1.5 px-2 py-1 rounded-sm text-sm font-medium transition-all duration-150 group relative cursor-pointer',
+                'relative flex items-center justify-center w-9 h-9 rounded-full transition-all duration-150 group cursor-pointer',
                 isActive
-                  ? 'bg-border dark:bg-border/70 text-primary'
-                  : 'text-muted-foreground hover:bg-border/50 dark:hover:bg-border/40 hover:text-foreground/80'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
               )}
             >
-              <item.icon size={18} />
-              <span>{item.name}</span>
+              <item.icon size={20} strokeWidth={2} />
 
-              {/* {isActive && (
+              {/* Индикатор активной вкладки (точка слева) */}
+              {isActive && (
                 <motion.div
-                  layoutId="sidebar-active"
-                  className="absolute left-0 w-0.5 h-4 bg-amber-500 rounded-r-full"
+                  layoutId="sidebar-dot"
+                  className="absolute -right-1.5 w-0.5 h-4 bg-primary rounded-full"
+                  transition={{ type: 'spring', stiffness: 500, damping: 30 }}
                 />
-              )} */}
+              )}
             </button>
           )
         })}
       </nav>
 
-      {/* Нижний блок: Настройки и Юзер */}
-      <div className="pt-2 border-t border-border/90 dark:border-border/40 space-y-1">
+      {/* 3. Нижний блок: Настройки и Юзер */}
+      <div className="flex flex-col items-center gap-2 pt-2 border-t border-border/80 dark:border-border/70">
         <button
           onClick={() => setIsSettingsOpen(true)}
-          className="w-full flex items-center gap-1.5 px-2 py-1 rounded-sm text-sm font-medium transition-all duration-150 group relative cursor-pointer text-muted-foreground hover:text-foreground/80 hover:bg-border/50 dark:hover:bg-border/40"
+          title="Настройки"
+          className="relative flex items-center justify-center w-9 h-9 rounded-full transition-all duration-150 group cursor-pointer text-muted-foreground hover:bg-secondary hover:text-foreground"
         >
-          <Settings size={18} />
-          <span>Настройки</span>
+          <Settings size={20} strokeWidth={2} />
         </button>
-        <div className="flex items-center gap-2 p-2 mt-3 bg-border/50 rounded-md border border-border/50 dark:border-border/40">
-          <div className="w-8 h-8 rounded-full bg-amber-500/10 dark:bg-amber-500/5 flex items-center justify-center text-amber-500">
-            <User size={20} />
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs font-bold truncate">User Name</span>
-            <span className="text-[10px] text-muted-foreground truncate font-mono">
-              {isPro ? 'PRO Plan' : 'Free Plan'}
-            </span>
-          </div>
+
+        {/* Аватар юзера */}
+        <div
+          className={cn(
+            'relative w-8 h-8 rounded-full border flex items-center justify-center transition-colors',
+            isPro
+              ? 'border-amber-500/20 bg-amber-500/10 text-amber-500'
+              : 'border-border bg-secondary text-muted-foreground'
+          )}
+        >
+          <User size={20} />
+          {/* Маленький индикатор PRO */}
+          {isPro && (
+            <div className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full border border-background" />
+          )}
         </div>
       </div>
     </aside>
