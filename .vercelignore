@@ -15,5 +15,3 @@ src-tauri/target
 .env.local
 .vercel
 .DS_Store
-.temp
-supabase
