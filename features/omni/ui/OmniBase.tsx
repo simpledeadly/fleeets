@@ -209,10 +209,9 @@ export function OmniBase({ mode }: OmniBaseProps) {
                 <FilterBar {...filter} />
                 <CommandList
                   className={
-                    mode === 'modal' ? 'max-h-130' : 'max-h-none flex-1 pb-20'
+                    mode === 'modal' ? 'max-h-130' : 'max-h-none flex-1 pb-10'
                   }
                 >
-                  <CommandEmpty>Ничего не найдено</CommandEmpty>
                   <CommandGroup
                     heading={`Элементы (${filter.visibleItems.length})`}
                   >
@@ -224,6 +223,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
                       />
                     ))}
                   </CommandGroup>
+                  <CommandEmpty className="flex items-center justify-center text-muted-foreground text-sm h-30">Ничего не найдено</CommandEmpty>
                 </CommandList>
               </Command>
             )}

@@ -42,7 +42,7 @@ export function InboxCard({
     ? {
         scale: 1,
         width: '90vw',
-        height: '75vh',
+        height: '80vh',
         maxWidth: '800px',
         maxHeight: '900px',
         x: 0,
@@ -61,7 +61,7 @@ export function InboxCard({
         y: index * 15,
         rotate: isTop ? 0 : 0,
         rotateY: 0,
-        zIndex: 30,
+        zIndex: 10,
         opacity: 1 - index * 0.2,
       }
 

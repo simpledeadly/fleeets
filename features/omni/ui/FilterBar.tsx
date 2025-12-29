@@ -115,7 +115,7 @@ export function FilterBar(props: FilterBarProps) {
       </div>
 
       {/* 2. Средний ряд: Теги */}
-      {topTags.length > 0 && (
+      {/* {topTags.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center">
           <Tag size={14} className="text-muted-foreground shrink-0 mr-1" />
           {topTags.map((tag) => (
@@ -128,7 +128,7 @@ export function FilterBar(props: FilterBarProps) {
             </FilterBadge>
           ))}
         </div>
-      )}
+      )} */}
 
       {/* 3. Нижний ряд: Типы и Флаги */}
       <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center">
