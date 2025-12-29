@@ -78,7 +78,7 @@ export function FocusList() {
   const otherTasksCount = Math.max(0, focusItems.length - 3)
 
   return (
-    <div className="sm:w-lg md:w-lg lg:w-2xl xl:w-3xl min-h-[90vh] flex flex-col justify-center p-6 relative">
+    <div className="sm:w-xl lg:w-3xl xl:w-4xl min-h-[90vh] flex flex-col justify-center p-6 relative">
       {/* Кнопка сброса (сверху справа, очень тонко) */}
       <button
         onClick={() => handleAction(resetTodayView)}
