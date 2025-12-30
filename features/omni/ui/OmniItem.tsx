@@ -19,7 +19,7 @@ const OmniItemComponent = ({ item, onSelect }: OmniItemProps) => {
       value={item.content + (item.ai_tags?.join(' ') || '')}
       onSelect={onSelect}
       data-item-id={item.id}
-      className="group flex items-center justify-between py-1.5 cursor-pointer aria-selected:bg-accent transition-all duration-75"
+      className="group flex items-center justify-between aria-selected:bg-accent py-1.5 cursor-pointer transition-all duration-75"
     >
       <div className="flex items-center gap-0 flex-1 min-w-0 my-px">
         {/* Иконка статуса */}
@@ -40,9 +40,9 @@ const OmniItemComponent = ({ item, onSelect }: OmniItemProps) => {
         <div className="flex flex-col overflow-hidden">
           <span
             className={cn(
-              'truncate font-mono transition-all duration-150',
+              'truncate text-primary font-mono transition-all duration-150',
               item.status === 'done' && 'line-through text-muted-foreground',
-              'group-aria-selected:text-primary' // Подсветка при выборе
+              'group-aria-selected:text-foreground' // Подсветка при выборе
             )}
           >
             {item.content}

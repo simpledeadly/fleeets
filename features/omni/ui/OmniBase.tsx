@@ -223,7 +223,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
         <ResizablePanel defaultSize={layout[0]} minSize={30}>
           <div className="flex-1 flex flex-col min-w-0 h-full relative">
             {isAiMode ? (
-              <OmniChat initialQuery={filter.searchQuery} />
+              <OmniChat initialQuery={filter.searchQuery} mode={mode} />
             ) : (
               <Command shouldFilter={false} className="h-full bg-transparent">
                 <CommandInput

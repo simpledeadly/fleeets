@@ -1,18 +1,31 @@
-"use client"
+'use client'
 
-import { useState, useEffect, useRef } from "react"
-import { Command, CommandInput, CommandList } from "@/components/ui/command"
-import { askBrain } from "@/features/ai"
-import { toast } from "sonner"
+import { useState, useEffect, useRef } from 'react'
+import { Command, CommandInput, CommandList } from '@/components/ui/command'
+import { askBrain } from '@/features/ai'
+import { toast } from 'sonner'
 import { BrainResponse } from './BrainResponse'
 import { GEN_UI_REGISTRY, isGenUITool } from '@/features/gen-ui'
+import { cn } from '@/lib/utils'
 
-export function OmniChat({ initialQuery }: { initialQuery: string }) {
-  const [query, setQuery] = useState(initialQuery.replace(/^\?/, "").trim())
+export function OmniChat({
+  initialQuery,
+  mode,
+}: {
+  initialQuery: string
+  mode: 'standalone' | 'modal'
+}) {
+  const [query, setQuery] = useState(initialQuery.replace(/^\?/, '').trim())
 
   // Стейт теперь хранит или обычный ответ, или GenUI данные
-  const [brainData, setBrainData] = useState<{ answer: string, sources: any[] } | null>(null)
-  const [genUIData, setGenUIData] = useState<{ type: string, data: any } | null>(null)
+  const [brainData, setBrainData] = useState<{
+    answer: string
+    sources: any[]
+  } | null>(null)
+  const [genUIData, setGenUIData] = useState<{
+    type: string
+    data: any
+  } | null>(null)
 
   const [isThinking, setIsThinking] = useState(false)
   const hasFetched = useRef(false)
@@ -32,7 +45,7 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
     } else if (result.answer) {
       setBrainData({ answer: result.answer, sources: result.sources || [] })
     } else {
-      toast.error("Мозг не ответил")
+      toast.error('Мозг не ответил')
     }
   }
 
@@ -41,7 +54,7 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
       hasFetched.current = true
 
       const t = setTimeout(() => {
-        performSearch(initialQuery.replace(/^\?/, "").trim())
+        performSearch(initialQuery.replace(/^\?/, '').trim())
       }, 0)
 
       return () => clearTimeout(t)
@@ -54,9 +67,10 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
     }
   }
 
-  const ToolComponent = genUIData && isGenUITool(genUIData.type)
-    ? GEN_UI_REGISTRY[genUIData.type].component
-    : null
+  const ToolComponent =
+    genUIData && isGenUITool(genUIData.type)
+      ? GEN_UI_REGISTRY[genUIData.type].component
+      : null
 
   return (
     <Command shouldFilter={false}>
@@ -69,8 +83,12 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
         autoFocus
       />
 
-      <CommandList className="max-h-200 p-4 overflow-y-auto">
-
+      <CommandList
+        className={cn(
+          'p-4 overflow-y-auto',
+          mode === 'modal' ? 'h-full max-h-120' : 'min-h-full pb-8'
+        )}
+      >
         {/* Индикатор загрузки текстом (опционально) */}
         {isThinking && !brainData && (
           <div className="text-sm text-muted-foreground animate-pulse pl-2">
@@ -87,10 +105,7 @@ export function OmniChat({ initialQuery }: { initialQuery: string }) {
 
         {/* 2. РЕНДЕР ТЕКСТА */}
         {brainData && (
-          <BrainResponse
-            text={brainData.answer}
-            sources={brainData.sources}
-          />
+          <BrainResponse text={brainData.answer} sources={brainData.sources} />
         )}
       </CommandList>
     </Command>
