@@ -1,12 +1,7 @@
 'use client'
 
 import { useHotkeys } from '@/lib/hooks'
-import {
-  useOmniStore,
-  PendingIndicator,
-  Omni,
-  CaptureBar,
-} from '@/features/omni'
+import { useOmniStore, PendingIndicator, CaptureBar, OmniModal } from '@/features/omni'
 import BottomNav from './BottomNav'
 import { motion } from 'framer-motion'
 import { ItemEditor } from '@/features/item'
@@ -14,6 +9,7 @@ import { FocusModal } from '@/features/focus'
 import { useStore } from '@/lib/store'
 import { getHotkeys } from '@/features/hotkeys'
 import { cn } from '@/lib/utils'
+import { SnowLayer } from '@/features/appearance'
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
   const { isPaletteOpen } = useOmniStore()
@@ -69,8 +65,8 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
           Они лежат ПОВЕРХ motion.div
       */}
 
-      {/* 1. Omni (он и вызывает эффект) */}
-      <Omni />
+      <SnowLayer />
+      <OmniModal />
 
       {/* 2. Другие модалки (они перекрывают всё, им зум не нужен, или можно настроить отдельно) */}
       <FocusModal
