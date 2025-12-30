@@ -89,9 +89,17 @@ export function useOmniFilter() {
       })
     }
 
-    return activeStatus || searchQuery
-      ? result.slice(0, 50)
-      : result.slice(0, 5)
+    const isInitialState =
+      !searchQuery &&
+      !activeStatus &&
+      !isQuick &&
+      !isTask &&
+      !isThought &&
+      !isNote &&
+      !isResource &&
+      activeTags.length === 0
+
+    return !isInitialState ? result.slice(0, 50) : result.slice(0, 5)
   }, [
     items,
     activeStatus,

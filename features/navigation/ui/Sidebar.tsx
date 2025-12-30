@@ -77,10 +77,6 @@ export function Sidebar() {
           )}
         >
           <User size={20} />
-          {/* Маленький индикатор PRO */}
-          {isPro && (
-            <div className="absolute top-0 right-0 w-2 h-2 bg-amber-500 rounded-full border border-background" />
-          )}
         </div>
       </div>
     </aside>

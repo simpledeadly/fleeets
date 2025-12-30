@@ -48,7 +48,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
 
   useEffect(() => {
     if (mode === 'standalone') {
-      const timer = setTimeout(() => setIsReady(true), 0) // Даем 100мс на маунт лейаута
+      const timer = setTimeout(() => setIsReady(true), 0)
       return () => clearTimeout(timer)
     }
   }, [mode])
@@ -203,7 +203,6 @@ export function OmniBase({ mode }: OmniBaseProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isPaletteOpen, items, mode])
 
-  // 1. Определяем, находимся ли мы в "начальном" состоянии (нет поиска и фильтров)
   const isInitialState =
     !filter.searchQuery &&
     !filter.activeStatus &&
