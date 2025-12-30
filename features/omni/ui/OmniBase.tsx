@@ -52,7 +52,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
     }
   }, [mode])
 
-  // В standalone моде мы всегда считаем палитру "открытой" для работы обзервера
+  // В standalone моде мы всегда считаем палитру "открытой" для работы наблюдателя
   const activeItem = useCmdkObserver(
     mode === 'standalone' ? true : isPaletteOpen
   )
@@ -225,7 +225,9 @@ export function OmniBase({ mode }: OmniBaseProps) {
 
                 <CommandList
                   className={
-                    mode === 'modal' ? 'max-h-130' : 'max-h-none flex-1 pb-25 md:pb-10'
+                    mode === 'modal'
+                      ? 'max-h-130'
+                      : 'max-h-none flex-1 pb-25 md:pb-10'
                   }
                 >
                   <AnimatePresence mode="wait">
@@ -237,20 +239,30 @@ export function OmniBase({ mode }: OmniBaseProps) {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        <CommandGroup
-                          heading={`Элементы (${filter.visibleItems.length})`}
-                        >
-                          {filter.visibleItems.map((item) => (
-                            <OmniItem
-                              key={item.id}
-                              item={item}
-                              onSelect={() => run(() => setFocusItem(item))}
-                            />
-                          ))}
-                        </CommandGroup>
-                        <CommandEmpty className="flex items-center justify-center text-muted-foreground text-sm h-30">
-                          Ничего не найдено
-                        </CommandEmpty>
+                        {((mode === 'modal' && filter.searchQuery) ||
+                          mode === 'standalone') && (
+                          <CommandGroup
+                            heading={`Элементы (${filter.visibleItems.length})`}
+                          >
+                            {filter.visibleItems.map((item) => (
+                              <OmniItem
+                                key={item.id}
+                                item={item}
+                                onSelect={() => run(() => setFocusItem(item))}
+                              />
+                            ))}
+                          </CommandGroup>
+                        )}
+                        {(mode === 'modal' && filter.searchQuery) ||
+                        mode === 'standalone' ? (
+                          <CommandEmpty className="flex items-center justify-center text-muted-foreground text-sm h-20 mb-8">
+                            Ничего не найдено
+                          </CommandEmpty>
+                        ) : (
+                          <CommandEmpty className="flex items-center justify-center text-muted-foreground/50 text-sm h-17.5">
+                            {/* Ищи! */}
+                          </CommandEmpty>
+                        )}
                       </motion.div>
                     ) : (
                       <motion.div

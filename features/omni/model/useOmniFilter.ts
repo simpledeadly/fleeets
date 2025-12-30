@@ -75,11 +75,19 @@ export function useOmniFilter() {
       })
     }
 
-    result.sort((a, b) => {
-      const dateA = a.triaged_at ? new Date(a.triaged_at).getTime() : 0
-      const dateB = b.triaged_at ? new Date(b.triaged_at).getTime() : 0
-      return dateB - dateA
-    })
+    if (activeStatus === 'done') {
+      result.sort((a, b) => {
+        const dateA = a.completed_at ? new Date(a.completed_at).getTime() : 0
+        const dateB = b.completed_at ? new Date(b.completed_at).getTime() : 0
+        return dateB - dateA
+      })
+    } else {
+      result.sort((a, b) => {
+        const dateA = a.triaged_at ? new Date(a.triaged_at).getTime() : 0
+        const dateB = b.triaged_at ? new Date(b.triaged_at).getTime() : 0
+        return dateB - dateA
+      })
+    }
 
     return result.slice(0, 50)
   }, [
