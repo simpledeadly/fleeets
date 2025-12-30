@@ -50,7 +50,6 @@ type StatusConfig = {
 }
 
 const STATUS_FILTERS: StatusConfig[] = [
-  { id: null, label: 'Все' },
   { id: 'today', label: 'Фокус', icon: Focus },
   { id: 'planned', label: 'План', icon: ListTodo },
   { id: 'done', label: 'Выполнено', icon: CheckCircle2 },
