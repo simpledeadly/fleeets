@@ -5,8 +5,7 @@ import { createClient } from '../../../lib/supabase/server'
 import type { Database } from '@/types/supabase'
 import OpenAI from 'openai'
 import { logTokenUsage } from '@/features/ai'
-import { logEvent } from '@/lib/logging' // Твой новый логгер событий
-import { revalidatePath } from 'next/cache'
+import { logEvent } from '@/lib/logging'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -93,7 +92,6 @@ export async function createItem(text: string) {
       })
     }
 
-    revalidatePath('/')
     return { success: true, item: data, parentTitle }
   } catch (e: any) {
     return { error: e.message }
@@ -117,8 +115,6 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
   if (fetchError || !currentItem) return { error: 'Item not found' }
 
   // Б. Готовим объект обновлений
-  // Мы используем any для updates, чтобы TS не ругался на динамические поля,
-  // но data типизирована
   const updates: any = { ...data }
 
   if (
@@ -257,7 +253,6 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
     .eq('id', itemId)
 
   if (error) return { error: error.message }
-  revalidatePath('/')
   return { success: true }
 }
 
@@ -282,7 +277,6 @@ export async function hardDeleteItem(itemId: string) {
   const supabase = await createClient()
   const { error } = await supabase.from('items').delete().eq('id', itemId)
   if (error) return { error: error.message }
-  revalidatePath('/')
   return { success: true }
 }
 

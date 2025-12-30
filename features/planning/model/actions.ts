@@ -1,7 +1,6 @@
 'use server'
 
 import OpenAI from 'openai'
-import { revalidatePath } from 'next/cache'
 import { createClient } from '../../../lib/supabase/server'
 import { createAdminClient } from '../../../lib/supabase/admin'
 
@@ -151,7 +150,6 @@ export async function generateDailyPlan(theme?: string) {
 
     if (error) throw error
 
-    revalidatePath('/')
     return {
       success: true,
       planned: taskIds.length,
@@ -186,7 +184,6 @@ export async function resetTodayView() {
 
     if (error) throw error
 
-    revalidatePath('/') // Обновляем UI
     return { success: true }
   } catch (e: any) {
     console.error('Reset today failed:', e)

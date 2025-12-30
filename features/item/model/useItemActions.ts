@@ -31,7 +31,21 @@ export function useItemActions(item: Item) {
       // 1. Optimistic Update (Мгновенно в UI)
       // Мержим изменения с текущим состоянием в сторе
       const freshItem = getFreshItem()
-      const newItem = { ...freshItem, ...changes }
+      
+      const optimisticUpdate: any = { ...changes }
+      if (
+        freshItem.status === 'inbox' &&
+        changes.status &&
+        changes.status !== 'inbox'
+      ) {
+        optimisticUpdate.triaged_at = new Date().toISOString()
+      }
+      if (changes.status === 'inbox') {
+        optimisticUpdate.triaged_at = null
+      }
+
+      // Обновляем стор в браузере (теперь с датой!)
+      const newItem = { ...freshItem, ...optimisticUpdate }
       store.updateItem(newItem)
 
       // 2. Накапливаем изменения для сервера

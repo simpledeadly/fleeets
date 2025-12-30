@@ -2,7 +2,6 @@
 
 import { createAdminClient } from '../../../lib/supabase/admin'
 import { createClient } from '../../../lib/supabase/server'
-import { revalidatePath } from 'next/cache'
 
 export async function activateMockSubscription() {
   const supabase = await createClient()
@@ -33,7 +32,6 @@ export async function activateMockSubscription() {
     return { error: error.message }
   }
 
-  revalidatePath('/')
   return { success: true }
 }
 
@@ -53,6 +51,5 @@ export async function cancelMockSubscription() {
 
   if (error) return { error: error.message }
 
-  revalidatePath('/')
   return { success: true }
 }

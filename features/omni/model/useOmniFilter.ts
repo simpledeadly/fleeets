@@ -1,10 +1,8 @@
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore } from '@/lib/store'
-import { useOmniStore } from './store'
 
 export function useOmniFilter() {
   const { items } = useStore()
-  const { isPaletteOpen } = useOmniStore()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeStatus, setActiveStatus] = useState<string | null>(null)
@@ -14,20 +12,6 @@ export function useOmniFilter() {
   const [isThought, setIsThought] = useState<boolean | null>(false)
   const [isNote, setIsNote] = useState<boolean | null>(false)
   const [isResource, setIsResource] = useState<boolean | null>(false)
-
-  // Сброс при закрытии
-  useEffect(() => {
-    if (!isPaletteOpen) {
-      const t = setTimeout(() => {
-        setActiveStatus(null)
-        setIsQuick(null)
-        setIsThought(null)
-        setActiveTags([])
-        setSearchQuery('')
-      }, 300)
-      return () => clearTimeout(t)
-    }
-  }, [isPaletteOpen])
 
   // Топ теги
   const topTags = useMemo(() => {

@@ -268,7 +268,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
                                   opacity: Math.max(0, 1 - index * 0.2),
                                   // filter: `blur(${index * 0.3}px)`,
                                 }}
-                                className="transition-all duration-150"
+                                className="transition-all duration-100"
                               >
                                 <OmniItem
                                   item={item}
