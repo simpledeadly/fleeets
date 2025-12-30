@@ -89,7 +89,9 @@ export function useOmniFilter() {
       })
     }
 
-    return result.slice(0, 50)
+    return activeStatus || searchQuery.trim() !== ''
+      ? result.slice(0, 50)
+      : result.slice(0, 5)
   }, [
     items,
     activeStatus,

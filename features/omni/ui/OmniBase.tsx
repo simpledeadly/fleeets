@@ -24,6 +24,7 @@ import { OmniPreview } from './OmniPreview'
 import { useCmdkObserver } from '../model/useCmdkObserver'
 import { softDeleteItem, updateItem } from '@/features/item'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
 
 interface OmniBaseProps {
   mode: 'standalone' | 'modal'
@@ -202,6 +203,17 @@ export function OmniBase({ mode }: OmniBaseProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isPaletteOpen, items, mode])
 
+  // 1. Определяем, находимся ли мы в "начальном" состоянии (нет поиска и фильтров)
+  const isInitialState =
+    !filter.searchQuery &&
+    !filter.activeStatus &&
+    !filter.isQuick &&
+    !filter.isTask &&
+    !filter.isThought &&
+    !filter.isNote &&
+    !filter.isResource &&
+    filter.activeTags.length === 0
+
   return (
     <div className={mode === 'modal' ? 'h-full' : 'h-screen'}>
       <ResizablePanelGroup
@@ -224,11 +236,12 @@ export function OmniBase({ mode }: OmniBaseProps) {
                 {mode === 'standalone' && <FilterBar {...filter} />}
 
                 <CommandList
-                  className={
+                  className={cn(
                     mode === 'modal'
                       ? 'max-h-130'
-                      : 'max-h-none flex-1 pb-25 md:pb-10'
-                  }
+                      : 'max-h-none flex-1 pb-25 md:pb-10',
+                    'outline-none'
+                  )}
                 >
                   <AnimatePresence mode="wait">
                     {isReady ? (
@@ -239,29 +252,52 @@ export function OmniBase({ mode }: OmniBaseProps) {
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
                       >
-                        {((mode === 'modal' && filter.searchQuery) ||
-                          mode === 'standalone') && (
+                        {isInitialState ? (
+                          /* --- РЕЖИМ: ТОЛЬКО НЕДАВНИЕ --- */
                           <CommandGroup
-                            heading={`Элементы (${filter.visibleItems.length})`}
+                            heading={
+                              filter.searchQuery
+                                ? `Найдено (${filter.visibleItems.length})`
+                                : 'Недавние'
+                            }
                           >
-                            {filter.visibleItems.map((item) => (
-                              <OmniItem
-                                key={item.id}
-                                item={item}
-                                onSelect={() => run(() => setFocusItem(item))}
-                              />
+                            {filter.visibleItems.map((item, index) => (
+                              <div
+                                key={`recent-${item.id}`}
+                                style={{
+                                  // Более плавное затухание для 5 элементов
+                                  opacity: Math.max(0, 1 - index * 0.2),
+                                  // filter: `blur(${index * 0.3}px)`,
+                                }}
+                                className="transition-all duration-150"
+                              >
+                                <OmniItem
+                                  item={item}
+                                  onSelect={() => run(() => setFocusItem(item))}
+                                />
+                              </div>
                             ))}
                           </CommandGroup>
-                        )}
-                        {(mode === 'modal' && filter.searchQuery) ||
-                        mode === 'standalone' ? (
-                          <CommandEmpty className="flex items-center justify-center text-muted-foreground text-sm h-20 mb-8">
-                            Ничего не найдено
-                          </CommandEmpty>
                         ) : (
-                          <CommandEmpty className="flex items-center justify-center text-muted-foreground/50 text-sm h-17.5">
-                            {/* Ищи! */}
-                          </CommandEmpty>
+                          /* --- РЕЖИМ: РЕЗУЛЬТАТЫ (ПОИСК ИЛИ ФИЛЬТРЫ) --- */
+                          <>
+                            <CommandGroup
+                              heading={`Найдено (${filter.visibleItems.length})`}
+                            >
+                              {filter.visibleItems.map((item) => (
+                                <OmniItem
+                                  key={item.id}
+                                  item={item}
+                                  onSelect={() => run(() => setFocusItem(item))}
+                                />
+                              ))}
+                            </CommandGroup>
+
+                            {/* Показываем "Ничего не найдено" только в этом режиме */}
+                            <CommandEmpty className="flex items-center justify-center text-muted-foreground text-sm h-20 mb-8">
+                              Ничего не найдено
+                            </CommandEmpty>
+                          </>
                         )}
                       </motion.div>
                     ) : (

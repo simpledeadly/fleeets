@@ -208,3 +208,7 @@ main {
 .animate-pulse-slow {
   animation: pulse-slow 12s ease-in-out infinite;
 }
+
+[cmdk-group] {
+  transition: opacity 0.2s ease;
+}
