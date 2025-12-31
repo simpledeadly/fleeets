@@ -7,20 +7,29 @@ import { createClient } from '../../lib/supabase/server'
 import { getSystemPromptTools } from '@/features/gen-ui'
 import { logTokenUsage } from './analytics'
 
-// Настраиваем клиента на OpenRouter
-const openai = new OpenAI({
-  apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: 'https://openrouter.ai/api/v1',
-})
-
-const groq = new OpenAI({
-  apiKey: process.env.GROQ_API_KEY,
-  baseURL: 'https://api.groq.com/openai/v1',
-})
+import { createAiClient } from '@/lib/ai/client'
 
 const llmModelOR_8b = 'meta-llama/llama-3.1-8b-instruct'
 const llmModelOR_70b = 'meta-llama/llama-3.1-8b-instruct'
 const llmModelGroq_70b = 'llama-3.3-70b-versatile'
+
+function getAiClients(userId: string, action: any) {
+  const openai = createAiClient({
+    apiKey: process.env.OPENROUTER_API_KEY,
+    baseURL: 'https://openrouter.ai/api/v1',
+    userId,
+    action,
+  })
+
+  const groq = createAiClient({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: 'https://api.groq.com/openai/v1',
+    userId,
+    action,
+  })
+
+  return { openai, groq }
+}
 
 export async function createItem(text: string) {
   const supabase = await createClient()
@@ -31,6 +40,7 @@ export async function createItem(text: string) {
   if (!user) return { error: 'Unauthorized' }
 
   try {
+    const { openai } = getAiClients(user.id, 'create_item')
     const embeddingModel = 'openai/text-embedding-3-small'
     // 1. Генерируем вектор
     const embeddingResponse = await openai.embeddings.create({
@@ -38,17 +48,6 @@ export async function createItem(text: string) {
       input: text.replace(/\n/g, ' '),
     })
     const embedding = embeddingResponse.data[0].embedding
-
-    // 📊 ЛОГ
-    if (embeddingResponse.usage) {
-      logTokenUsage({
-        userId: user.id,
-        model: embeddingModel,
-        action: 'create_item',
-        inputTokens: embeddingResponse.usage.prompt_tokens,
-        outputTokens: 0,
-      })
-    }
 
     // 2. Сохраняем в БД
     const { data, error } = await supabase
@@ -218,6 +217,7 @@ export async function searchWithAI(query: string): Promise<SearchResult[]> {
 
   // --- 2. Глубокий семантический поиск (RAG) ---
   // (Этот блок уже работает правильно, так как match_items фильтрует)
+  const { openai } = getAiClients(user.id, 'embedding')
   const embeddingResponse = await openai.embeddings.create({
     model: 'openai/text-embedding-3-small',
     input: query,
@@ -262,7 +262,7 @@ export async function findSimilarItemsByQuery(query: string): Promise<Item[]> {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user || !query.trim()) return []
-
+  const { openai } = getAiClients(user.id, 'embedding')
   const embeddingResponse = await openai.embeddings.create({
     model: 'openai/text-embedding-3-small',
     input: query,
@@ -287,6 +287,7 @@ export async function askBrain(question: string) {
   if (!user) return { error: 'Auth required' }
 
   // 1. Поиск контекста (RAG)
+  const { openai, groq } = getAiClients(user.id, 'chat')
   const embeddingModel = 'openai/text-embedding-3-small'
 
   // 1. Поиск контекста (RAG)
@@ -296,18 +297,6 @@ export async function askBrain(question: string) {
     input: question,
   })
   const vector = embeddingResp.data[0].embedding
-
-  // 📊 ЛОГ 1: Эмбеддинг
-  // У OpenAI usage находится в embeddingResp.usage
-  if (embeddingResp.usage) {
-    logTokenUsage({
-      userId: user.id,
-      model: embeddingModel,
-      action: 'embedding',
-      inputTokens: embeddingResp.usage.prompt_tokens,
-      outputTokens: 0,
-    })
-  }
 
   const { data: contextItems } = await supabase.rpc('match_items', {
     query_embedding: vector,
@@ -447,17 +436,6 @@ export async function askBrain(question: string) {
       temperature: 0.7,
     })
 
-    // 📊 ЛОГ 2: Генерация текста
-    if (completion.usage) {
-      logTokenUsage({
-        userId: user.id,
-        model: llmModelGroq_70b,
-        action: 'rag_query',
-        inputTokens: completion.usage.prompt_tokens,
-        outputTokens: completion.usage.completion_tokens,
-      })
-    }
-
     const content = completion.choices[0].message.content || ''
     console.log('🤖 [Brain] Ответ:', content)
 
@@ -580,6 +558,7 @@ export async function performActivityRetrospective(customUserQuery?: string) {
     - Будь прямолинеен как Дитер Рамс.
   `
 
+  const { groq } = getAiClients(user.id, 'chat')
   // Используем мощную модель 70b, так как тут нужен глубокий анализ паттернов
   const completion = await groq.chat.completions.create({
     messages: [{ role: 'system', content: systemPrompt }],

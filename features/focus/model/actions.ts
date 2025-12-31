@@ -23,33 +23,18 @@ export async function logFocusSession(itemId: string, durationSeconds: number) {
   const endedAt = new Date()
   const startedAt = new Date(endedAt.getTime() - durationSeconds * 1000)
 
-  const { error } = await supabase.from('activity_logs').insert({
-    user_id: user.id,
-    source: 'fleeets_web',
-    started_at: startedAt.toISOString(),
-    ended_at: endedAt.toISOString(),
-    category: 'deep_work',
-    details: {
-      item_id: itemId,
+  // Используем нашу общую систему событий. Она теперь умеет сама определять userId и контекст.
+  await logEvent({
+    itemId: itemId,
+    eventType: 'focus.session',
+    startedAt: startedAt.toISOString(),
+    endedAt: endedAt.toISOString(),
+    meta: {
+      duration_seconds: durationSeconds,
       tags: item?.ai_tags || [],
+      item_content: item?.content,
     },
   })
-
-  // Также пишем в нашу общую систему событий для единообразия
-  if (!error) {
-    await logEvent({
-      userId: user.id,
-      itemId: itemId,
-      eventType: 'focus.session',
-      startedAt: startedAt.toISOString(),
-      endedAt: endedAt.toISOString(),
-      meta: {
-        duration_seconds: durationSeconds, // Дублируем в meta для удобства JSON
-        tags: item?.ai_tags || [],
-        item_content: item?.content,
-      },
-    })
-  }
 }
 
 /**

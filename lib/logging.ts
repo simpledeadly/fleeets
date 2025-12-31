@@ -1,6 +1,7 @@
 'use server'
 
 import { createAdminClient } from '../lib/supabase/admin'
+import { createClient } from '../lib/supabase/server'
 import { headers } from 'next/headers'
 
 type EventType =
@@ -14,10 +15,10 @@ type EventType =
   | 'focus.session'
 
 interface LogEventParams {
-  userId: string
+  userId?: string // Сделали опциональным
   itemId?: string
   eventType: EventType
-  meta?: Record<string, any> // Любые доп данные
+  meta?: Record<string, any>
   startedAt?: string
   endedAt?: string
 }
@@ -31,6 +32,22 @@ export async function logEvent({
   endedAt,
 }: LogEventParams) {
   try {
+    let finalUserId = userId
+
+    // Если userId не передан, пробуем достать из сессии
+    if (!finalUserId) {
+      const supabaseUser = await createClient()
+      const {
+        data: { user },
+      } = await supabaseUser.auth.getUser()
+      finalUserId = user?.id
+    }
+
+    if (!finalUserId) {
+      console.warn('Logging skipped: No userId found')
+      return
+    }
+
     const supabase = await createAdminClient()
 
     // Пытаемся определить устройство (Mobile/Desktop)
@@ -39,12 +56,13 @@ export async function logEvent({
 
     const now = new Date().toISOString()
 
+    // Не ждем выполнения, пишем в «фоне»
     supabase
       .from('activity_logs')
       .insert({
-        user_id: userId,
+        user_id: finalUserId,
         source: 'web_app',
-        category: eventType, // Пишем тип события в категорию для простоты фильтрации
+        category: eventType,
         started_at: startedAt || now,
         ended_at: endedAt || now,
         details: {

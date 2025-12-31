@@ -77,21 +77,6 @@ export async function createItem(text: string) {
 
     if (error) throw error
 
-    // Логируем событие создания
-    if (data) {
-      await logEvent({
-        userId: user.id,
-        itemId: data.id,
-        eventType: 'item.create',
-        meta: {
-          length: text.length,
-          source: 'web',
-          item_content: data.content,
-          has_parent: !!parentId,
-        },
-      })
-    }
-
     return { success: true, item: data, parentTitle }
   } catch (e: any) {
     return { error: e.message }
@@ -190,61 +175,7 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
     }
   }
 
-  // --- ЛОГИРОВАНИЕ СОБЫТИЙ (DATA HOARDING) ---
-  const logPromises = []
-
-  // 1. Смена статуса (Воронка)
-  if (data.status && data.status !== currentItem.status) {
-    // Триггер разбора инбокса
-    if (currentItem.status === 'inbox') {
-      logPromises.push(
-        logEvent({
-          userId: currentItem.user_id,
-          itemId: itemId,
-          eventType: 'item.triage', // <--- Специальное событие
-          meta: { destination: data.status, item_content: currentItem.content },
-        })
-      )
-    }
-
-    logPromises.push(
-      logEvent({
-        userId: currentItem.user_id,
-        itemId: itemId,
-        eventType: 'item.status_change',
-        meta: {
-          from: currentItem.status,
-          to: data.status,
-          item_content: currentItem.content,
-          // Сколько времени висело в старом статусе (в часах)
-          hours_in_status:
-            Math.round(
-              ((Date.now() -
-                new Date(
-                  currentItem.updated_at || currentItem.created_at
-                ).getTime()) /
-                1000 /
-                3600) *
-                10
-            ) / 10,
-        },
-      })
-    )
-  }
-  // 2. Просто редактирование
-  else if (Object.keys(data).length > 0) {
-    logPromises.push(
-      logEvent({
-        userId: currentItem.user_id,
-        itemId: itemId,
-        eventType: 'item.update',
-        meta: { fields: Object.keys(data) },
-      })
-    )
-  }
-
-  // Запускаем логи в фоне, не ждем их
-  Promise.all(logPromises).catch((err) => console.error('Logging failed', err))
+  // Запускаем обновление в БД (логи теперь пишутся триггером)
 
   // В. Выполняем обновление
   const { error } = await supabase
@@ -373,6 +304,8 @@ export async function decomposeTask(itemId: string) {
 
     await updateItem(item.id, { status: 'archived' })
 
+    // Логирование декомпозиции (можно оставить в коде, так как это сложное событие с метаданными подзадач,
+    // которые триггер не видит)
     await logEvent({
       userId: user.id,
       itemId: item.id,
