@@ -15,7 +15,7 @@ const PRICING = {
     unit: '1M_tokens',
   }, // https://openrouter.ai/meta-llama/llama-3.1-8b-instruct
   'meta-llama/llama-3.3-70b-instruct': {
-    input: 0.10,
+    input: 0.1,
     output: 0.32,
     unit: '1M_tokens',
   }, // https://openrouter.ai/meta-llama/llama-3.3-70b-instruct
@@ -36,6 +36,7 @@ interface UsageParams {
     | 'chat'
     | 'transcription'
     | 'embedding_on_promote'
+    | 'suggest_group'
   inputTokens?: number
   outputTokens?: number
   seconds?: number

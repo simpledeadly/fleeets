@@ -6,6 +6,8 @@ import type { Database } from '@/types/supabase'
 import OpenAI from 'openai'
 import { logTokenUsage } from '@/features/ai'
 import { logEvent } from '@/lib/logging'
+import { createAiClient } from '@/lib/ai/client'
+// Used only for embeddings
 
 const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -450,4 +452,75 @@ export async function deleteGroup(tag: string) {
   const { error: updateError } = await supabase.from('items').upsert(updates)
   if (updateError) return { error: updateError.message }
   return { success: true }
+}
+
+/**
+ * 5. AI MAGIC (Авто-группировка)
+ */
+export async function suggestGroupForItems(itemsContent: string[]) {
+  if (!itemsContent || itemsContent.length === 0) {
+    return { error: 'Список элементов пуст' }
+  }
+
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  const groq = createAiClient({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: 'https://api.groq.com/openai/v1',
+    userId: user.id,
+    action: 'suggest_group',
+  })
+
+  const systemPrompt = `
+    Ты — эксперт по категоризации. Твоя задача — найти ОБЩИЙ контекст для списка элементов и предложить ОДНО название группы.
+    
+    ОТТВЕТЬ СТРОГО В ФОРМАТЕ JSON:
+    { "group": "Название/Подтема" }
+
+    Правила:
+    1. Название должно быть кратким (1-3 слова).
+    2. Если это проект, верни название проекта (например: "Fleeets", "Flode").
+    3. Если это подтема, верни иерархию через слэш (например: "Fleeets/Reports", "Учёба/Математика").
+    4. Если общего контекста НЕТ, верни "inbox".
+    5. Используй язык, на котором написаны задачи (русский или английский).
+  `
+
+  console.log(
+    `🤖 [AI Magic] Suggesting group for ${itemsContent.length} items:`,
+    itemsContent
+  )
+
+  try {
+    const completion = await groq.chat.completions.create({
+      messages: [
+        { role: 'system', content: systemPrompt },
+        {
+          role: 'user',
+          content: `Элементы:\n${itemsContent.map((c) => `- ${c}`).join('\n')}`,
+        },
+      ],
+      model: 'llama-3.1-8b-instant',
+      response_format: { type: 'json_object' },
+      temperature: 0.15,
+    })
+
+    const content = completion.choices[0].message.content || '{}'
+    console.log(`🤖 [AI Magic] Raw response: ${content}`)
+
+    const parsed = JSON.parse(content)
+    const suggestion = (parsed.group || 'inbox').trim()
+
+    const cleanSuggestion = suggestion
+      .replace(/["']/g, '')
+      .replace(/^group:/, '')
+
+    return { success: true, group: cleanSuggestion }
+  } catch (e: any) {
+    console.error('❌ AI suggestion failed:', e)
+    return { error: `AI error: ${e.message || 'Unknown error'}` }
+  }
 }

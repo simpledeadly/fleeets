@@ -5,8 +5,21 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { X, FolderPlus, FolderMinus, Loader2, Trash2, Tag } from 'lucide-react'
-import { bulkAddTag, bulkRemoveTag, softDeleteItem } from '../model/actions'
+import {
+  X,
+  FolderPlus,
+  FolderMinus,
+  Loader2,
+  Trash2,
+  Tag,
+  Wand2,
+} from 'lucide-react'
+import {
+  bulkAddTag,
+  bulkRemoveTag,
+  softDeleteItem,
+  suggestGroupForItems,
+} from '../model/actions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -140,6 +153,29 @@ export function SelectionToolbar() {
     if (e.key === 'Escape') clearSelection()
   }
 
+  const handleMagic = async () => {
+    setIsPending(true)
+    const selectedItems = selectedIds
+      .map((id) => items.find((i) => i.id === id))
+      .filter(Boolean) as any[]
+
+    const contents = selectedItems.map((i) => i.content)
+
+    try {
+      const result = await suggestGroupForItems(contents)
+      if (result.success && result.group) {
+        setGroupName(result.group)
+        toast.success(`Предложено: ${result.group}`)
+      } else {
+        toast.error(result.error || 'Не удалось подобрать группу')
+      }
+    } catch (e) {
+      toast.error('Ошибка AI')
+    } finally {
+      setIsPending(false)
+    }
+  }
+
   return (
     <motion.div
       initial={{ y: 50, opacity: 0, x: '-50%' }}
@@ -217,6 +253,23 @@ export function SelectionToolbar() {
 
         {/* Быстрые действия */}
         <div className="flex items-center gap-0.5 duration-150 text-muted-foreground">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleMagic}
+            disabled={isPending}
+            className="h-8 w-8 p-0 rounded-full hover:bg-violet-500/20 hover:text-violet-500 cursor-pointer transition-all"
+            title="Авто-группировка (AI)"
+          >
+            {isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Wand2 className="size-4" />
+            )}
+          </Button>
+
+          <div className="h-6 w-px bg-border/40 mx-1" />
+
           <Button
             variant="ghost"
             size="icon"

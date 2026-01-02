@@ -15,6 +15,7 @@ export function createAiClient(config: {
     | 'chat'
     | 'transcription'
     | 'embedding_on_promote'
+    | 'suggest_group'
 }) {
   const client = new OpenAI({
     apiKey: config.apiKey,
