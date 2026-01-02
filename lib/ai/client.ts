@@ -16,6 +16,7 @@ export function createAiClient(config: {
     | 'transcription'
     | 'embedding_on_promote'
     | 'suggest_group'
+    | 'clustering'
 }) {
   const client = new OpenAI({
     apiKey: config.apiKey,

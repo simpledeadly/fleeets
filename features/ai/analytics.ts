@@ -37,6 +37,7 @@ interface UsageParams {
     | 'transcription'
     | 'embedding_on_promote'
     | 'suggest_group'
+    | 'clustering'
   inputTokens?: number
   outputTokens?: number
   seconds?: number
