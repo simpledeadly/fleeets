@@ -26,25 +26,57 @@ export function useOmniFilter() {
 
   // Фильтрация
   const visibleItems = useMemo(() => {
+    // 1. Базовый фильтр (не во входящих и не удалено)
     let result = items.filter(
       (item) => item.status !== 'inbox' && item.status !== 'deleted'
     )
 
-    if (activeStatus)
+    // 2. Статус (Фокус, План и т.д.) - это жесткое условие (AND)
+    if (activeStatus) {
       result = result.filter((item) => item.status === activeStatus)
-    if (isQuick) result = result.filter((item) => item.is_quick === isQuick)
-    if (isTask) result = result.filter((item) => item.type === 'task')
-    if (isThought) result = result.filter((item) => item.type === 'thought')
-    if (isNote) result = result.filter((item) => item.type === 'note')
-    if (isResource) result = result.filter((item) => item.type === 'resource')
+    }
 
-    if (activeTags.length > 0) {
+    // 3. Типы и Теги - между собой работают по ИЛИ
+    const activeFilters = {
+      isQuick,
+      isTask,
+      isThought,
+      isNote,
+      isResource,
+      tags: activeTags,
+    }
+
+    const hasAnyTypeOrTagFilter =
+      isQuick ||
+      isTask ||
+      isThought ||
+      isNote ||
+      isResource ||
+      activeTags.length > 0
+
+    if (hasAnyTypeOrTagFilter) {
       result = result.filter((item) => {
-        if (!item.ai_tags) return false
-        return activeTags.every((t) => item.ai_tags!.includes(t))
+        const matchesQuick = isQuick && item.is_quick
+        const matchesTask = isTask && item.type === 'task'
+        const matchesThought = isThought && item.type === 'thought'
+        const matchesNote = isNote && item.type === 'note'
+        const matchesResource = isResource && item.type === 'resource'
+        const matchesTags = activeTags.some((tag) =>
+          item.ai_tags?.includes(tag)
+        )
+
+        return (
+          matchesQuick ||
+          matchesTask ||
+          matchesThought ||
+          matchesNote ||
+          matchesResource ||
+          matchesTags
+        )
       })
     }
 
+    // 4. Поиск - отдельный фильтр (AND)
     if (searchQuery.trim() !== '') {
       const lowerQuery = searchQuery.toLowerCase()
       result = result.filter((item) => {

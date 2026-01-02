@@ -16,21 +16,35 @@ export function useDebounce<T>(value: T, delay: number): T {
 
 export function useHotkeys(
   hotkeys: [string, (event: KeyboardEvent) => void][],
-  node: HTMLElement | null = null
+  options: { enabled?: boolean; node?: HTMLElement | null } = {}
 ) {
+  const { enabled = true, node = null } = options
+
   useEffect(() => {
+    if (!enabled) return
+
     const targetNode = node ?? window
 
     const handleKeyDown = (event: KeyboardEvent) => {
       hotkeys.forEach(([key, handler]) => {
-        const [mod, k] = key.split('+')
-        if (
-          event.key.toLowerCase() === k &&
-          (event.metaKey || event.ctrlKey) &&
-          mod === 'mod'
-        ) {
-          event.preventDefault()
-          handler(event)
+        const parts = key.split('+')
+        const hasMod = parts.length > 1 && parts[0] === 'mod'
+        const k = hasMod ? parts[1] : parts[0]
+
+        // Проверяем соответствие клавиши
+        const keyMatch =
+          event.key.toLowerCase() === k.toLowerCase() ||
+          event.code.toLowerCase() === `key${k.toLowerCase()}`
+
+        if (keyMatch) {
+          const modMatch = hasMod
+            ? event.metaKey || event.ctrlKey
+            : !event.metaKey && !event.ctrlKey
+
+          if (modMatch) {
+            event.preventDefault()
+            handler(event)
+          }
         }
       })
     }
@@ -38,5 +52,5 @@ export function useHotkeys(
     targetNode.addEventListener('keydown', handleKeyDown as EventListener)
     return () =>
       targetNode.removeEventListener('keydown', handleKeyDown as EventListener)
-  }, [hotkeys, node])
+  }, [enabled, hotkeys, node])
 }

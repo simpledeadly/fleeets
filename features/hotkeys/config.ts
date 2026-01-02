@@ -10,7 +10,12 @@ export const HOTKEY_MAP: Record<
 > = {
   'mod+k': {
     label: 'Открыть Omni',
-    action: () => useOmniStore.getState().togglePalette(),
+    action: () => {
+      const { isPaletteOpen, closePalette, openPalette } =
+        useOmniStore.getState()
+      if (isPaletteOpen) closePalette()
+      else openPalette()
+    },
   },
   'mod+j': {
     label: 'Фокус на Capture Bar',

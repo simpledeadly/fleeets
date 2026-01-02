@@ -9,17 +9,27 @@ import { type Item } from '@/lib/store'
 
 interface OmniItemProps {
   item: Item
-  // filters: any
-  onSelect: () => void
+  isSelected?: boolean
+  opacity?: number
+  onSelect: (multi?: boolean) => void
 }
 
-const OmniItemComponent = ({ item, onSelect }: OmniItemProps) => {
+const OmniItemComponent = ({
+  item,
+  isSelected,
+  opacity,
+  onSelect,
+}: OmniItemProps) => {
   return (
     <CommandItem
-      value={item.content + (item.ai_tags?.join(' ') || '')}
-      onSelect={onSelect}
+      value={item.id + item.content}
+      onSelect={() => onSelect(false)}
+      style={{ opacity }}
       data-item-id={item.id}
-      className="group flex items-center justify-between aria-selected:bg-accent py-1.5 cursor-pointer transition-all duration-75"
+      className={cn(
+        'group flex items-center justify-between aria-selected:bg-accent py-1.5 cursor-pointer transition-all duration-75',
+        isSelected && 'bg-accent/50 border-l-2 rounded-l-none border-primary'
+      )}
     >
       <div className="flex items-center gap-0 flex-1 min-w-0 my-px">
         {/* Иконка статуса */}
@@ -37,16 +47,30 @@ const OmniItemComponent = ({ item, onSelect }: OmniItemProps) => {
           </AnimatePresence>
         </div>
 
-        <div className="flex flex-col overflow-hidden">
-          <span
-            className={cn(
-              'truncate text-primary font-mono transition-all duration-150',
-              item.status === 'done' && 'line-through text-muted-foreground',
-              'group-aria-selected:text-foreground' // Подсветка при выборе
-            )}
-          >
-            {item.content}
-          </span>
+        <div className="flex flex-col min-w-0 pr-4">
+          <div className="flex items-center gap-2 overflow-hidden">
+            <span
+              className={cn(
+                'truncate text-primary font-mono transition-all duration-150',
+                item.status === 'done' && 'line-through text-muted-foreground',
+                'group-aria-selected:text-foreground' // Подсветка при выборе
+              )}
+            >
+              {item.content}
+            </span>
+
+            {/* Группы */}
+            {item.ai_tags
+              ?.filter((t) => t.startsWith('group:'))
+              .map((tag) => (
+                <span
+                  key={tag}
+                  className="shrink-0 px-1.5 py-0.5 bg-muted text-primary rounded-full text-[10px] font-semibold uppercase tracking-wider border border-border"
+                >
+                  {tag.replace('group:', '')}
+                </span>
+              ))}
+          </div>
         </div>
       </div>
 
@@ -77,6 +101,7 @@ const propsAreEqual = (
 ) => {
   return (
     prev.item.id === next.item.id &&
+    prev.isSelected === next.isSelected &&
     prev.item.status === next.item.status &&
     prev.item.content === next.item.content &&
     prev.item.priority === next.item.priority &&

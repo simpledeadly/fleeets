@@ -35,6 +35,11 @@ interface AppState {
   setIsSettingsOpen: (state: boolean) => void
   reorderItems: (newOrder: Item[]) => void
   promoteToHero: (id: string) => void
+  selectedIds: string[]
+  toggleSelection: (id: string, multi?: boolean) => void
+  clearSelection: () => void
+  renameGroup: (oldTag: string, newTag: string) => void
+  deleteGroup: (tag: string) => void
 }
 
 export const useStore = create<AppState>()(
@@ -95,6 +100,45 @@ export const useStore = create<AppState>()(
           const [item] = newItems.splice(itemIndex, 1)
           return { items: [item, ...newItems] }
         }),
+      selectedIds: [],
+      toggleSelection: (id, multi = false) =>
+        set((state) => {
+          const isSelected = state.selectedIds.includes(id)
+          if (multi) {
+            return {
+              selectedIds: isSelected
+                ? state.selectedIds.filter((sid) => sid !== id)
+                : [...state.selectedIds, id],
+            }
+          } else {
+            // Если без Shift/Cmd - выделяем только один, или снимаем если уже был один этот
+            if (isSelected && state.selectedIds.length === 1) {
+              return { selectedIds: [] }
+            }
+            return { selectedIds: [id] }
+          }
+        }),
+      clearSelection: () => set({ selectedIds: [] }),
+      renameGroup: (oldTag, newTag) =>
+        set((state) => ({
+          items: state.items.map((item) => {
+            if (!item.ai_tags?.includes(oldTag)) return item
+            return {
+              ...item,
+              ai_tags: item.ai_tags.map((t) => (t === oldTag ? newTag : t)),
+            }
+          }),
+        })),
+      deleteGroup: (tag) =>
+        set((state) => ({
+          items: state.items.map((item) => {
+            if (!item.ai_tags?.includes(tag)) return item
+            return {
+              ...item,
+              ai_tags: item.ai_tags.filter((t) => t !== tag),
+            }
+          }),
+        })),
     }),
     {
       name: 'app-storage',

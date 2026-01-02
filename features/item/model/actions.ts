@@ -324,3 +324,130 @@ export async function decomposeTask(itemId: string) {
     return { error: 'Ошибка AI: не удалось обработать ответ.' }
   }
 }
+
+/**
+ * 4. МАССОВЫЕ ОПЕРАЦИИ (Группировка)
+ */
+export async function bulkAddTag(itemIds: string[], tag: string) {
+  const supabase = await createClient()
+
+  // Получаем текущие теги и контент для всех элементов
+  const { data: items, error: fetchError } = await supabase
+    .from('items')
+    .select('id, ai_tags, content')
+    .in('id', itemIds)
+
+  if (fetchError || !items)
+    return { error: fetchError?.message || 'Items not found' }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Готовим массив обновлений
+  const updates = items.map((item) => ({
+    id: item.id,
+    user_id: user.id, // Обязательно для RLS политик
+    content: item.content, // Обязательно для NOT NULL constraint
+    ai_tags: Array.from(new Set([...(item.ai_tags || []), tag])),
+  }))
+
+  const { error: updateError } = await supabase.from('items').upsert(updates)
+
+  if (updateError) return { error: updateError.message }
+  return { success: true }
+}
+
+/**
+ * Удаляет тег у нескольких элементов
+ */
+export async function bulkRemoveTag(itemIds: string[], tag: string) {
+  const supabase = await createClient()
+
+  const { data: items, error: fetchError } = await supabase
+    .from('items')
+    .select('id, ai_tags, content')
+    .in('id', itemIds)
+
+  if (fetchError || !items)
+    return { error: fetchError?.message || 'Items not found' }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const updates = items.map((item) => ({
+    id: item.id,
+    user_id: user.id,
+    content: item.content,
+    ai_tags: (item.ai_tags || []).filter((t: string) => t !== tag),
+  }))
+
+  const { error: updateError } = await supabase.from('items').upsert(updates)
+
+  if (updateError) return { error: updateError.message }
+  return { success: true }
+}
+export async function renameGroup(oldTag: string, newName: string) {
+  const supabase = await createClient()
+  const newTag = `group:${newName}`
+
+  const { data: items, error: fetchError } = await supabase
+    .from('items')
+    .select('id, ai_tags, content')
+    .contains('ai_tags', [oldTag])
+
+  if (fetchError || !items)
+    return { error: fetchError?.message || 'Items not found' }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const updates = items.map((item) => ({
+    id: item.id,
+    user_id: user.id,
+    content: item.content,
+    ai_tags: (item.ai_tags || [])
+      .map((t: string) => (t === oldTag ? newTag : t))
+      .filter(Boolean),
+  }))
+
+  const { error: updateError } = await supabase.from('items').upsert(updates)
+  if (updateError) return { error: updateError.message }
+  return { success: true }
+}
+
+/**
+ * Удаляет группу (удаляет тег group:* у всех элементов)
+ */
+export async function deleteGroup(tag: string) {
+  const supabase = await createClient()
+
+  const { data: items, error: fetchError } = await supabase
+    .from('items')
+    .select('id, ai_tags, content')
+    .contains('ai_tags', [tag])
+
+  if (fetchError || !items)
+    return { error: fetchError?.message || 'Items not found' }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const updates = items.map((item) => ({
+    id: item.id,
+    user_id: user.id,
+    content: item.content,
+    ai_tags: (item.ai_tags || []).filter((t: string) => t !== tag),
+  }))
+
+  const { error: updateError } = await supabase.from('items').upsert(updates)
+  if (updateError) return { error: updateError.message }
+  return { success: true }
+}

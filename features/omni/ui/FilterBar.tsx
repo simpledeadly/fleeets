@@ -13,9 +13,13 @@ import {
   Lightbulb,
   StickyNote,
   FileBox,
+  Folders,
+  Pencil,
+  Trash2,
   type LucideIcon,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useStore } from '@/lib/store'
 
 // --- Types ---
 
@@ -61,6 +65,9 @@ const STATUS_FILTERS: StatusConfig[] = [
 export function FilterBar(props: FilterBarProps) {
   const { activeStatus, setActiveStatus, activeTags, toggleTag, topTags } =
     props
+
+  const groupTags = topTags.filter((t) => t.startsWith('group:'))
+  const regularTags = topTags.filter((t) => !t.startsWith('group:'))
 
   // Конфигурация для нижнего ряда фильтров (зависит от пропсов)
   const typeFilters = [
@@ -113,23 +120,7 @@ export function FilterBar(props: FilterBarProps) {
         ))}
       </div>
 
-      {/* 2. Средний ряд: Теги */}
-      {/* {topTags.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center">
-          <Tag size={14} className="text-muted-foreground shrink-0 mr-1" />
-          {topTags.map((tag) => (
-            <FilterBadge
-              key={tag}
-              active={activeTags.includes(tag)}
-              onClick={() => toggleTag(tag)}
-            >
-              {tag}
-            </FilterBadge>
-          ))}
-        </div>
-      )} */}
-
-      {/* 3. Нижний ряд: Типы и Флаги */}
+      {/* 2. Нижний ряд: Типы и Флаги */}
       <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center">
         <Filter size={14} className="text-muted-foreground shrink-0 mr-1" />
         {typeFilters.map((filter) => (
@@ -143,6 +134,76 @@ export function FilterBar(props: FilterBarProps) {
           </FilterBadge>
         ))}
       </div>
+
+      {/* 3. Ряд: Группы (Manual Groups) */}
+      {groupTags.length > 0 && (
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-t border-border/50 pt-2">
+          <Folders size={14} className="text-muted-foreground shrink-0 mr-1" />
+          {groupTags.map((tag) => (
+            <div key={tag} className="flex items-center group/badge relative">
+              <FilterBadge
+                active={activeTags.includes(tag)}
+                onClick={() => toggleTag(tag)}
+                className="pr-6" // Только отступ для иконок управления
+              >
+                {tag.replace('group:', '')}
+              </FilterBadge>
+              <div className="absolute right-1.5 flex gap-1 opacity-0 group-hover/badge:opacity-100 transition-opacity">
+                <button
+                  onPointerDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    const groupName = tag.replace('group:', '')
+                    const newName = prompt('Переименовать группу:', groupName)
+                    if (newName && newName !== groupName) {
+                      const newTag = `group:${newName}`
+                      // Оптимистичное обновление в сторе
+                      useStore.getState().renameGroup(tag, newTag)
+
+                      import('@/features/item').then(({ renameGroup }) => {
+                        renameGroup(tag, newName).catch((err) => {
+                          console.error('Failed to rename group:', err)
+                          // В случае ошибки возвращаем как было
+                          useStore.getState().renameGroup(newTag, tag)
+                        })
+                      })
+                    }
+                  }}
+                  className="p-0.5 hover:text-primary text-muted-foreground transition-colors"
+                >
+                  <Pencil size={10} />
+                </button>
+                <button
+                  onPointerDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    if (confirm('Удалить эту группу?')) {
+                      // Сохраняем для отката если надо (но тут проще просто перечитать из БД)
+                      // [ROUND 18] Если группа активна в фильтре - убираем её
+                      if (activeTags.includes(tag)) {
+                        toggleTag(tag)
+                      }
+
+                      useStore.getState().deleteGroup(tag)
+
+                      import('@/features/item').then(
+                        ({ deleteGroup: deleteAction }) => {
+                          deleteAction(tag).catch((err) => {
+                            console.error('Failed to delete group:', err)
+                          })
+                        }
+                      )
+                    }
+                  }}
+                  className="p-0.5 hover:text-destructive text-muted-foreground transition-colors"
+                >
+                  <Trash2 size={10} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -183,11 +244,13 @@ function FilterBadge({
   onClick,
   children,
   icon: Icon,
+  className,
 }: {
   active: boolean
   onClick: () => void
   children: React.ReactNode
   icon?: LucideIcon
+  className?: string
 }) {
   return (
     <Badge
@@ -196,7 +259,8 @@ function FilterBadge({
         'cursor-pointer text-xs h-5 px-2 font-normal transition-all duration-100 hover:bg-primary/20 hover:text-primary gap-1',
         active
           ? 'hover:bg-primary hover:text-primary-foreground'
-          : 'bg-card/20 text-primary border-border hover:bg-muted'
+          : 'bg-card/20 text-primary border-border hover:bg-muted',
+        className
       )}
       onClick={onClick}
     >
