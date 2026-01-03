@@ -154,42 +154,61 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
     updates.completed_at = null
   }
 
-  // --- ЛОГИКА ВЕКТОРИЗАЦИИ (При выходе из Инбокса) ---
-  if (data.status && data.status !== 'inbox' && data.status !== 'deleted') {
-    if (currentItem.status === 'inbox') {
-      console.log(`🧠 Векторизация при переходе из Inbox: ${itemId}`)
+  // --- ЛОГИКА ВЕКТОРИЗАЦИИ ---
+  // Векторизуем в двух случаях:
+  // 1. При выходе из Инбокса (первичная сортировка)
+  // 2. При завершении (чтобы сохранить опыт/логи в векторе для RAG)
+  const isPromoting =
+    currentItem.status === 'inbox' &&
+    data.status &&
+    data.status !== 'inbox' &&
+    data.status !== 'deleted'
+  const isCompleting = data.status === 'done' && currentItem.status !== 'done'
 
-      const textForEmbedding = `${currentItem.content}\n${
-        currentItem.description || ''
-      }\n${currentItem.raw_content || ''}`.trim()
+  if (isPromoting || isCompleting) {
+    console.log(
+      `🧠 Vectorizing item ${itemId} (Reason: ${
+        isPromoting ? 'Promoting' : 'Completing'
+      })`
+    )
 
-      try {
-        const embeddingModel = 'openai/text-embedding-3-small'
-        const embeddingResponse = await openai.embeddings.create({
+    const textForEmbedding = [
+      currentItem.content,
+      data.content || '',
+      currentItem.description || '',
+      data.description || '',
+      currentItem.raw_content || '',
+      currentItem.execution_log || '',
+      data.execution_log || '',
+    ]
+      .filter(Boolean)
+      .join('\n')
+      .trim()
+
+    try {
+      const embeddingModel = 'openai/text-embedding-3-small'
+      const embeddingResponse = await openai.embeddings.create({
+        model: embeddingModel,
+        input: textForEmbedding,
+      })
+
+      updates.embedding = embeddingResponse.data[0].embedding
+
+      // Лог затрат на AI
+      if (embeddingResponse.usage) {
+        logTokenUsage({
+          userId: currentItem.user_id,
           model: embeddingModel,
-          input: textForEmbedding,
+          action: 'embedding_on_promote',
+          inputTokens: embeddingResponse.usage.prompt_tokens,
+          outputTokens: 0,
         })
-
-        updates.embedding = embeddingResponse.data[0].embedding
-
-        // Лог затрат на AI
-        if (embeddingResponse.usage) {
-          logTokenUsage({
-            userId: currentItem.user_id,
-            model: embeddingModel,
-            action: 'embedding_on_promote',
-            inputTokens: embeddingResponse.usage.prompt_tokens,
-            outputTokens: 0,
-          })
-        }
-      } catch (e) {
-        console.error('Embedding failed during update:', e)
-        // Не прерываем обновление, если AI упал
       }
+    } catch (e) {
+      console.error('Embedding failed during update:', e)
+      // Не прерываем обновление, если AI упал
     }
   }
-
-  // Запускаем обновление в БД (логи теперь пишутся триггером)
 
   // В. Выполняем обновление
   const { error } = await supabase

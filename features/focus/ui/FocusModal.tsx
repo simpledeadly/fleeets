@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
 import { ArrowUp, CheckCircle2, CornerDownRight, Save, X } from 'lucide-react'
 import { useStore, type Item } from '@/lib/store'
-import { useDebounce } from '@/lib/hooks'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { SimilarItems } from './SimilarItems'
 import { Timer as FocusTimer } from './Timer'
@@ -73,34 +72,22 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
 
   useEffect(() => {
     if (isOpen && item) {
-      // Обновляем, только если текст реально отличается
-      const t = setTimeout(() => {
-        setLogText((prev) =>
-          item.execution_log !== prev ? item.execution_log || '' : prev
-        )
-      }, 0)
-      return () => clearTimeout(t)
+      setLogText(item.execution_log || '')
     }
-  }, [item?.execution_log, isOpen])
+  }, [item?.id, isOpen])
 
-  const debouncedLog = useDebounce(logText, 1000)
-  useEffect(() => {
-    if (!item) return
-    if (debouncedLog === (item.execution_log || '')) return
-    if (debouncedLog === '' && item.execution_log === null) return
-
-    const save = async () => {
-      setIsSaving(true)
-      await updateExecutionLog(item.id, debouncedLog)
-      setIsSaving(false)
-    }
-    save()
-  }, [debouncedLog, item])
+  const handleSaveLogs = async (text: string) => {
+    if (!item || text === (item.execution_log || '')) return
+    setIsSaving(true)
+    await updateExecutionLog(item.id, text)
+    setIsSaving(false)
+  }
 
   const handleRemoveExecutionLog = async (itemId: string) => {
-    if (!logText) return
     setLogText('')
+    setIsSaving(true)
     await updateExecutionLog(itemId, '')
+    setIsSaving(false)
   }
 
   const handleComplete = async (item: Item) => {
@@ -231,6 +218,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
                 <textarea
                   value={logText}
                   onChange={(e) => setLogText(e.target.value)}
+                  onBlur={() => handleSaveLogs(logText)}
                   className="text-sm caret-accented w-full bg-secondary/30 rounded-xl p-3 min-h-37 resize-none focus:outline-none focus:ring-1 focus:ring-primary/20 transition-all duration-100 placeholder:text-muted-foreground/50"
                   placeholder="Пиши сюда мысли, заметки, что угодно по теме. Это уйдет в базу знаний."
                 />
@@ -254,7 +242,10 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
             {item.type === 'task' && (
               <div className="p-2 border-t border-border/50 bg-card/80 backdrop-blur-lg absolute bottom-0 w-full flex gap-4">
                 <button
-                  onClick={() => handleComplete(item)}
+                  onClick={async () => {
+                    await handleSaveLogs(logText)
+                    handleComplete(item)
+                  }}
                   className="w-full mr-2 py-2.5 mb-7 md:mb-0 rounded-full md:rounded-xl bg-primary text-primary-foreground font-semibold text-lg opacity-80 hover:opacity-100 transition-opacity flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <CheckCircle2 size={22} strokeWidth={2.4} />
