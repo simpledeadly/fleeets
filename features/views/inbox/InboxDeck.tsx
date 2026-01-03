@@ -5,18 +5,19 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '@/lib/store'
 import { InboxCard } from '../../inbox/ui/InboxCard'
 import { getInboxStats } from '../../inbox/model/stats'
+import { Zap, Clock, CheckCircle2 } from 'lucide-react'
 // import { CoolEmoji } from './CoolEmoji'
 // import { Loveduck } from './Loveduck'
 // import { YourKickAss } from './YourKickAss'
 
 const EMPTY_MESSAGES = [
   'Инбокс чист, как совесть младенца 🧘‍♂️',
-  'Хаос побежден. Пока что.',
+  'Хаос побеждён. Пока что.',
   'Отличная работа! Можно выпить кофе ☕️',
   'Пустота — это начало творчества.',
   'Zero Inbox. Ты сделал это! 🔥',
   'Тишина и покой...',
-  'Все по полочкам. Кайф.',
+  'Всё по полочкам. Кайф.',
   'Красава, Марат!',
 ]
 
@@ -98,24 +99,62 @@ export function InboxDeck() {
   }, [isEmpty, setInboxStats, inboxStats.lastUpdated])
 
   if (isEmpty) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen mx-auto my-auto text-center animate-in fade-in space-y-3">
-        {/* {randomSticker || <CoolEmoji />} */}
+    const throughput =
+      inboxStats.inputCount > 0
+        ? Math.round((inboxStats.outputCount / inboxStats.inputCount) * 100)
+        : inboxStats.outputCount > 0
+        ? 100
+        : 0
 
-        <div className="space-y-2">
-          <h2 className="text-xl font-bold px-8 leading-relaxed">
+    return (
+      <div className="flex flex-col items-center justify-center h-screen mx-auto my-auto text-center animate-in fade-in duration-100">
+        <div className="space-y-2 mb-6">
+          <h2 className="text-2xl font-black px-8 leading-tight tracking-tighter">
             {randomMessage || 'Входящих нет'}
           </h2>
+          <p className="text-muted-foreground/60 text-sm font-medium">
+            Ты навёл идеальный порядок
+          </p>
         </div>
 
-        {/* Блок статистики */}
-        <div className="flex gap-6 text-sm text-muted-foreground bg-secondary/30 px-6 py-3 rounded-2xl border border-border/50">
-          <div className="flex flex-col items-center">
-            <span className="font-bold text-foreground text-2xl">
-              {inboxStats.today}
+        {/* Аккуратные блоки метрик */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 px-6 w-full max-w-2xl">
+          {/* Пропускная способность */}
+          <div className="flex flex-col items-center p-5 rounded-3xl bg-primary/5 border border-primary/10 transition-all hover:bg-primary/10 group">
+            <div className="size-10 rounded-2xl bg-primary/10 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+              <Zap className="size-5 text-primary" />
+            </div>
+            <span className="text-2xl font-black text-foreground tabular-nums">
+              {inboxStats.outputCount}/{inboxStats.inputCount}
             </span>
-            <span className="text-xs uppercase tracking-wider opacity-70">
-              За сегодня
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/70 mt-1">
+              Прогресс ({throughput}%)
+            </span>
+          </div>
+
+          {/* Время в фокусе */}
+          <div className="flex flex-col items-center p-5 rounded-3xl bg-amber-500/5 border border-amber-500/10 transition-all hover:bg-amber-500/10 group">
+            <div className="size-10 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <Clock className="size-5 text-amber-500" />
+            </div>
+            <span className="text-2xl font-black text-foreground tabular-nums">
+              {inboxStats.focusMins}м
+            </span>
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/70 mt-1">
+              В потоке
+            </span>
+          </div>
+
+          {/* Завершено */}
+          <div className="flex flex-col items-center p-5 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 transition-all hover:bg-emerald-500/10 group">
+            <div className="size-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+              <CheckCircle2 className="size-5 text-emerald-500" />
+            </div>
+            <span className="text-2xl font-black text-foreground tabular-nums">
+              {inboxStats.completedCount}
+            </span>
+            <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/70 mt-1">
+              Закрыто за день
             </span>
           </div>
         </div>

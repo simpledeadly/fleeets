@@ -6,35 +6,39 @@ export async function getInboxStats() {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) return { today: 0, total: 0 }
 
-  const startOfDay = new Date()
-  startOfDay.setHours(0, 0, 0, 0)
+  if (!user) {
+    return {
+      inputCount: 0,
+      outputCount: 0,
+      completedCount: 0,
+      focusMins: 0,
+    }
+  }
 
-  const startOfDayISO = startOfDay.toISOString()
+  const todayStr = new Date().toISOString().split('T')[0]
 
-  // 1. Статистика за сегодня (считаем логи)
-  const { count: todayCount } = await supabase
-    .from('activity_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .in('category', ['item.triage', 'inbox_triage'])
-    .gte('created_at', startOfDayISO)
+  try {
+    const { data: report, error } = await supabase.rpc('get_daily_report', {
+      user_uuid: user.id,
+      target_date: todayStr,
+    })
 
-  // 2. Статистика за все время (Можно считать логи, а можно считать обработанные задачи)
-  // Вариант А: Считать логи (точно показывает процесс работы)
-  const { count: totalCount } = await supabase
-    .from('activity_logs')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', user.id)
-    .in('category', ['item.triage', 'inbox_triage'])
+    if (error) throw error
 
-  // Вариант Б: Считать текущее состояние базы (сколько сейчас НЕ в инбоксе)
-  // Это покажет "Объем базы знаний", а не "Твою продуктивность".
-  // Я рекомендую Вариант А.
-
-  return {
-    today: todayCount || 0,
-    total: totalCount || 0,
+    return {
+      inputCount: report?.input_count || 0,
+      outputCount: report?.output_count || 0,
+      completedCount: report?.completed?.length || 0,
+      focusMins: report?.focus_stats?.total_mins || 0,
+    }
+  } catch (e) {
+    console.error('Failed to fetch inbox stats:', e)
+    return {
+      inputCount: 0,
+      outputCount: 0,
+      completedCount: 0,
+      focusMins: 0,
+    }
   }
 }

@@ -6,8 +6,10 @@ import type { ViewType } from '@/features/views'
 export type Item = Database['public']['Tables']['items']['Row']
 
 interface InboxStats {
-  today: number
-  total: number
+  inputCount: number // Создано сегодня
+  outputCount: number // Обработано сегодня
+  completedCount: number // Завершено сегодня
+  focusMins: number // Минут в фокусе сегодня
   lastUpdated: number
 }
 
@@ -28,7 +30,7 @@ interface AppState {
   setEditingItem: (item: Item | null) => void
   inboxStats: InboxStats
   setInboxStats: (stats: Omit<InboxStats, 'lastUpdated'>) => void
-  incrementInboxStats: () => void // Чтобы увеличивать на +1 при свайпе
+  incrementInboxStats: () => void // Для свайпа (увеличиваем outputCount)
   isSnowing: boolean
   toggleSnow: () => void
   isSettingsOpen: boolean
@@ -73,7 +75,13 @@ export const useStore = create<AppState>()(
       setFocusItem: (item) => set({ focusItem: item }),
       editingItem: null,
       setEditingItem: (item) => set({ editingItem: item }),
-      inboxStats: { today: 0, total: 0, lastUpdated: 0 },
+      inboxStats: {
+        inputCount: 0,
+        outputCount: 0,
+        completedCount: 0,
+        focusMins: 0,
+        lastUpdated: 0,
+      },
       setInboxStats: (stats) =>
         set({
           inboxStats: { ...stats, lastUpdated: Date.now() },
@@ -81,9 +89,9 @@ export const useStore = create<AppState>()(
       incrementInboxStats: () =>
         set((state) => ({
           inboxStats: {
-            ...state.inboxStats, // Копируем все, включая lastUpdated
-            today: state.inboxStats.today + 1,
-            total: state.inboxStats.total + 1,
+            ...state.inboxStats,
+            outputCount: state.inboxStats.outputCount + 1,
+            lastUpdated: Date.now(),
           },
         })),
       isSnowing: false, // По дефолту выкл (или вкл, если хочешь праздника сразу)
