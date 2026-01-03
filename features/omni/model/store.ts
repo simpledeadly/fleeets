@@ -12,6 +12,8 @@ interface CommandCenterState {
   togglePalette: () => void
   layout: number[]
   setLayout: (sizes: number[]) => void
+  visibleLimit: number
+  setVisibleLimit: (limit: number) => void
 }
 
 export const useOmniStore = create<CommandCenterState>()(
@@ -27,10 +29,15 @@ export const useOmniStore = create<CommandCenterState>()(
         set((state) => ({ isPaletteOpen: !state.isPaletteOpen })),
       layout: [60, 30],
       setLayout: (sizes) => set({ layout: sizes }),
+      visibleLimit: 50,
+      setVisibleLimit: (limit) => set({ visibleLimit: limit }),
     }),
     {
       name: 'omni-storage', // Имя ключа в localStorage
-      partialize: (state) => ({ layout: state.layout }), // Если хочешь сохранять ТОЛЬКО layout, раскомментируй
+      partialize: (state) => ({
+        layout: state.layout,
+        visibleLimit: state.visibleLimit,
+      }), // Сохраняем и layout, и лимит
     }
   )
 )

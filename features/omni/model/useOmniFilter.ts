@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '@/lib/store'
+import { useOmniStore } from './store'
 
 export function useOmniFilter() {
   const { items } = useStore()
+  const visibleLimit = useOmniStore((state) => state.visibleLimit)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [activeStatus, setActiveStatus] = useState<string | null>(null)
@@ -115,7 +117,7 @@ export function useOmniFilter() {
       !isResource &&
       activeTags.length === 0
 
-    return !isInitialState ? result.slice(0, 50) : result.slice(0, 5)
+    return !isInitialState ? result.slice(0, visibleLimit) : result.slice(0, 5)
   }, [
     items,
     activeStatus,
@@ -133,6 +135,8 @@ export function useOmniFilter() {
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
     )
   }
+
+  const setVisibleLimit = useOmniStore((state) => state.setVisibleLimit)
 
   return {
     searchQuery,
@@ -155,5 +159,7 @@ export function useOmniFilter() {
     visibleItems,
     topTags,
     isDefaultView: !searchQuery && !activeStatus && activeTags.length === 0,
+    visibleLimit,
+    setVisibleLimit,
   }
 }

@@ -18,6 +18,14 @@ import {
   Trash2,
   type LucideIcon,
 } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { useOmniStore } from '../model/store'
 import { cn } from '@/lib/utils'
 import { useStore } from '@/lib/store'
 
@@ -43,6 +51,10 @@ interface FilterBarProps {
   activeTags: string[]
   toggleTag: (t: string) => void
   topTags: string[]
+
+  // Visibility Limit
+  visibleLimit: number
+  setVisibleLimit: (l: number) => void
 }
 
 // --- Configurations ---
@@ -105,21 +117,42 @@ export function FilterBar(props: FilterBarProps) {
 
   return (
     <div className="flex flex-col gap-2 p-3 border-b border-border/40 bg-muted/20">
-      {/* 1. Верхний ряд: Статусы */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
-        {STATUS_FILTERS.map((status) => (
-          <FilterChip
-            key={String(status.id)}
-            label={status.label}
-            icon={status.icon}
-            active={activeStatus === status.id}
-            onClick={() =>
-              setActiveStatus(activeStatus === status.id ? null : status.id)
-            }
-          />
-        ))}
-      </div>
+      {/* 1. Верхний ряд: Статусы и Лимит */}
+      <div className="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar pb-1">
+        <div className="flex gap-2">
+          {STATUS_FILTERS.map((status) => (
+            <FilterChip
+              key={String(status.id)}
+              label={status.label}
+              icon={status.icon}
+              active={props.activeStatus === status.id}
+              onClick={() =>
+                props.setActiveStatus(
+                  props.activeStatus === status.id ? null : status.id
+                )
+              }
+            />
+          ))}
+        </div>
 
+        <div className="flex items-center gap-2 shrink-0">
+          <Select
+            value={String(props.visibleLimit)}
+            onValueChange={(val) => props.setVisibleLimit(Number(val))}
+          >
+            <SelectTrigger className="max-h-6.5 rounded-full text-xs font-semibold bg-card/20 text-primary border-border hover:bg-muted transition-all duration-100 shadow-none cursor-pointer">
+              <SelectValue placeholder="50" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+              <SelectItem value="100">100</SelectItem>
+              <SelectItem value="250">250</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
       {/* 2. Нижний ряд: Типы и Флаги */}
       <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center">
         <Filter size={14} className="text-muted-foreground shrink-0 mr-1" />
@@ -134,7 +167,6 @@ export function FilterBar(props: FilterBarProps) {
           </FilterBadge>
         ))}
       </div>
-
       {/* 3. Ряд: Группы (Manual Groups) */}
       {groupTags.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-t border-border/50 pt-2">
