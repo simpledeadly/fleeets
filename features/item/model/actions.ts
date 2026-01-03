@@ -135,11 +135,23 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
   }
 
   // --- ЛОГИКА ДАТ ---
-  if (data.status === 'today' && !data.planned_at) {
+  // planned_at ставится ТОЛЬКО для статуса 'today' (фокус)
+  if (data.status === 'today' && !currentItem.planned_at && !data.planned_at) {
     updates.planned_at = new Date().toISOString()
+  } else if (data.status && data.status !== 'today') {
+    // Убираем дату планирования при уходе из фокуса
+    updates.planned_at = null
   }
-  if (data.status === 'done' && !data.completed_at) {
+
+  if (
+    data.status === 'done' &&
+    !currentItem.completed_at &&
+    !data.completed_at
+  ) {
     updates.completed_at = new Date().toISOString()
+  } else if (data.status && data.status !== 'done') {
+    // Снимаем дату завершения при воскрешении задачи
+    updates.completed_at = null
   }
 
   // --- ЛОГИКА ВЕКТОРИЗАЦИИ (При выходе из Инбокса) ---

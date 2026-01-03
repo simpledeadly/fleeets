@@ -194,7 +194,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
           if (selectedIds.length > 0) clearSelection()
         },
       ],
-      ['Delete', () => triggerAction('delete')],
+      ['mod+Delete', () => triggerAction('delete')],
     ],
     {
       enabled: mode === 'standalone' ? !isPaletteOpen : isPaletteOpen,
