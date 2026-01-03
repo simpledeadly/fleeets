@@ -220,6 +220,68 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
   return { success: true }
 }
 
+/**
+ * Принудительная перевекторизация элемента на основе текущего контента
+ */
+export async function vectorizeItem(itemId: string) {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  // 1. Берем самые свежие данные из базы
+  const { data: item, error: fetchError } = await supabase
+    .from('items')
+    .select('content, description, raw_content, execution_log, user_id')
+    .eq('id', itemId)
+    .single()
+
+  if (fetchError || !item) return { error: 'Item not found' }
+
+  try {
+    // 2. Формируем "Мега-Сэндвич" для максимального охвата смыслов
+    const textForEmbedding = `
+      ${item.content}
+      ${item.description || ''}
+      ${item.raw_content || ''}
+      ${item.execution_log || ''}
+    `.trim()
+
+    const embeddingModel = 'openai/text-embedding-3-small'
+    const embeddingResponse = await openai.embeddings.create({
+      model: embeddingModel,
+      input: textForEmbedding,
+    })
+
+    const embedding = embeddingResponse.data[0].embedding
+
+    // 3. Сохраняем новый вектор
+    const { error: updateError } = await supabase
+      .from('items')
+      .update({ embedding })
+      .eq('id', itemId)
+
+    if (updateError) throw updateError
+
+    // 4. Логируем расход
+    if (embeddingResponse.usage) {
+      logTokenUsage({
+        userId: item.user_id,
+        model: embeddingModel,
+        action: 'manual_vectorize',
+        inputTokens: embeddingResponse.usage.prompt_tokens,
+        outputTokens: 0,
+      })
+    }
+
+    return { success: true }
+  } catch (e: any) {
+    console.error('Manual vectorization failed:', e)
+    return { error: e.message }
+  }
+}
+
 // === ОБЕРТКИ (ХЕЛПЕРЫ) ===
 // Используем их в UI для ясности, но внутри они все вызывают updateItem
 

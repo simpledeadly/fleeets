@@ -1,6 +1,6 @@
 import { toast } from 'sonner'
 import { useStore, type Item } from '@/lib/store'
-import { updateItem, softDeleteItem } from './actions'
+import { updateItem, softDeleteItem, vectorizeItem } from './actions'
 import { createClient } from '../../../lib/supabase/client'
 import { useRef, useCallback } from 'react'
 
@@ -152,5 +152,17 @@ export function useItemActions(item: Item) {
   const toggleBlitz = () => update({ is_quick: !item.is_quick }) // Без тоста
   const setType = (type: Item['type']) => update({ type }) // Без тоста
 
-  return { update, remove, refine, toggleBlitz, setType }
+  const vectorize = useCallback(async () => {
+    const toastId = toast.loading('Обновляем вектор смысла...')
+
+    const result = await vectorizeItem(item.id)
+
+    if (result.success) {
+      toast.success('Второй мозг запомнил изменения!', { id: toastId })
+    } else {
+      toast.error('Ошибка векторизации', { id: toastId })
+    }
+  }, [])
+
+  return { update, remove, refine, toggleBlitz, setType, vectorize }
 }

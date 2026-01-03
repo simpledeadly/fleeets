@@ -38,6 +38,7 @@ interface UsageParams {
     | 'embedding_on_promote'
     | 'suggest_group'
     | 'clustering'
+    | 'manual_vectorize'
   inputTokens?: number
   outputTokens?: number
   seconds?: number

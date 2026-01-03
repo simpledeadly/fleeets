@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { Fingerprint, Sparkles, Trash2 } from 'lucide-react'
 
 export function ItemEditor() {
   const item = useStore((state) => state.editingItem)
@@ -28,10 +29,34 @@ export function ItemEditor() {
   return (
     <Sheet open={!!item} onOpenChange={(open) => !open && setEditingItem(null)}>
       <SheetContent className="sm:max-w-md p-0 flex flex-col gap-0 border-l border-border overflow-y-auto">
-        <SheetHeader className="p-3 border-b border-border">
+        <SheetHeader className="flex flex-row justify-between items-center p-3 border-b border-border">
           <SheetTitle className="text-lg font-bold tracking-tight">
             Инспектор
           </SheetTitle>
+
+          <div className="flex gap-1 mr-8">
+            <button
+              onClick={() => actions.vectorize()}
+              className="p-2 hover:bg-primary/10 rounded-full transition-colors text-primary cursor-pointer"
+              title="Обновить вектор в базе знаний"
+            >
+              <Fingerprint size={18} />
+            </button>
+
+            <button
+              onClick={() => actions.refine()}
+              className="p-2 hover:bg-secondary rounded-full transition-colors text-amber-500 cursor-pointer"
+            >
+              <Sparkles size={18} />
+            </button>
+
+            <button
+              onClick={() => actions.remove()}
+              className="p-2 hover:bg-destructive/10 rounded-full transition-colors text-destructive cursor-pointer"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
         </SheetHeader>
 
         <div className="flex-1 px-3 py-2">
