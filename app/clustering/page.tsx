@@ -1,4 +1,4 @@
-import { ArchitectPage } from '@/features/architect/ui/ArchitectPage'
+import { ArchitectPage } from '@/features/architect'
 
 export default function ClusteringPage() {
   return <ArchitectPage />
