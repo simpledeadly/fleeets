@@ -31,7 +31,7 @@ export function useItemActions(item: Item) {
       // 1. Optimistic Update (Мгновенно в UI)
       // Мержим изменения с текущим состоянием в сторе
       const freshItem = getFreshItem()
-      
+
       const optimisticUpdate: any = { ...changes }
       if (
         freshItem.status === 'inbox' &&
@@ -92,7 +92,7 @@ export function useItemActions(item: Item) {
         }
       }, delay)
     },
-    [item.id]
+    [item?.id]
   ) // Зависимость только от ID!
 
   /**

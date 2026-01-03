@@ -39,8 +39,24 @@ export const HOTKEY_MAP: Record<
     action: () => useStore.getState().setView('vault'),
   },
   'mod+e': {
-    label: 'Создать новое входящее',
-    action: async () => await createItem(''),
+    label: 'Редактировать элемент',
+    action: () => {
+      const store = useStore.getState()
+      // 1. Если открыта модалка фокуса — редактируем её айтем
+      if (store.focusItem) {
+        store.setEditingItem(store.focusItem)
+        return
+      }
+      // 2. Если мы в Omni (standalone) или просто на странице —
+      // ищем элемент, на котором сейчас фокус (через наш data-attribute)
+      const selectedEl = document.querySelector(
+        '[data-item-id][aria-selected="true"]'
+      ) as HTMLElement
+      if (selectedEl?.dataset.itemId) {
+        const item = store.items.find((i) => i.id === selectedEl.dataset.itemId)
+        if (item) store.setEditingItem(item)
+      }
+    },
   },
 }
 

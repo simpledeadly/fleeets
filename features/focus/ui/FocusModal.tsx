@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react'
 import confetti from 'canvas-confetti'
-import { ArrowUp, CheckCircle2, CornerDownRight, Save, X } from 'lucide-react'
+import {
+  ArrowUp,
+  CheckCircle2,
+  CornerDownRight,
+  Save,
+  Settings,
+  X,
+} from 'lucide-react'
 import { useStore, type Item } from '@/lib/store'
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog'
 import { SimilarItems } from './SimilarItems'
@@ -24,6 +31,7 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
     items,
     focusItem,
     setFocusItem,
+    setEditingItem,
     updateItem: updateStoreItem,
   } = useStore()
 
@@ -118,6 +126,13 @@ export function FocusModal({ item, isOpen, onClose }: FocusModalProps) {
             <DialogTitle className="sr-only">
               Режим фокуса: {item.content}
             </DialogTitle>
+            <button
+              onClick={() => setEditingItem(focusItem)}
+              className="max-w-8 mt-1 ml-1 flex items-center justify-center p-2 text-muted-foreground hover:bg-secondary rounded-full transition-colors cursor-pointer"
+              title="Редактировать (Cmd+E)"
+            >
+              <Settings size={18} />
+            </button>
 
             <div className="flex-1 overflow-y-auto p-2 pt-12 md:p-4 md:pt-12 space-y-8">
               {/* "ХЛЕБНЫЕ КРОШКИ" (Breadcrumbs) */}

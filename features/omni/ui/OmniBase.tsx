@@ -38,6 +38,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
     removeItem: removeStoreItem,
     addItem: addStoreItem,
     selectedIds,
+    setEditingItem,
     toggleSelection,
     clearSelection,
   } = useStore()
@@ -53,7 +54,6 @@ export function OmniBase({ mode }: OmniBaseProps) {
   const inputRef = useRef<HTMLInputElement>(null)
   const [isReady, setIsReady] = useState(mode === 'modal')
 
-  // 👇 Эффект: Возвращаем фокус в инпут при закрытии модалки (focusItem -> null)
   // 👇 Эффект: Возвращаем фокус в инпут при закрытии модалки ИЛИ при очистке выделения
   const focusItem = useStore((state) => state.focusItem)
   useEffect(() => {
@@ -106,7 +106,12 @@ export function OmniBase({ mode }: OmniBaseProps) {
     (mode === 'modal' && isPaletteOpen ? filter.visibleItems[0] : null)
 
   const triggerAction = async (
-    action: 'toggleDone' | 'toggleFocused' | 'toggleInbox' | 'delete'
+    action:
+      | 'toggleDone'
+      | 'toggleFocused'
+      | 'toggleInbox'
+      | 'delete'
+      | 'openItemEditor'
   ) => {
     // ЖЕСТКАЯ изоляция: если мы в фоне и открыто омни — ничего не делаем
     if (mode === 'standalone' && isPaletteOpen) return
@@ -174,9 +179,12 @@ export function OmniBase({ mode }: OmniBaseProps) {
       })
       await softDeleteItem(item.id)
     }
+
+    if (action === 'openItemEditor') {
+      setEditingItem(item)
+    }
   }
 
-  // 👇 Логика горячих клавиш
   useHotkeys(
     [
       ['mod+d', () => triggerAction('toggleDone')],
@@ -195,6 +203,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
         },
       ],
       ['mod+Delete', () => triggerAction('delete')],
+      ['mod+e', () => triggerAction('openItemEditor')],
     ],
     {
       enabled: mode === 'standalone' ? !isPaletteOpen : isPaletteOpen,

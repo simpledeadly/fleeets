@@ -1,101 +1,162 @@
-"use client"
-import { Item, useStore } from "@/lib/store"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Switch } from "@/components/ui/switch"
-import { Button } from "@/components/ui/button"
-import { updateItem, softDeleteItem } from "../model/actions"
-import { toast } from "sonner"
-import { useState } from "react"
+'use client'
+import { useStore } from '@/lib/store'
+import { useItemActions } from '../model/useItemActions'
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
 
 export function ItemEditor() {
-  const { editingItem, setEditingItem, updateItem: updateStoreItem } = useStore()
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [isUpdating, setIsUpdating] = useState(false)
+  const item = useStore((state) => state.editingItem)
+  const setEditingItem = useStore((state) => state.setEditingItem)
+  const actions = useItemActions(item!)
 
-  const handleUpdate = async (data: Partial<Item>) => {
-    if (!editingItem) return
-    setIsUpdating(true)
-
-    const oldItem = { ...editingItem }
-    updateStoreItem({ ...editingItem, ...data })
-
-    const result = await updateItem(editingItem.id, data)
-
-    setIsUpdating(false)
-    if (result.error) {
-      toast.error("Ошибка обновления")
-      updateStoreItem(oldItem)
-    } else {
-      toast.success("Сохранено!")
-    }
-  }
-
-  const handleDelete = async () => {
-    if (!editingItem) return
-    const tempItem = { ...editingItem }
-    setEditingItem(null)
-    await softDeleteItem(tempItem.id)
-    toast.success("Задача перемещена в корзину")
-  }
+  if (!item) return null
 
   return (
-    <Sheet open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>
-      <SheetContent>
-        {editingItem && (
-          <>
-            <SheetHeader>
-              <SheetTitle>Редактирование</SheetTitle>
-              <SheetDescription>Измените детали задачи здесь.</SheetDescription>
-            </SheetHeader>
-            <div className="grid gap-6 py-4">
-              <Input
-                defaultValue={editingItem.content}
-                onBlur={(e) => handleUpdate({ content: e.target.value })}
-              />
-              <Textarea
-                defaultValue={editingItem.description || ""}
-                placeholder="Описание..."
-                onBlur={(e) => handleUpdate({ description: e.target.value })}
-              />
-              <div className="grid grid-cols-2 gap-4">
+    <Sheet open={!!item} onOpenChange={(open) => !open && setEditingItem(null)}>
+      <SheetContent className="sm:max-w-md p-0 flex flex-col gap-0 border-l border-border overflow-y-auto">
+        <SheetHeader className="p-3 border-b border-border">
+          <SheetTitle className="text-lg font-bold tracking-tight">
+            Инспектор
+          </SheetTitle>
+        </SheetHeader>
+
+        <div className="flex-1 px-3 py-2">
+          <div className="space-y-8 pb-12">
+            {/* Группа: Контент */}
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest pl-1">
+                  Заголовок
+                </span>
+                <Input
+                  key={`title-${item.id}`}
+                  defaultValue={item.content}
+                  onBlur={(e) => actions.update({ content: e.target.value })}
+                  className="border-none bg-secondary/30 text-md font-medium focus-visible:ring-1 focus-visible:ring-primary/20"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest pl-1">
+                  Описание
+                </span>
+                <Textarea
+                  key={`desc-${item.id}`}
+                  defaultValue={item.description || ''}
+                  onBlur={(e) =>
+                    actions.update({ description: e.target.value })
+                  }
+                  className="border-none bg-secondary/30 min-h-32 resize-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                />
+              </div>
+            </div>
+
+            {/* Группа: Мета */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <span className="text-xs uppercase font-bold text-muted-foreground pl-1">
+                  Тип
+                </span>
                 <Select
-                  value={editingItem.status || 'inbox'}
-                  onValueChange={(value) => handleUpdate({ status: value as any })}
+                  value={item.type!}
+                  onValueChange={(v: any) => actions.update({ type: v })}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inbox">Inbox</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="planned">Plan</SelectItem>
-                    <SelectItem value="done">Done</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={editingItem.type || 'task'}
-                  onValueChange={(value) => handleUpdate({ type: value as any })}
-                >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="bg-secondary/30 border-none">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="task">Task</SelectItem>
                     <SelectItem value="note">Note</SelectItem>
                     <SelectItem value="thought">Thought</SelectItem>
+                    <SelectItem value="resource">Resource</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <label className="text-sm font-medium">⚡️ Быстрая задача</label>
-                <Switch
-                  checked={editingItem.is_quick || false}
-                  onCheckedChange={(checked) => handleUpdate({ is_quick: checked })}
-                />
+
+              <div className="space-y-1.5">
+                <span className="text-xs uppercase font-bold text-muted-foreground pl-1">
+                  Статус
+                </span>
+                <Select
+                  value={item.status!}
+                  onValueChange={(v: any) => actions.update({ status: v })}
+                >
+                  <SelectTrigger className="bg-secondary/30 border-none">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="inbox">Inbox</SelectItem>
+                    <SelectItem value="planned">Planned</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="done">Done</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <Button variant="destructive" onClick={handleDelete}>В корзину</Button>
             </div>
-          </>
-        )}
+
+            {/* Группа: Приоритет и Блиц */}
+            <div className="flex items-end gap-4">
+              <div className="flex-1 space-y-1.5">
+                <span className="text-xs uppercase font-bold text-muted-foreground pl-1">
+                  Приоритет
+                </span>
+                <Select
+                  value={String(item.priority || 'medium')}
+                  onValueChange={(v: any) => actions.update({ priority: v })}
+                >
+                  <SelectTrigger className="bg-secondary/30 border-none">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center gap-3 bg-secondary/30 px-4 h-10 rounded-md border border-transparent">
+                <Switch
+                  checked={item.is_quick!}
+                  onCheckedChange={(v) => actions.update({ is_quick: v })}
+                />
+                <span className="text-xs font-bold text-muted-foreground">
+                  БЛИЦ
+                </span>
+              </div>
+            </div>
+
+            {/* Исходник и Лог */}
+            <div className="space-y-1.5">
+              <span className="text-xs uppercase font-bold text-muted-foreground pl-1">
+                Execution Log
+              </span>
+              <Textarea
+                key={`log-${item.id}`}
+                defaultValue={item.execution_log || ''}
+                onBlur={(e) =>
+                  actions.update({ execution_log: e.target.value })
+                }
+                className="bg-secondary/20 border-none font-mono text-[11px] min-h-40"
+              />
+            </div>
+          </div>
+        </div>
       </SheetContent>
     </Sheet>
   )
