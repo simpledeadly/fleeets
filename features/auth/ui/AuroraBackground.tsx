@@ -2,15 +2,25 @@
 
 export function AuroraBackground({ hue, sat }: { hue: number; sat: number }) {
   return (
-    <div className="absolute mt-2 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-350 h-350 pointer-events-none z-0 animate-pulse-slow">
+    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[180%] h-[180%] pointer-events-none z-0">
       <div
-        className="absolute inset-0 transition-all duration-1000 opacity-60"
+        className="absolute inset-0 transition-all duration-1000 opacity-40 blur-[100px]"
         style={{
           background: `radial-gradient(
-            circle at center, 
-            hsla(${hue}, ${sat}%, 25%, 0.3) 0%, 
-            hsla(${hue + 30}, ${sat}%, 10%, 0.1) 40%, 
-            transparent 45%
+            circle at 50% 50%, 
+            hsla(${hue}, ${sat}%, 40%, 0.4) 0%, 
+            hsla(${hue + 40}, ${sat}%, 20%, 0.2) 30%, 
+            transparent 60%
+          )`,
+        }}
+      />
+      <div
+        className="absolute inset-0 transition-all duration-2000 opacity-30 blur-[120px] animate-pulse-slow"
+        style={{
+          background: `radial-gradient(
+            circle at 40% 60%, 
+            hsla(${hue - 30}, ${sat}%, 30%, 0.3) 0%, 
+            transparent 50%
           )`,
         }}
       />

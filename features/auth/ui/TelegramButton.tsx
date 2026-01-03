@@ -25,13 +25,13 @@ export function TelegramButton({ url, isLoading }: TelegramButtonProps) {
       {/* Блик */}
       <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
 
-      <div className="relative flex items-center justify-center gap-3 py-4">
+      <div className="relative flex items-center justify-center gap-3 py-3">
         {isLoading ? (
-          <Loader2 className="w-5 h-5 text-white/70 animate-spin" />
+          <Loader2 className="w-4 h-4 text-white/70 animate-spin" />
         ) : (
           <>
-            <Send className="w-5 h-5 text-white drop-shadow-sm transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
-            <span className="text-lg font-semibold text-white tracking-wide drop-shadow-sm">
+            <Send className="w-4 h-4 text-white drop-shadow-sm transition-transform duration-150 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+            <span className="text-md font-semibold text-white tracking-wide drop-shadow-sm">
               Войти через Telegram
             </span>
           </>
