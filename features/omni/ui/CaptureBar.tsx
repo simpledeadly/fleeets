@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { toast } from 'sonner'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -37,6 +37,25 @@ export function CaptureBar() {
     sources: any[]
   } | null>(null)
   const [isThinking, setIsThinking] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // 👇 Авто-расширение высоты
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'
+      textareaRef.current.style.height = `${Math.min(
+        textareaRef.current.scrollHeight,
+        250
+      )}px`
+    }
+  }, [text])
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSubmit(e as any)
+    }
+  }
 
   useEffect(() => {
     if (text.trim().startsWith('?')) {
@@ -322,10 +341,10 @@ export function CaptureBar() {
         <form
           onSubmit={handleSubmit}
           className={cn(
-            'hidden md:flex items-center gap-1 p-1 bg-card/80 backdrop-blur-xl border shadow-lg transition-colors duration-150',
+            'hidden md:flex items-center gap-1.5 p-1.5 bg-card/85 backdrop-blur-3xl border shadow-lg transition-all duration-300 ease-in-out',
             suggestions.length > 0
-              ? 'rounded-t-0 rounded-b-3xl'
-              : 'rounded-full',
+              ? 'rounded-t-xl rounded-b-2xl'
+              : 'rounded-2xl',
             brainMode
               ? 'border-amber-500/30 bg-amber-500/10' // Стиль Мозга
               : 'border-border dark:border-border/60' // Обычный стиль
@@ -334,7 +353,7 @@ export function CaptureBar() {
           {/* Кнопка Плюс (будущий Cmd+K) */}
           <button
             type="button"
-            className="p-2 rounded-full transition-colors cursor-pointer"
+            className="p-2 rounded-full transition-colors cursor-pointer shrink-0 hover:bg-black/5 dark:hover:bg-white/5"
           >
             {/* Иконка меняется */}
             <AnimatePresence mode="popLayout">
@@ -369,26 +388,28 @@ export function CaptureBar() {
             </AnimatePresence>
           </button>
 
-          {/* Инпут */}
-          <input
+          <textarea
+            ref={textareaRef}
             id="capture-bar-input"
             value={text}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={1}
             autoComplete="off"
             autoCorrect="off"
             autoCapitalize="off"
             spellCheck="false"
             placeholder={brainMode ? 'Спроси базу знаний...' : 'Новая мысль...'}
             className={cn(
-              'flex-1 bg-transparent text-md focus:outline-none transition-colors',
+              'flex-1 bg-transparent text-md focus:outline-none transition-all resize-none py-0.5 px-1 max-h-[250px] custom-scrollbar overflow-y-auto min-h-[38px]',
               brainMode
                 ? 'text-foreground placeholder:text-secondary'
-                : 'placeholder:text-muted-foreground/80'
+                : 'placeholder:text-muted-foreground/60'
             )}
           />
 
           {/* Правые кнопки (Микрофон / Отправить) */}
-          <div className="relative w-8 h-8 flex items-center justify-center">
+          <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
             <AnimatePresence>
               {/* 1. Кнопка "Отправить" (если есть текст) */}
               {text.trim() && !isRecording && !isTranscribing && !isThinking ? (
@@ -398,12 +419,14 @@ export function CaptureBar() {
                   initial={{ opacity: 0, scale: 0.5 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.5 }}
-                  className="bg-foreground text-background absolute inset-0 flex items-center  justify-center rounded-full transition-colors cursor-pointer"
+                  className="bg-foreground text-background absolute inset-0 flex items-center  justify-center rounded-full transition-colors cursor-pointer scale-90"
                 >
                   <ArrowUp size={20} strokeWidth={2.6} />
                 </motion.button>
               ) : (
-                <Loader2 className="animate-spin text-amber-400" size={20} />
+                isThinking && (
+                  <Loader2 className="animate-spin text-amber-400" size={20} />
+                )
               )}
 
               {/* 2. Кнопка "Микрофон / Стоп" (если текста нет) */}
