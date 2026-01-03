@@ -88,6 +88,8 @@ export function useOmniFilter() {
             item.description.toLowerCase().includes(lowerQuery)) ||
           (item.raw_content &&
             item.raw_content.toLowerCase().includes(lowerQuery)) ||
+          (item.execution_log &&
+            item.execution_log.toLowerCase().includes(lowerQuery)) ||
           item.ai_tags?.some((tag) => tag.toLowerCase().includes(lowerQuery))
         )
       })
