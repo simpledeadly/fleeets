@@ -50,11 +50,13 @@ export function OmniChat({
   }
 
   useEffect(() => {
-    if (!hasFetched.current && initialQuery.trim().length > 0) {
+    const cleanQuery = initialQuery.replace(/^\?/, '').trim()
+
+    if (!hasFetched.current && cleanQuery.length > 0) {
       hasFetched.current = true
 
       const t = setTimeout(() => {
-        performSearch(initialQuery.replace(/^\?/, '').trim())
+        performSearch(cleanQuery)
       }, 0)
 
       return () => clearTimeout(t)
