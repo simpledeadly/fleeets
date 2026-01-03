@@ -5,7 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useStore } from '@/lib/store'
 import { InboxCard } from '../../inbox/ui/InboxCard'
 import { getInboxStats } from '../../inbox/model/stats'
-import { Zap, Clock, CheckCircle2 } from 'lucide-react'
+import { Zap, Clock, CheckCircle2, RefreshCw, Loader2 } from 'lucide-react'
+import { fetchActiveItems } from '@/lib/data'
+import { createClient } from '@/lib/supabase/client'
+import { cn } from '@/lib/utils'
 // import { CoolEmoji } from './CoolEmoji'
 // import { Loveduck } from './Loveduck'
 // import { YourKickAss } from './YourKickAss'
@@ -33,10 +36,27 @@ export function InboxDeck() {
   const [randomMessage, setRandomMessage] = useState('')
   // const [randomSticker, setRandomSticker] = useState<any>()
   const items = useStore((state) => state.items)
+  const setItems = useStore((state) => state.setItems)
   const inboxStats = useStore((state) => state.inboxStats)
   const setInboxStats = useStore((state) => state.setInboxStats)
   const [isGridMode, setIsGridMode] = useState(false)
   const [forcedTopId, setForcedTopId] = useState<string | null>(null)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const supabase = createClient()
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true)
+    try {
+      const updatedItems = await fetchActiveItems(supabase)
+      setItems(updatedItems)
+      const stats = await getInboxStats()
+      setInboxStats(stats)
+    } catch (error) {
+      console.error('Refresh failed:', error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }
 
   const inboxTasks = useMemo(() => {
     const sorted = items
@@ -158,6 +178,15 @@ export function InboxDeck() {
             </span>
           </div>
         </div>
+
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-2 mx-auto mt-4 px-4 py-2 rounded-full bg-secondary/50 hover:bg-secondary border border-border transition-colors text-xs font-semibold cursor-pointer disabled:opacity-50"
+        >
+          <RefreshCw className={cn('size-3', isRefreshing && 'animate-spin')} />
+          {isRefreshing ? 'Обновляем...' : 'Обновить сейчас'}
+        </button>
       </div>
     )
   }
@@ -167,6 +196,23 @@ export function InboxDeck() {
 
   return (
     <div className="relative w-[94vw] md:w-100 h-screen m-auto flex items-center justify-center">
+      {/* Кнопка ручного обновления (плавающая сверху) */}
+      {!isGridMode && (
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="fixed top-24 right-4 md:right-8 z-50 p-2.5 rounded-full bg-card/85 backdrop-blur-3xl border border-border shadow-md hover:bg-accent transition-all cursor-pointer disabled:opacity-50 group"
+          title="Обновить входящие"
+        >
+          <RefreshCw
+            className={cn(
+              'size-4 text-muted-foreground group-hover:text-foreground transition-colors',
+              isRefreshing && 'animate-spin'
+            )}
+          />
+        </button>
+      )}
+
       {/* РЕЖИМ СЕТКИ (OVERVIEW) */}
       {isGridMode ? (
         <div className="min-w-[96vw] h-screen px-4 pt-20 pb-20 overflow-y-auto custom-scrollbar">

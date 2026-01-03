@@ -54,7 +54,12 @@ export const useStore = create<AppState>()(
       setView: (view) => set({ currentView: view }),
       setItems: (items) =>
         set({ items, isLoading: false, isInitialized: true }),
-      addItem: (item) => set((state) => ({ items: [item, ...state.items] })),
+      addItem: (newItem) =>
+        set((state) => {
+          const exists = state.items.some((i) => i.id === newItem.id)
+          if (exists) return state
+          return { items: [newItem, ...state.items] }
+        }),
       updateItem: (updatedItem) =>
         set((state) => ({
           items: state.items.map((item) =>

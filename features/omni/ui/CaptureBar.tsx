@@ -29,7 +29,7 @@ export function CaptureBar() {
   const [suggestions, setSuggestions] = useState<Item[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const debouncedText = useDebounce(text, 700)
-  const { currentView, items, setFocusItem } = useStore()
+  const { currentView, items, setFocusItem, addItem } = useStore()
   const { isPro, openPaywall } = usePaywall()
   const [brainMode, setBrainMode] = useState(false)
   const [brainAnswer, setBrainAnswer] = useState<{
@@ -208,6 +208,8 @@ export function CaptureBar() {
             } else {
               toast.success('Задача в Inbox!')
             }
+            // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ UI (не дожидаясь Realtime)
+            addItem(result.item)
           }
         })
         .finally(() => {
