@@ -186,7 +186,7 @@ export function SelectionToolbar() {
     >
       {/* Список существующих групп для быстрого выбора */}
       {existingGroups.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar max-w-md p-1 bg-background/40 backdrop-blur-xl border border-border/50 rounded-full mb-1 pb-1">
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar max-w-screen md:max-w-xl lg:max-w-2xl xl:max-w-3xl p-1 bg-background border border-border rounded-full mb-1 pb-1">
           {existingGroups.map((group) => (
             <button
               key={group}
@@ -194,7 +194,7 @@ export function SelectionToolbar() {
                 setGroupName((prev) => (prev === group ? '' : group))
               }
               className={cn(
-                'px-2 py-0.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap cursor-pointer',
+                'px-2 py-0.5 rounded-full text-xs font-medium transition-all whitespace-nowrap cursor-pointer',
                 groupName === group
                   ? 'bg-primary text-primary-foreground'
                   : 'bg-muted/50 text-muted-foreground hover:bg-muted'
@@ -206,7 +206,7 @@ export function SelectionToolbar() {
         </div>
       )}
 
-      <div className="flex items-center gap-1 p-1 bg-background/60 backdrop-blur-2xl border border-border rounded-2xl shadow-2xl">
+      <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-2xl shadow-2xl">
         {/* Счетчик */}
         <div className="flex items-center gap-2 px-2.5 py-1 bg-primary/10 rounded-xl text-primary font-mono text-sm font-bold ml-0.5 tabular-nums">
           <span>{selectedIds.length}</span>

@@ -31,7 +31,7 @@ const OmniItemComponent = ({
       data-item-id={item.id}
       className={cn(
         'group flex items-center justify-between aria-selected:bg-accent py-1.5 cursor-pointer transition-all duration-75',
-        isSelected && 'bg-accent/50 border-l-2 rounded-l-none border-primary'
+        isSelected && 'bg-accent/50 border-l-2 rounded-none border-primary'
       )}
     >
       <div className="flex items-center gap-0 flex-1 min-w-0 my-px">
