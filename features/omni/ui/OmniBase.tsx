@@ -27,6 +27,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useHotkeys } from '@/lib/hooks'
 import { SelectionToolbar } from '@/features/item'
+import { OmniFooter } from './OmniFooter'
 
 interface OmniBaseProps {
   mode: 'standalone' | 'modal'
@@ -277,7 +278,10 @@ export function OmniBase({ mode }: OmniBaseProps) {
         <ResizablePanel defaultSize={layout[0]} minSize={30}>
           <div className="flex-1 flex flex-col min-w-0 h-full relative">
             {isAiMode ? (
-              <OmniChat initialQuery={filter.searchQuery} mode={mode} />
+              <>
+                <OmniChat initialQuery={filter.searchQuery} mode={mode} />
+                {/* <OmniFooter /> */}
+              </>
             ) : (
               <Command
                 key={`${mode}-${isReady}`} // Убрали isPaletteOpen, чтобы фон не ремаунтился и не воровал фокус
@@ -366,6 +370,8 @@ export function OmniBase({ mode }: OmniBaseProps) {
                     </>
                   )}
                 </CommandList>
+
+                <OmniFooter item={effectiveActiveItem} />
               </Command>
             )}
           </div>

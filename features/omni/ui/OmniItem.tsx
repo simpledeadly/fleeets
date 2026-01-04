@@ -80,7 +80,7 @@ const OmniItemComponent = ({
       </div>
 
       {/* БЛОК ШОРТКАТОВ (Виден только при фокусе) */}
-      <div className="hidden group-aria-selected:flex items-center gap-1 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-1 duration-100">
+      {/* <div className="hidden group-aria-selected:flex items-center gap-1 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-1 duration-100">
         {item.status !== 'done' && (
           <>
             {item.type === 'task' ? (
@@ -95,7 +95,7 @@ const OmniItemComponent = ({
           </>
         )}
         <Kbd keys={['⌘', 'Del']} />
-      </div>
+      </div> */}
     </CommandItem>
   )
 }
@@ -146,16 +146,4 @@ function TaskStatusIcon({ item }: { item: Item }) {
   }
 
   return <Circle size={16} className={cn('mr-2', priorityColor)} />
-}
-
-function Kbd({ keys }: { keys: string[] }) {
-  return (
-    <div className="flex items-center gap-0.5 bg-card border border-border px-1.5 py-0.5 rounded shadow-xs min-w-5 justify-center">
-      {keys.map((k, i) => (
-        <span key={i} className={k === '⌘' ? 'font-sans' : ''}>
-          {k}
-        </span>
-      ))}
-    </div>
-  )
 }
