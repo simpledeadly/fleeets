@@ -138,7 +138,7 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
   // planned_at ставится ТОЛЬКО для статуса 'today' (фокус)
   if (data.status === 'today' && !currentItem.planned_at && !data.planned_at) {
     updates.planned_at = new Date().toISOString()
-  } else if (data.status && data.status !== 'today') {
+  } else if (data.status && data.status !== 'today' && data.status !== 'done') {
     // Убираем дату планирования при уходе из фокуса
     updates.planned_at = null
   }

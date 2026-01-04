@@ -70,7 +70,7 @@ const OmniItemComponent = ({
               .map((tag) => (
                 <span
                   key={tag}
-                  className="shrink-0 px-1 bg-muted text-primary rounded-full text-xs font-medium tracking-tight border border-border"
+                  className="shrink-0 px-1.5 bg-muted text-primary rounded-full text-xs font-medium tracking-tight border border-border"
                 >
                   {tag.replace('group:', '')}
                 </span>
@@ -78,24 +78,6 @@ const OmniItemComponent = ({
           </div>
         </div>
       </div>
-
-      {/* БЛОК ШОРТКАТОВ (Виден только при фокусе) */}
-      {/* <div className="hidden group-aria-selected:flex items-center gap-1 text-xs text-muted-foreground animate-in fade-in slide-in-from-left-1 duration-100">
-        {item.status !== 'done' && (
-          <>
-            {item.type === 'task' ? (
-              <>
-                <Kbd keys={['⌘', 'D']} />
-                <Kbd keys={['⌘', 'F']} />
-                <Kbd keys={['⌘', 'I']} />
-              </>
-            ) : (
-              item.status === 'archived' && <Kbd keys={['⌘', 'I']} />
-            )}
-          </>
-        )}
-        <Kbd keys={['⌘', 'Del']} />
-      </div> */}
     </CommandItem>
   )
 }

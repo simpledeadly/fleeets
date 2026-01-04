@@ -34,7 +34,7 @@ export const OmniFooter = ({ item }: { item: Item | null }) => {
 
 function Kbd({ keys, label }: { keys: string[]; label: string }) {
   return (
-    <div className="flex items-center gap-1 bg-card border border-border/90 px-1 py-0.5 rounded shadow-0">
+    <div className="flex items-center gap-1 bg-muted/40 border border-border/90 px-1 py-0.5 rounded shadow-0">
       <span className="font-sans text-foreground/80">{keys.join('')}</span>
       <span className="text-muted-foreground font-mono">{label}</span>
     </div>

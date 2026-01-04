@@ -385,7 +385,11 @@ export function OmniBase({ mode }: OmniBaseProps) {
               minSize={30}
               className="hidden md:block"
             >
-              <OmniPreview item={activeItem} />
+              <OmniPreview
+                item={activeItem}
+                activeTags={filter.activeTags}
+                onToggleTag={filter.toggleTag}
+              />
             </ResizablePanel>
           </>
         )}
