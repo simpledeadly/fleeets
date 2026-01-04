@@ -23,6 +23,7 @@ export const OmniFooter = ({ item }: { item: Item | null }) => {
             </>
           )}
           <Kbd keys={['⌘', 'Del']} label="Удалить" />
+          <Kbd keys={['⌘', 'E']} label="Редактировать" />
           <Kbd keys={['⌘', 'X']} label="Выделить" />
           <Kbd keys={['Enter']} label="Открыть" />
         </div>
