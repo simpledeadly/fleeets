@@ -3,9 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { type Item } from '@/lib/store'
 import {
   Calendar,
-  AlignLeft,
-  Hash,
-  Activity,
   StickyNote,
   Lightbulb,
   FileBox,
@@ -60,7 +57,7 @@ export function OmniPreview({
 
                 {item.status && (
                   <>
-                    <div className="h-4 w-px bg-border shrink-0" />
+                    <div className="h-4 w-px bg-border/60 shrink-0" />
                     <div className="flex items-center gap-1 shrink-0">
                       <TypeIcon type={item.type!} />
                       <span className="capitalize">{item.status}</span>
@@ -70,7 +67,7 @@ export function OmniPreview({
 
                 {item.ai_tags?.some((t) => t.startsWith('group:')) && (
                   <>
-                    <div className="h-4 w-px bg-border shrink-0" />
+                    <div className="h-4 w-px bg-border/60 shrink-0" />
                     <span className="shrink-0 gap-1 flex items-center text-xs text-muted-foreground">
                       <Folders size={14} className="shrink-0 opacity-80" />
                       <span className="truncate">
@@ -89,7 +86,7 @@ export function OmniPreview({
                   (item.metadata?.source === 'voice' ||
                     item.metadata?.duration) && (
                     <>
-                      <div className="h-4 w-px bg-border shrink-0" />
+                      <div className="h-4 w-px bg-border/60 shrink-0" />
                       <div className="flex items-center gap-1 text-xs text-blue-500">
                         <Mic size={14} />
                         <span>Voice</span>
