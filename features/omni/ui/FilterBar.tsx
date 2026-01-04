@@ -116,7 +116,7 @@ export function FilterBar(props: FilterBarProps) {
   ]
 
   return (
-    <div className="flex flex-col gap-2 p-3 border-b border-border/40 bg-muted/20">
+    <div className="flex flex-col gap-2 p-3 border-b border-border bg-muted/20">
       {/* 1. Верхний ряд: Статусы и Лимит */}
       <div className="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar pb-1">
         <div className="flex gap-2">

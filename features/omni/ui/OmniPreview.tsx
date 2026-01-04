@@ -7,7 +7,7 @@ import { ru } from 'date-fns/locale'
 
 export function OmniPreview({ item }: { item: Item | null }) {
   return (
-    <div className="border-l bg-card border-border/40 hidden md:flex flex-col h-full">
+    <div className="bg-card border-l border-border hidden md:flex flex-col h-full">
       <AnimatePresence mode="wait">
         {item ? (
           <motion.div

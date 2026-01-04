@@ -6,11 +6,13 @@ import { CommandItem } from '@/components/ui/command'
 import { CheckCircle2, Circle, CircleDot, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type Item } from '@/lib/store'
+import { useOmniFilter } from '../model/useOmniFilter'
 
 interface OmniItemProps {
   item: Item
   isSelected?: boolean
   opacity?: number
+  activeTags: string[]
   onSelect: (multi?: boolean) => void
 }
 
@@ -18,6 +20,7 @@ const OmniItemComponent = ({
   item,
   isSelected,
   opacity,
+  activeTags,
   onSelect,
 }: OmniItemProps) => {
   return (
@@ -61,11 +64,13 @@ const OmniItemComponent = ({
 
             {/* Группы */}
             {item.ai_tags
-              ?.filter((t) => t.startsWith('group:'))
+              ?.filter(
+                (tag) => tag.startsWith('group:') && !activeTags.includes(tag)
+              )
               .map((tag) => (
                 <span
                   key={tag}
-                  className="shrink-0 px-1.5 py-0.5 bg-muted text-primary rounded-full text-[10px] font-semibold uppercase tracking-wider border border-border"
+                  className="shrink-0 px-1 bg-muted text-primary rounded-full text-xs font-medium tracking-tight border border-border"
                 >
                   {tag.replace('group:', '')}
                 </span>
@@ -105,6 +110,7 @@ const propsAreEqual = (
     prev.item.status === next.item.status &&
     prev.item.content === next.item.content &&
     prev.item.priority === next.item.priority &&
+    JSON.stringify(prev.activeTags) === JSON.stringify(next.activeTags) &&
     prev.item.ai_tags?.length === next.item.ai_tags?.length
   )
 }

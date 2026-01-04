@@ -17,7 +17,7 @@ export function Sidebar() {
   }))
 
   return (
-    <aside className="hidden md:flex flex-col w-12 h-screen border-r border-border dark:border-border/70 bg-card p-2 z-50 transition-all duration-200">
+    <aside className="hidden md:flex flex-col w-12 h-screen border-r border-border bg-card p-2 z-50 transition-all duration-200">
       {/* 1. Лого (Центрировано) */}
       <div className="flex justify-center mb-6 mt-2">
         <Zap

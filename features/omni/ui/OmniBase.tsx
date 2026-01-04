@@ -328,6 +328,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
                           item={item}
                           opacity={Math.max(0, 1 - index * 0.2)}
                           isSelected={selectedIds.includes(item.id)}
+                          activeTags={filter.activeTags}
                           onSelect={(multi) => {
                             if (multi) {
                               toggleSelection(item.id, true)
@@ -348,6 +349,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
                             key={item.id}
                             item={item}
                             isSelected={selectedIds.includes(item.id)}
+                            activeTags={filter.activeTags}
                             onSelect={(multi) => {
                               if (multi) {
                                 toggleSelection(item.id, true)
@@ -371,15 +373,13 @@ export function OmniBase({ mode }: OmniBaseProps) {
 
         {!isAiMode && mode === 'standalone' && (
           <>
-            <ResizableHandle withHandle className="bg-border/40" />
+            <ResizableHandle className="w-min" />
             <ResizablePanel
               defaultSize={layout[1]}
               minSize={30}
               className="hidden md:block"
             >
-              <div className="h-full w-full bg-muted/5">
-                <OmniPreview item={activeItem} />
-              </div>
+              <OmniPreview item={activeItem} />
             </ResizablePanel>
           </>
         )}
