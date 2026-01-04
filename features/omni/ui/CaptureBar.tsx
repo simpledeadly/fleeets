@@ -235,13 +235,13 @@ export function CaptureBar() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
-            className="absolute bottom-full w-full space-y-0"
+            className="absolute bottom-full w-full space-y-0 -mb-3"
           >
             {suggestions.map((item) => (
               <button
                 key={item.id}
                 onClick={() => handleSuggestionClick(item)}
-                className="w-full flex justify-between text-left p-2 text-sm bg-card/80 backdrop-blur-3xl border border-b-0 border-border first:rounded-t-xl shadow-md hover:bg-muted/80 transition-colors cursor-pointer"
+                className="w-full flex justify-between text-left p-2 text-sm bg-card/80 backdrop-blur-3xl border border-b-0 border-border first:rounded-t-xl shadow-md hover:bg-muted/80 transition-colors cursor-pointer last:pb-5"
               >
                 <div>
                   <p className="font-medium">{item.content}</p>
@@ -249,9 +249,7 @@ export function CaptureBar() {
                     {item.description}
                   </p>
                 </div>
-                <p className="text-muted-foreground font-medium">
-                  {item.status}
-                </p>
+                <p className="text-muted-foreground font-mono">{item.status}</p>
               </button>
             ))}
           </motion.div>
@@ -343,7 +341,7 @@ export function CaptureBar() {
         <form
           onSubmit={handleSubmit}
           className={cn(
-            'hidden md:flex items-center gap-1.5 p-1.5 bg-card/85 backdrop-blur-3xl border shadow-lg transition-all duration-300 ease-in-out',
+            'hidden md:flex items-center gap-1.5 p-1.5 bg-card backdrop-blur-3xl border shadow-lg transition-all duration-75 ease-in-out',
             suggestions.length > 0
               ? 'rounded-t-xl rounded-b-2xl'
               : 'rounded-2xl',
