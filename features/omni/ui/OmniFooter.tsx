@@ -1,10 +1,10 @@
 import type { Item } from '@/lib/store'
 
 export const OmniFooter = ({ item }: { item: Item | null }) => {
-  if (!item) return <footer className="border-t border-border hidden" />
+  if (!item) return <footer className="border-t border-border h-8" />
 
   return (
-    <footer className="h-8 border-t border-border p-1.5 text-xs bg-card flex items-center justify-between animate-in fade-in slide-in-from-bottom-1 duration-150">
+    <footer className="h-8 border-t border-border p-1.5 text-xs bg-card flex items-center justify-between">
       <div className="flex items-center gap-2 text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-150 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-1.5">
           {item.status !== 'done' && (
