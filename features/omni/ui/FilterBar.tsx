@@ -116,7 +116,7 @@ export function FilterBar(props: FilterBarProps) {
   ]
 
   return (
-    <div className="flex flex-col gap-2 p-3 border-b border-border bg-muted/20">
+    <div className="flex flex-col gap-1 p-2 border-b border-border bg-muted/20">
       {/* 1. Верхний ряд: Статусы и Лимит */}
       <div className="flex items-center justify-between gap-4 overflow-x-auto no-scrollbar pb-1">
         <div className="flex gap-2">
@@ -154,8 +154,8 @@ export function FilterBar(props: FilterBarProps) {
         </div>
       </div>
       {/* 2. Нижний ряд: Типы и Флаги */}
-      <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center">
-        <Filter size={14} className="text-muted-foreground shrink-0 mr-1" />
+      <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center mb-1">
+        <Filter size={14} className="text-muted-foreground shrink-0 mr-0.5" />
         {typeFilters.map((filter) => (
           <FilterBadge
             key={filter.label}
@@ -169,8 +169,11 @@ export function FilterBar(props: FilterBarProps) {
       </div>
       {/* 3. Ряд: Группы (Manual Groups) */}
       {groupTags.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-t border-border/50 pt-2">
-          <Folders size={14} className="text-muted-foreground shrink-0 mr-1" />
+        <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-t border-border/60 pt-2">
+          <Folders
+            size={14}
+            className="text-muted-foreground shrink-0 mr-0.5"
+          />
           {groupTags.map((tag) => (
             <div key={tag} className="flex items-center group/badge relative">
               <FilterBadge
