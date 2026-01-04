@@ -5,24 +5,26 @@ export const OmniFooter = ({ item }: { item: Item | null }) => {
 
   return (
     <footer className="h-8 border-t border-border p-1.5 text-xs bg-card flex items-center justify-between">
-      <div className="flex items-center gap-2 text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-150">
+      <div className="flex items-center gap-2 text-muted-foreground animate-in fade-in slide-in-from-bottom-1 duration-150 overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-1.5">
           {item.status !== 'done' && (
             <>
               {item.type === 'task' ? (
                 <>
-                  <Kbd keys={['⌘', 'D']} label="Done" />
-                  <Kbd keys={['⌘', 'F']} label="Focus" />
-                  <Kbd keys={['⌘', 'I']} label="Inbox" />
+                  <Kbd keys={['⌘', 'D']} label="Выполнить" />
+                  <Kbd keys={['⌘', 'F']} label="Фокус" />
+                  <Kbd keys={['⌘', 'I']} label="Входящее" />
                 </>
               ) : (
                 item.status === 'archived' && (
-                  <Kbd keys={['⌘', 'I']} label="Inbox" />
+                  <Kbd keys={['⌘', 'I']} label="Вернуть" />
                 )
               )}
             </>
           )}
-          <Kbd keys={['⌘', 'Del']} label="Delete" />
+          <Kbd keys={['⌘', 'Del']} label="Удалить" />
+          <Kbd keys={['⌘', 'X']} label="Выделить" />
+          <Kbd keys={['Enter']} label="Открыть" />
         </div>
       </div>
     </footer>
