@@ -286,7 +286,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
               <Command
                 key={`${mode}-${isReady}`} // Убрали isPaletteOpen, чтобы фон не ремаунтился и не воровал фокус
                 shouldFilter={false}
-                className="h-full bg-transparent"
+                className="flex flex-col h-full bg-transparent overflow-hidden"
               >
                 <CommandInput
                   ref={inputRef}
@@ -300,10 +300,10 @@ export function OmniBase({ mode }: OmniBaseProps) {
 
                 <CommandList
                   className={cn(
+                    'flex-1 overflow-y-auto outline-none custom-scrollbar',
                     mode === 'modal'
-                      ? 'max-h-130'
-                      : 'max-h-none flex-1 pb-25 md:pb-10',
-                    'outline-none'
+                      ? 'flex-1 max-h-120'
+                      : 'max-h-none flex-1 pb-25 md:pb-10'
                   )}
                 >
                   {!isReady ? (
