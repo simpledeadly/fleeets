@@ -1,7 +1,7 @@
 import type { Item } from '@/lib/store'
 
 export const OmniFooter = ({ item }: { item: Item | null }) => {
-  if (!item) return <footer className="border-t border-border h-8" />
+  if (!item) return <footer className="border-t border-border hidden" />
 
   return (
     <footer className="h-8 border-t border-border p-1.5 text-xs bg-card flex items-center justify-between">
