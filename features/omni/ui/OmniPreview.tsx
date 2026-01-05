@@ -47,7 +47,7 @@ export function OmniPreview({
 
               <div className="flex items-center gap-2 text-xs text-muted-foreground shrink-0 truncate overflow-x-auto no-scrollbar">
                 <div className="flex items-center gap-1 shrink-0">
-                  <Calendar size={14} />
+                  <Calendar size={14} className="shrink-0 opacity-80" />
                   <span>
                     {format(new Date(item.created_at!), 'd MMM', {
                       locale: ru,
