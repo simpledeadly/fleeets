@@ -113,6 +113,7 @@ export function OmniPreview({
                   </p>
                 )}
               </div>
+
               {/* Исходный текст */}
               <div className="space-y-1.5">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
@@ -128,6 +129,25 @@ export function OmniPreview({
                   </p>
                 )}
               </div>
+
+              {/* Лог выполнения */}
+              {item.status === 'done' && (
+                <div className="space-y-1.5">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  Лог выполнения
+                </div>
+                {item.execution_log ? (
+                  <div className="text-sm text-foreground/80">
+                    <p>{item.execution_log}</p>
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground/50 italic">
+                    Нет лога выполнения
+                  </p>
+                )}
+              </div>
+              )}
+
               {/* Теги */}
               {item.ai_tags && item.ai_tags.length > 0 && (
                 <div className="space-y-2">
