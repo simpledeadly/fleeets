@@ -88,6 +88,20 @@ export function ItemEditor() {
                   className="border-none bg-secondary/30 min-h-32 resize-none focus-visible:ring-1 focus-visible:ring-primary/20"
                 />
               </div>
+
+              <div className="space-y-1.5">
+                <span className="text-xs uppercase font-bold text-muted-foreground tracking-widest pl-1">
+                  Исходный текст
+                </span>
+                <Textarea
+                  key={`raw-${item.id}`}
+                  defaultValue={item.raw_content || ''}
+                  onBlur={(e) =>
+                    actions.update({ raw_content: e.target.value })
+                  }
+                  className="border-none bg-secondary/30 min-h-32 resize-none focus-visible:ring-1 focus-visible:ring-primary/20"
+                />
+              </div>
             </div>
 
             {/* Группа: Мета */}
