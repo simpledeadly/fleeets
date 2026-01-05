@@ -11,7 +11,7 @@ import {
   Zap,
   Filter,
   Lightbulb,
-  StickyNote,
+  FileText,
   FileBox,
   Folders,
   Pencil,
@@ -145,7 +145,7 @@ export function FilterBar(props: FilterBarProps) {
     },
     {
       label: 'Заметка',
-      icon: StickyNote,
+      icon: FileText,
       active: props.isNote,
       toggle: () => props.setIsNote(!props.isNote),
     },

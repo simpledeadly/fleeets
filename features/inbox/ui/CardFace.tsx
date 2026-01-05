@@ -5,7 +5,7 @@ import {
   Mic,
   Sparkles,
   Eye,
-  StickyNote,
+  FileText,
   Lightbulb,
   CheckSquare,
   FileBox,
@@ -37,7 +37,7 @@ export function CardFace({
 
   const types = [
     { id: 'task', icon: CheckSquare },
-    { id: 'note', icon: StickyNote },
+    { id: 'note', icon: FileText },
     { id: 'thought', icon: Lightbulb },
     { id: 'resource', icon: FileBox },
   ] as const
