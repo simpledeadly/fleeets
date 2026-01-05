@@ -211,76 +211,80 @@ export function FilterBar(props: FilterBarProps) {
       </div>
       {/* 3. Ряд: Группы (Manual Groups) */}
       {groupTags.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-t border-border/60 pt-2">
+        <div className="flex items-center gap-2 border-t border-border/60 pt-2">
           <button
             onClick={() => setIsTagsModalOpen(true)}
             className="hover:bg-muted p-1 rounded-full transition-colors duration-100 text-muted-foreground hover:text-primary shrink-0 cursor-pointer"
           >
             <Folders size={14} className="shrink-0" />
           </button>
-          {groupTags.map((tag) => (
-            <div key={tag} className="flex items-center group/badge relative">
-              <FilterBadge
-                active={activeTags.includes(tag)}
-                onClick={() => toggleTag(tag)}
-                className="pr-6" // Только отступ для иконок управления
-              >
-                {tag.replace('group:', '')}
-              </FilterBadge>
-              <div className="absolute right-1.5 flex gap-1 opacity-0 group-hover/badge:opacity-100 transition-opacity">
-                <button
-                  onPointerDown={(e) => e.preventDefault()}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    const groupName = tag.replace('group:', '')
-                    const newName = prompt('Переименовать группу:', groupName)
-                    if (newName && newName !== groupName) {
-                      const newTag = `group:${newName}`
-                      // Оптимистичное обновление в сторе
-                      useStore.getState().renameGroup(tag, newTag)
 
-                      import('@/features/item').then(({ renameGroup }) => {
-                        renameGroup(tag, newName).catch((err) => {
-                          console.error('Failed to rename group:', err)
-                          // В случае ошибки возвращаем как было
-                          useStore.getState().renameGroup(newTag, tag)
-                        })
-                      })
-                    }
-                  }}
-                  className="p-0.5 hover:text-primary text-muted-foreground transition-colors"
+          {/* 2. СКРОЛЛИРУЕМЫЙ КОНТЕЙНЕР (только для тегов) */}
+          <div className="flex-1 flex gap-1.5 overflow-x-auto no-scrollbar items-center py-1">
+            {groupTags.map((tag) => (
+              <div key={tag} className="flex items-center group/badge relative">
+                <FilterBadge
+                  active={activeTags.includes(tag)}
+                  onClick={() => toggleTag(tag)}
+                  className="pr-6" // Только отступ для иконок управления
                 >
-                  <Pencil size={10} />
-                </button>
-                <button
-                  onPointerDown={(e) => e.preventDefault()}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    if (confirm('Удалить эту группу?')) {
-                      // Сохраняем для отката если надо (но тут проще просто перечитать из БД)
-                      // [ROUND 18] Если группа активна в фильтре - убираем её
-                      if (activeTags.includes(tag)) {
-                        toggleTag(tag)
-                      }
+                  {tag.replace('group:', '')}
+                </FilterBadge>
+                <div className="absolute right-1.5 flex gap-1 opacity-0 group-hover/badge:opacity-100 transition-opacity">
+                  <button
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      const groupName = tag.replace('group:', '')
+                      const newName = prompt('Переименовать группу:', groupName)
+                      if (newName && newName !== groupName) {
+                        const newTag = `group:${newName}`
+                        // Оптимистичное обновление в сторе
+                        useStore.getState().renameGroup(tag, newTag)
 
-                      useStore.getState().deleteGroup(tag)
-
-                      import('@/features/item').then(
-                        ({ deleteGroup: deleteAction }) => {
-                          deleteAction(tag).catch((err) => {
-                            console.error('Failed to delete group:', err)
+                        import('@/features/item').then(({ renameGroup }) => {
+                          renameGroup(tag, newName).catch((err) => {
+                            console.error('Failed to rename group:', err)
+                            // В случае ошибки возвращаем как было
+                            useStore.getState().renameGroup(newTag, tag)
                           })
+                        })
+                      }
+                    }}
+                    className="p-0.5 hover:text-primary text-muted-foreground transition-colors"
+                  >
+                    <Pencil size={10} />
+                  </button>
+                  <button
+                    onPointerDown={(e) => e.preventDefault()}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (confirm('Удалить эту группу?')) {
+                        // Сохраняем для отката если надо (но тут проще просто перечитать из БД)
+                        // [ROUND 18] Если группа активна в фильтре - убираем её
+                        if (activeTags.includes(tag)) {
+                          toggleTag(tag)
                         }
-                      )
-                    }
-                  }}
-                  className="p-0.5 hover:text-destructive text-muted-foreground transition-colors"
-                >
-                  <Trash2 size={10} />
-                </button>
+
+                        useStore.getState().deleteGroup(tag)
+
+                        import('@/features/item').then(
+                          ({ deleteGroup: deleteAction }) => {
+                            deleteAction(tag).catch((err) => {
+                              console.error('Failed to delete group:', err)
+                            })
+                          }
+                        )
+                      }
+                    }}
+                    className="p-0.5 hover:text-destructive text-muted-foreground transition-colors"
+                  >
+                    <Trash2 size={10} />
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
