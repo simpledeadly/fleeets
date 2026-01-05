@@ -16,7 +16,7 @@ import {
   Target,
   TrendingUp,
   CheckCircle2,
-  Layers,
+  Inbox,
   PlusCircle,
 } from 'lucide-react'
 import { sendPhotoToTelegram } from '@/features/notifications'
@@ -119,7 +119,7 @@ export function GenWeeklyReport({ data }: { data: any }) {
         <SummaryCard
           label="Добавлено в Память"
           value={totalStats.output}
-          icon={Layers}
+          icon={Inbox}
           colorClass="text-green-500"
           bgClass="bg-green-500/5 border-green-500/20"
         />

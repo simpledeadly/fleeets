@@ -73,8 +73,13 @@ export function useItemActions(item: Item) {
       // 5. Серверная синхронизация (Debounced)
       // Если это смена статуса (свайп) - отправляем практически сразу (маленькая задержка для плавности)
       // Если это текст - ждем 1000мс (чтобы собрать все буквы)
-      const isStatusChange = 'status' in changes || 'type' in changes
-      const delay = isStatusChange ? 50 : 1000
+      const isFastField =
+        'status' in changes ||
+        'type' in changes ||
+        'priority' in changes ||
+        'is_quick' in changes
+
+      const delay = isFastField ? 50 : 1000
 
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
 

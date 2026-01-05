@@ -38,7 +38,7 @@ const OmniItemComponent = ({
         <div className="shrink-0 transition-colors">
           <AnimatePresence mode="wait">
             <motion.div
-              key={item.status} // Перерисовка при смене статуса
+              key={`${item.id}-${item.status}-${item.priority}-${item.is_quick}`}
               initial={{ scale: 0.9, opacity: 0.5 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0.5 }}
@@ -88,8 +88,10 @@ const propsAreEqual = (
   return (
     prev.item.id === next.item.id &&
     prev.isSelected === next.isSelected &&
-    prev.item.status === next.item.status &&
     prev.item.content === next.item.content &&
+    prev.item.type === next.item.type &&
+    prev.item.status === next.item.status &&
+    prev.item.is_quick === next.item.is_quick &&
     prev.item.priority === next.item.priority &&
     JSON.stringify(prev.activeTags) === JSON.stringify(next.activeTags) &&
     prev.item.ai_tags?.length === next.item.ai_tags?.length
@@ -99,32 +101,47 @@ const propsAreEqual = (
 export const OmniItem = memo<OmniItemProps>(OmniItemComponent, propsAreEqual)
 
 function TaskStatusIcon({ item }: { item: Item }) {
-  // Если не задача - ничего не рисуем (или можно добавить иконку типа)
+  // 1. Если не задача — ничего не рисуем
   if (item.type !== 'task') return null
 
-  // Выполнено
-  if (item.status === 'done' && item.is_quick !== true) {
-    return <CheckCircle2 size={16} className="text-green-500 mr-2" />
-  } else if (item.status === 'done' && item.is_quick === true) {
-    return <Zap size={16} className="text-amber-500 mr-2" />
-  }
+  const isFocus = item.status === 'today'
+  const isDone = item.status === 'done'
 
-  // Блиц
-  if (item.is_quick === true) {
-    return <Zap size={16} className="mr-2" />
-  }
-
+  // Цвет всегда привязан к приоритету
   const priorityColor =
     item.priority === 'critical'
       ? 'text-red-600'
       : item.priority === 'high'
       ? 'text-red-400'
-      : 'text-muted-foreground' // Обычный серый для medium/low
+      : 'text-muted-foreground'
 
-  // Сегодня (Фокус) - Точка в центре
-  if (item.status === 'today') {
-    return <CircleDot size={16} className={cn('mr-2', priorityColor)} />
+  // 2. ВЫПОЛНЕНО (Done)
+  if (isDone) {
+    return item.is_quick ? (
+      <Zap size={16} className="text-amber-500 mr-2" /> // Цветной, без заливки
+    ) : (
+      <CheckCircle2 size={16} className="text-green-500 mr-2" />
+    )
   }
 
-  return <Circle size={16} className={cn('mr-2', priorityColor)} />
+  // 3. БЛИЦ (is_quick)
+  if (item.is_quick) {
+    return (
+      <Zap
+        size={16}
+        className={cn(
+          'mr-2 transition-all duration-200',
+          priorityColor, // ВСЕГДА цвет приоритета
+          isFocus && 'fill-current' // Заливка ТОЛЬКО в фокусе
+        )}
+      />
+    )
+  }
+
+  // 4. ОБЫЧНАЯ ЗАДАЧА (Task)
+  return isFocus ? (
+    <CircleDot size={16} className={cn('mr-2', priorityColor)} />
+  ) : (
+    <Circle size={16} className={cn('mr-2', priorityColor)} />
+  )
 }

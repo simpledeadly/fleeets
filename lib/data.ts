@@ -9,7 +9,7 @@ export async function fetchActiveItems(supabase: SupabaseClient) {
   const { data, error } = await supabase
     .from('items')
     .select(
-      'id, user_id, content, description, status, type, parent_id, metadata, created_at, updated_at, completed_at, planned_at, triaged_at, revision_count, interaction_count, ai_tags, raw_content, execution_log'
+      'id, user_id, content, description, status, type, priority, is_quick, parent_id, metadata, created_at, updated_at, completed_at, planned_at, triaged_at, revision_count, interaction_count, ai_tags, raw_content, execution_log'
     )
     .in('status', ['inbox', 'planned', 'archived', 'today', 'done'])
     .order('created_at', { ascending: false })

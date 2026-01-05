@@ -10,7 +10,7 @@ import {
   FolderTree,
   Check,
   ArrowRight,
-  Layers,
+  Inbox,
   ChevronRight,
   ChevronDown,
   Trash2,
@@ -138,7 +138,7 @@ export function ArchitectPage() {
           {/* HEADER */}
           <div className="text-center space-y-2">
             <h1 className="text-3xl font-black uppercase tracking-tighter flex items-center justify-center gap-3">
-              <Layers className="size-8 text-indigo-500" />
+              <Inbox className="size-8 text-indigo-500" />
               Project Architect 7.0
             </h1>
             <p className="text-muted-foreground text-sm max-w-lg mx-auto">

@@ -64,9 +64,17 @@ export const useStore = create<AppState>()(
         }),
       updateItem: (updatedItem) =>
         set((state) => ({
-          items: state.items.map((item) =>
-            item.id === updatedItem.id ? { ...item, ...updatedItem } : item
+          items: state.items.map((i) =>
+            i.id === updatedItem.id ? { ...i, ...updatedItem } : i
           ),
+          editingItem:
+            state.editingItem?.id === updatedItem.id
+              ? { ...state.editingItem, ...updatedItem }
+              : state.editingItem,
+          focusItem:
+            state.focusItem?.id === updatedItem.id
+              ? { ...state.focusItem, ...updatedItem }
+              : state.focusItem,
         })),
       replaceItem: (tempId, realItem) =>
         set((state) => ({
