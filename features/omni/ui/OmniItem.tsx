@@ -6,7 +6,6 @@ import { CommandItem } from '@/components/ui/command'
 import { CheckCircle2, Circle, CircleDot, Zap } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type Item } from '@/lib/store'
-import { useOmniFilter } from '../model/useOmniFilter'
 
 interface OmniItemProps {
   item: Item
@@ -70,7 +69,7 @@ const OmniItemComponent = ({
               .map((tag) => (
                 <span
                   key={tag}
-                  className="shrink-0 px-1.5 bg-muted text-primary rounded-full text-xs font-medium tracking-tight border border-border"
+                  className="hidden md:block shrink-0 px-1.5 bg-muted text-primary rounded-full text-xs font-medium tracking-tight border border-border"
                 >
                   {tag.replace('group:', '')}
                 </span>
