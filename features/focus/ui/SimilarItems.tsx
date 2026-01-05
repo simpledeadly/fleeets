@@ -3,12 +3,11 @@
 import {
   CheckCircle2,
   CalendarDays,
-  StickyNote,
+  FileText,
   Lightbulb,
   CheckSquare,
   Mic,
   Hash,
-  FileText,
   FileBox,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -27,7 +26,7 @@ interface SimilarItemsProps {
 const TypeIcon = ({ type }: { type: string }) => {
   switch (type) {
     case 'note':
-      return <StickyNote size={14} className="text-blue-500" />
+      return <FileText size={14} className="text-blue-500" />
     case 'thought':
       return <Lightbulb size={14} className="text-purple-500" />
     case 'resource':

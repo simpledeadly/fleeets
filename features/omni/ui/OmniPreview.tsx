@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { type Item } from '@/lib/store'
 import {
   Calendar,
-  StickyNote,
+  FileText,
   Lightbulb,
   FileBox,
   CheckSquare,
@@ -226,7 +226,7 @@ export function OmniPreview({
 const TypeIcon = ({ type }: { type: string }) => {
   switch (type) {
     case 'note':
-      return <StickyNote size={14} className="text-blue-500" />
+      return <FileText size={14} className="text-blue-500" />
     case 'thought':
       return <Lightbulb size={14} className="text-purple-500" />
     case 'resource':
