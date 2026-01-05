@@ -6,14 +6,20 @@ export function TagBadge({
   tag,
   isActive,
   onToggle,
+  isChild = false,
 }: {
   tag: string
   isActive: boolean
   onToggle: (t: string) => void
+  isChild?: boolean
 }) {
   const isTagsAsWall = useStore((state) => state.isTagsAsWall)
   const isGroup = tag.startsWith('group:')
-  const displayLabel = isGroup ? tag.replace('group:', '') : tag
+  let displayLabel = isGroup ? tag.replace('group:', '') : tag
+
+  if (isChild && displayLabel.includes('/')) {
+    displayLabel = displayLabel.split('/').slice(1).join('/')
+  }
 
   return (
     <span

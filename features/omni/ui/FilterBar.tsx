@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import {
   ListTodo,
@@ -82,13 +82,46 @@ const STATUS_FILTERS: StatusConfig[] = [
 // --- Main Component ---
 
 export function FilterBar(props: FilterBarProps) {
+  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
   const { activeStatus, setActiveStatus, activeTags, toggleTag, topTags } =
     props
 
-  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
-
   const groupTags = topTags.filter((t) => t.startsWith('group:'))
   const regularTags = topTags.filter((t) => !t.startsWith('group:'))
+
+  const groupedProjects = useMemo(() => {
+    const groups: Record<string, string[]> = {}
+    const soloProjects: string[] = []
+
+    groupTags.forEach((tag) => {
+      const tagName = tag.replace('group:', '')
+      if (tagName.includes('/')) {
+        const [prefix] = tagName.split('/')
+        if (!groups[prefix]) groups[prefix] = []
+        groups[prefix].push(tag)
+      } else {
+        soloProjects.push(tag)
+      }
+    })
+
+    return { groups, soloProjects }
+  }, [groupTags])
+
+  const toggleGroup = (prefix: string, tags: string[]) => {
+    const allSelected = tags.every((t) => activeTags.includes(t))
+
+    if (allSelected) {
+      // Если все выбраны — снимаем все
+      tags.forEach((t) => {
+        if (activeTags.includes(t)) toggleTag(t)
+      })
+    } else {
+      // Иначе — выбираем те, что еще не выбраны
+      tags.forEach((t) => {
+        if (!activeTags.includes(t)) toggleTag(t)
+      })
+    }
+  }
 
   // Конфигурация для нижнего ряда фильтров (зависит от пропсов)
   const typeFilters = [
@@ -262,20 +295,79 @@ export function FilterBar(props: FilterBarProps) {
 
           <div className="space-y-5 py-3">
             {/* СЕКЦИЯ ПРОЕКТОВ */}
-            {groupTags.length > 0 && (
-              <div className="space-y-3">
+            {(Object.keys(groupedProjects.groups).length > 0 ||
+              groupedProjects.soloProjects.length > 0) && (
+              <div className="space-y-4">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
                   <Folders size={14} /> Проекты
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {groupTags.map((tag) => (
-                    <TagBadge
-                      key={tag}
-                      tag={tag}
-                      isActive={activeTags.includes(tag)}
-                      onToggle={toggleTag}
-                    />
-                  ))}
+
+                <div className="space-y-4">
+                  {/* Отрисовка групп со слешем */}
+                  {Object.entries(groupedProjects.groups).map(
+                    ([prefix, tags]) => {
+                      const allActive = tags.every((t) =>
+                        activeTags.includes(t)
+                      )
+                      const someActive = tags.some((t) =>
+                        activeTags.includes(t)
+                      )
+
+                      return (
+                        <div key={prefix}>
+                          <div className="flex flex-wrap gap-1 items-center">
+                            {/* Родительский тег (Мастер-тег) */}
+                            <span
+                              onClick={() => toggleGroup(prefix, tags)}
+                              className={cn(
+                                'flex items-center grow justify-center text-xs px-2 py-1 rounded transition-all duration-150 cursor-pointer select-none font-bold',
+                                allActive || someActive
+                                  ? 'bg-primary text-primary-foreground border border-primary shadow-sm'
+                                  : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
+                              )}
+                            >
+                              <Folders size={14} className="mr-1.5 shrink-0" />
+                              {prefix}
+                              <span className="ml-1.5 opacity-60 font-normal text-xs">
+                                {
+                                  tags.filter((t) => activeTags.includes(t))
+                                    .length
+                                }
+                                /{tags.length}
+                              </span>
+                            </span>
+
+                            {/* Дочерние теги */}
+                            <div className="flex flex-wrap gap-1">
+                              {tags.map((tag) => (
+                                <TagBadge
+                                  key={tag}
+                                  tag={tag}
+                                  isActive={activeTags.includes(tag)}
+                                  onToggle={toggleTag}
+                                  isChild // Новый проп для удаления префикса при отображении
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    }
+                  )}
+
+                  {/* Одиночные проекты (без слеша) */}
+                  {groupedProjects.soloProjects.length > 0 && (
+                    <div className="flex flex-wrap gap-1 pt-2 border-t border-border/40">
+                      {groupedProjects.soloProjects.map((tag) => (
+                        <TagBadge
+                          key={tag}
+                          tag={tag}
+                          isActive={activeTags.includes(tag)}
+                          onToggle={toggleTag}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
