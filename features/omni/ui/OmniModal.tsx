@@ -12,7 +12,7 @@ export function OmniModal() {
     <Dialog open={isPaletteOpen} onOpenChange={closePalette}>
       <DialogContent
         showCloseButton={false}
-        className="max-h-140 sm:max-w-4xl p-0 block overflow-hidden bg-card border-border/60 shadow-2xl transition-all duration-150"
+        className="max-h-140 z-300 sm:max-w-4xl p-0 block overflow-hidden bg-card border-border/60 shadow-2xl transition-all duration-150"
       >
         <VisuallyHidden>
           <DialogTitle>Командный центр</DialogTitle>
