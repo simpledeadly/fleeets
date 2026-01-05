@@ -220,7 +220,7 @@ export function FilterBar(props: FilterBarProps) {
           </button>
 
           {/* 2. СКРОЛЛИРУЕМЫЙ КОНТЕЙНЕР (только для тегов) */}
-          <div className="flex-1 flex gap-1.5 overflow-x-auto no-scrollbar items-center py-1">
+          <div className="flex-1 flex gap-1.5 overflow-x-auto no-scrollbar items-center">
             {groupTags.map((tag) => (
               <div key={tag} className="flex items-center group/badge relative">
                 <FilterBadge
