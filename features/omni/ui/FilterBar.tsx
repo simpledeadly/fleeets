@@ -327,7 +327,7 @@ export function FilterBar(props: FilterBarProps) {
                                 'flex items-center grow justify-center text-xs px-2 py-1 rounded transition-all duration-150 cursor-pointer select-none font-bold',
                                 allActive || someActive
                                   ? 'bg-primary text-primary-foreground border border-primary shadow-sm'
-                                  : 'bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20'
+                                  : 'bg-primary/7 dark:bg-primary/12 text-primary border border-primary/12 hover:bg-primary/10 dark:hover:bg-primary/15'
                               )}
                             >
                               <Folders size={14} className="mr-1.5 shrink-0" />
