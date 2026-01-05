@@ -2,7 +2,7 @@
 
 import { createClient } from '../../../lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { LogOut, CreditCard, Snowflake } from 'lucide-react'
+import { LogOut, CreditCard, Snowflake, BrickWall } from 'lucide-react'
 import { usePaywall, paymentService } from '@/features/paywall'
 import { toast } from 'sonner'
 import { ThemeSelector } from './ThemeSelector'
@@ -22,7 +22,7 @@ interface SettingsModalProps {
 }
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const { isSnowing, toggleSnow } = useStore()
+  const { isSnowing, toggleSnow, isTagsAsWall, setIsTagsAsWall } = useStore()
   const router = useRouter()
   const supabase = createClient()
   const { isPro } = usePaywall()
@@ -43,7 +43,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-95 p-0 overflow-hidden bg-card border-border gap-0">
+      <DialogContent className="sm:max-w-95 p-0 overflow-hidden overflow-y-auto bg-card border-border gap-0">
         <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="text-xl font-bold tracking-tight">
             Настройки
@@ -59,28 +59,59 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
             <ThemeSelector />
           </div>
 
-          {/* Block: Showfall */}
-          <div className="flex items-center justify-between p-4 border border-border rounded-xl bg-card">
-            <div className="flex items-center gap-3">
-              <div
-                className={`p-2 rounded-full transition-colors duration-150 ${
-                  isSnowing
-                    ? 'bg-blue-500/20 text-blue-500'
-                    : 'bg-secondary text-muted-foreground'
-                }`}
-              >
-                <Snowflake size={18} strokeWidth={1.6} />
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              Особенности
+            </h3>
+
+            {/* Block: Tags as wall */}
+            <div className="flex items-center justify-between p-3 border border-border rounded-xl bg-card">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`p-2 rounded-full transition-colors duration-150 ${
+                    isTagsAsWall
+                      ? 'bg-red-500/20 text-red-500/80'
+                      : 'bg-secondary text-muted-foreground'
+                  }`}
+                >
+                  <BrickWall size={18} strokeWidth={1.6} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">Теги как стена</span>
+                  <span className="text-xs text-muted-foreground">
+                    Выравнивание тегов по всей ширине
+                  </span>
+                </div>
               </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium">
-                  Новогоднее настроение
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  Да будет снег!
-                </span>
-              </div>
+              <Switch
+                checked={isTagsAsWall}
+                onCheckedChange={setIsTagsAsWall}
+              />
             </div>
-            <Switch checked={isSnowing} onCheckedChange={toggleSnow} />
+
+            {/* Block: Showfall */}
+            <div className="flex items-center justify-between p-3 border border-border rounded-xl bg-card">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`p-2 rounded-full transition-colors duration-150 ${
+                    isSnowing
+                      ? 'bg-blue-500/20 text-blue-500'
+                      : 'bg-secondary text-muted-foreground'
+                  }`}
+                >
+                  <Snowflake size={18} strokeWidth={1.6} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">
+                    Новогоднее настроение
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Да будет снег!
+                  </span>
+                </div>
+              </div>
+              <Switch checked={isSnowing} onCheckedChange={toggleSnow} />
+            </div>
           </div>
 
           {/* Block: Subscription */}

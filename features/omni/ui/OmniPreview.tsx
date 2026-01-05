@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
+import { TagBadge } from './TagBadge'
 
 interface OmniPreviewProps {
   item: Item | null
@@ -137,35 +137,14 @@ export function OmniPreview({
                   <div className="flex flex-wrap gap-1">
                     {item.ai_tags
                       .sort((a, b) => (b.startsWith('group:') ? 1 : -1))
-                      .map((tag) => {
-                        const isGroup = tag.startsWith('group:')
-                        const isActive = activeTags.includes(tag)
-                        const displayLabel = isGroup
-                          ? tag.replace('group:', '')
-                          : tag
-
-                        return (
-                          <span
-                            key={tag}
-                            onClick={() => onToggleTag(tag)}
-                            className={cn(
-                              'flex items-center text-xs px-1.5 py-0.5 rounded transition-all duration-150 cursor-pointer select-none',
-                              isGroup
-                                ? 'bg-primary/5 hover:bg-primary/10 dark:bg-primary/10 dark:hover:bg-primary/15 text-primary border border-primary/5'
-                                : 'bg-muted/60 hover:bg-muted text-accent-foreground/80 border border-primary/5',
-                              isActive && 'border-primary/25'
-                            )}
-                          >
-                            {isGroup && (
-                              <Folders
-                                size={12}
-                                className="mr-1 shrink-0 opacity-80"
-                              />
-                            )}
-                            {displayLabel}
-                          </span>
-                        )
-                      })}
+                      .map((tag) => (
+                        <TagBadge
+                          key={tag}
+                          tag={tag}
+                          isActive={activeTags.includes(tag)}
+                          onToggle={onToggleTag}
+                        />
+                      ))}
                   </div>
                 </div>
               )}

@@ -33,6 +33,8 @@ interface AppState {
   incrementInboxStats: () => void // Для свайпа (увеличиваем outputCount)
   isSnowing: boolean
   toggleSnow: () => void
+  isTagsAsWall: boolean
+  setIsTagsAsWall: (state: boolean) => void
   isSettingsOpen: boolean
   setIsSettingsOpen: (state: boolean) => void
   reorderItems: (newOrder: Item[]) => void
@@ -101,6 +103,8 @@ export const useStore = create<AppState>()(
         })),
       isSnowing: false, // По дефолту выкл (или вкл, если хочешь праздника сразу)
       toggleSnow: () => set((state) => ({ isSnowing: !state.isSnowing })),
+      isTagsAsWall: false,
+      setIsTagsAsWall: (state) => set({ isTagsAsWall: state }),
       isSettingsOpen: false,
       setIsSettingsOpen: (state) => set({ isSettingsOpen: state }),
       reorderItems: (newOrder) => set({ items: newOrder }),
@@ -155,7 +159,10 @@ export const useStore = create<AppState>()(
     }),
     {
       name: 'app-storage',
-      partialize: (state) => ({ isSnowing: state.isSnowing }),
+      partialize: (state) => ({
+        isSnowing: state.isSnowing,
+        isTagsAsWall: state.isTagsAsWall,
+      }),
     }
   )
 )

@@ -1,13 +1,13 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
 import { Badge } from '@/components/ui/badge'
 import {
   ListTodo,
   Focus,
   CheckCircle2,
   Archive,
-  Tag,
+  Tag as TagIcon,
   Zap,
   Filter,
   Lightbulb,
@@ -25,9 +25,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useOmniStore } from '../model/store'
 import { cn } from '@/lib/utils'
 import { useStore } from '@/lib/store'
+import { TagBadge } from './TagBadge'
 
 // --- Types ---
 
@@ -77,6 +84,8 @@ const STATUS_FILTERS: StatusConfig[] = [
 export function FilterBar(props: FilterBarProps) {
   const { activeStatus, setActiveStatus, activeTags, toggleTag, topTags } =
     props
+
+  const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
 
   const groupTags = topTags.filter((t) => t.startsWith('group:'))
   const regularTags = topTags.filter((t) => !t.startsWith('group:'))
@@ -170,10 +179,12 @@ export function FilterBar(props: FilterBarProps) {
       {/* 3. Ряд: Группы (Manual Groups) */}
       {groupTags.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar items-center border-t border-border/60 pt-2">
-          <Folders
-            size={14}
-            className="text-muted-foreground shrink-0 mr-0.5"
-          />
+          <button
+            onClick={() => setIsTagsModalOpen(true)}
+            className="hover:bg-muted p-1 rounded-full transition-colors duration-100 text-muted-foreground hover:text-primary shrink-0 cursor-pointer"
+          >
+            <Folders size={14} className="shrink-0" />
+          </button>
           {groupTags.map((tag) => (
             <div key={tag} className="flex items-center group/badge relative">
               <FilterBadge
@@ -239,6 +250,57 @@ export function FilterBar(props: FilterBarProps) {
           ))}
         </div>
       )}
+
+      {/* --- МОДАЛЬНОЕ ОКНО ВСЕХ ТЕГОВ --- */}
+      <Dialog open={isTagsModalOpen} onOpenChange={setIsTagsModalOpen}>
+        <DialogContent className="bg-card md:min-w-xl lg:min-w-3xl 2xl:min-w-5xl max-h-[85vh] overflow-y-auto custom-scrollbar">
+          <DialogHeader>
+            <DialogTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+              <Filter size={16} /> Все теги системы
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-5 py-3">
+            {/* СЕКЦИЯ ПРОЕКТОВ */}
+            {groupTags.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  <Folders size={14} /> Проекты
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {groupTags.map((tag) => (
+                    <TagBadge
+                      key={tag}
+                      tag={tag}
+                      isActive={activeTags.includes(tag)}
+                      onToggle={toggleTag}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* СЕКЦИЯ ОБЫЧНЫХ ТЕГОВ */}
+            {regularTags.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  <TagIcon size={14} /> Метки
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {regularTags.map((tag) => (
+                    <TagBadge
+                      key={tag}
+                      tag={tag}
+                      isActive={activeTags.includes(tag)}
+                      onToggle={toggleTag}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

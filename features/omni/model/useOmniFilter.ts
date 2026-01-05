@@ -130,6 +130,7 @@ export function useOmniFilter() {
     isResource,
     activeTags,
     searchQuery,
+    visibleLimit,
   ])
 
   const toggleTag = (tag: string) => {
