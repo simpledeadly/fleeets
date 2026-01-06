@@ -8,15 +8,7 @@ export function createAiClient(config: {
   apiKey?: string
   baseURL?: string
   userId: string
-  action:
-    | 'rag_query'
-    | 'create_item'
-    | 'embedding'
-    | 'chat'
-    | 'transcription'
-    | 'embedding_on_promote'
-    | 'suggest_group'
-    | 'clustering'
+  action: string
 }) {
   const client = new OpenAI({
     apiKey: config.apiKey,
@@ -27,9 +19,7 @@ export function createAiClient(config: {
   const originalChatCreate = client.chat.completions.create.bind(
     client.chat.completions
   )
-  // @ts-ignore
   client.chat.completions.create = async function (...args: any[]) {
-    // @ts-ignore
     const response = await originalChatCreate(...args)
 
     if ('usage' in response && response.usage) {

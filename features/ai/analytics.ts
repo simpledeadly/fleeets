@@ -26,19 +26,10 @@ const PRICING = {
 
 type ModelName = keyof typeof PRICING | string
 
-interface UsageParams {
+export interface UsageParams {
   userId: string
   model: ModelName
-  action:
-    | 'rag_query'
-    | 'create_item'
-    | 'embedding'
-    | 'chat'
-    | 'transcription'
-    | 'embedding_on_promote'
-    | 'suggest_group'
-    | 'clustering'
-    | 'manual_vectorize'
+  action: string
   inputTokens?: number
   outputTokens?: number
   seconds?: number
