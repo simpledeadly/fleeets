@@ -48,32 +48,33 @@ export async function getFocusViewData(itemId: string) {
 
   if (!user) return { totalDuration: 0, similarItems: [] }
 
-  // Запускаем запросы параллельно используя один инстанс клиента
-
-  // 1. Время
   const durationPromise = supabase.rpc('get_item_total_duration', {
     item_uuid: itemId,
   })
 
-  // 2. Контекст (RAG)
   const similarItemsPromise = (async () => {
-    // Сначала нужен вектор
+    // Получаем эмбеддинг и текущий скоуп
     const { data: currentItem } = await supabase
       .from('items')
-      .select('embedding')
+      .select('embedding, scope')
       .eq('id', itemId)
       .single()
 
     if (!currentItem?.embedding) return []
 
-    const { data } = await supabase.rpc('match_items', {
+    const { data, error } = await supabase.rpc('match_items', {
       query_embedding: currentItem.embedding,
-      match_threshold: 0.4,
-      match_count: 16,
-      user_id_input: user.id,
+      match_threshold: 0.5,
+      match_count: 11,
+      user_id_input: user.id, // Теперь это снова совпадает с SQL
+      filter_scope: currentItem.scope || 'general', // Ищем только в этом проекте
     })
 
-    // Фильтруем саму себя
+    if (error) {
+      console.error('Ошибка match_items:', error)
+      return []
+    }
+
     return data?.filter((i: any) => i.id !== itemId) || []
   })()
 
