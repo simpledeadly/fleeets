@@ -19,7 +19,9 @@ export function createAiClient(config: {
   const originalChatCreate = client.chat.completions.create.bind(
     client.chat.completions
   )
+  // @ts-ignore
   client.chat.completions.create = async function (...args: any[]) {
+    // @ts-ignore
     const response = await originalChatCreate(...args)
 
     if ('usage' in response && response.usage) {
