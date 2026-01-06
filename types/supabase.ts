@@ -12,31 +12,6 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
-  }
   public: {
     Tables: {
       activity_logs: {
@@ -79,6 +54,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      agents: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          id: string
+          is_system: boolean | null
+          model_settings: Json | null
+          name: string
+          system_prompt: string
+          user_id: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_system?: boolean | null
+          model_settings?: Json | null
+          name: string
+          system_prompt: string
+          user_id: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          id?: string
+          is_system?: boolean | null
+          model_settings?: Json | null
+          name?: string
+          system_prompt?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       assets: {
         Row: {
@@ -195,7 +203,7 @@ export type Database = {
           priority: Database["public"]["Enums"]["priority_level"] | null
           raw_content: string | null
           revision_count: number | null
-          scope: Database["public"]["Enums"]["app_scope"] | null
+          scope: string | null
           sentiment: string | null
           status: Database["public"]["Enums"]["item_status"] | null
           triaged_at: string | null
@@ -221,7 +229,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["priority_level"] | null
           raw_content?: string | null
           revision_count?: number | null
-          scope?: Database["public"]["Enums"]["app_scope"] | null
+          scope?: string | null
           sentiment?: string | null
           status?: Database["public"]["Enums"]["item_status"] | null
           triaged_at?: string | null
@@ -247,7 +255,7 @@ export type Database = {
           priority?: Database["public"]["Enums"]["priority_level"] | null
           raw_content?: string | null
           revision_count?: number | null
-          scope?: Database["public"]["Enums"]["app_scope"] | null
+          scope?: string | null
           sentiment?: string | null
           status?: Database["public"]["Enums"]["item_status"] | null
           triaged_at?: string | null
@@ -464,36 +472,24 @@ export type Database = {
       get_weekly_summary: { Args: { user_uuid: string }; Returns: Json }
       match_items: {
         Args: {
+          filter_scope?: string
+          filter_user_id: string
           match_count: number
           match_threshold: number
           query_embedding: string
-          user_id_input: string
         }
         Returns: {
-          ai_tags: string[]
-          completed_at: string
           content: string
-          created_at: string
           description: string
-          embedding: string
-          execution_log: string
           id: string
-          is_quick: boolean
           metadata: Json
-          parent_id: string
-          planned_at: string
-          priority: Database["public"]["Enums"]["priority_level"]
-          raw_content: string
-          scope: Database["public"]["Enums"]["app_scope"]
           similarity: number
           status: Database["public"]["Enums"]["item_status"]
           type: Database["public"]["Enums"]["item_type"]
-          user_id: string
         }[]
       }
     }
     Enums: {
-      app_scope: "fleeets" | "randona" | "flode"
       item_status:
         | "inbox"
         | "planned"
@@ -643,12 +639,8 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
-      app_scope: ["fleeets", "randona", "flode"],
       item_status: ["inbox", "planned", "today", "done", "archived", "deleted"],
       item_type: [
         "task",
