@@ -6,6 +6,8 @@ import { CardFace } from './CardFace'
 import { CardBack } from './CardBack'
 import { useInboxCard } from '../model/useInboxCard'
 import { SwipeStamp } from './SwipeStamp'
+import { useItemActions } from '@/features/item'
+import { cn } from '@/lib/utils'
 
 interface InboxCardProps {
   item: Item
@@ -37,6 +39,7 @@ export function InboxCard({
     hasSimilar,
     handlers,
   } = useInboxCard(item, isTop, onSwipeDown)
+  const { update, remove } = useItemActions(item)
 
   const animateState = isFlipped
     ? {
@@ -142,6 +145,45 @@ export function InboxCard({
             isFlipped={isFlipped}
           />
         </motion.div>
+
+        <div className="flex items-center justify-evenly gap-2 mt-2">
+          <button
+            onClick={() => remove()}
+            className="py-1 px-2.5 rounded bg-muted grow cursor-pointer"
+          >
+            Удалить
+          </button>
+          <button
+            onClick={() => update({ status: 'archived' }, 'Отправлено в Архив')}
+            className={cn(
+              'py-1 px-2.5 rounded bg-muted grow cursor-pointer',
+              item.type === 'task' && 'text-muted-foreground/60'
+            )}
+            disabled={item.type === 'task'}
+          >
+            В архив
+          </button>
+          <button
+            onClick={() => update({ status: 'planned' }, 'Добавлено в План')}
+            className={cn(
+              'py-1 px-2.5 rounded bg-muted grow cursor-pointer',
+              item.type !== 'task' && 'text-muted-foreground/60'
+            )}
+            disabled={item.type !== 'task'}
+          >
+            В план
+          </button>
+          <button
+            onClick={() => update({ status: 'today' }, 'Задача взята в фокус')}
+            className={cn(
+              'py-1 px-2.5 rounded bg-muted grow cursor-pointer',
+              item.type !== 'task' && 'text-muted-foreground/60'
+            )}
+            disabled={item.type !== 'task'}
+          >
+            В фокус
+          </button>
+        </div>
       </motion.div>
     </>
   )

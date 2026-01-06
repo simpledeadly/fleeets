@@ -9,6 +9,7 @@ import {
   Lightbulb,
   CheckSquare,
   FileBox,
+  Loader2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { type Item } from '@/lib/store'
@@ -153,7 +154,7 @@ export function CardFace({
           className="p-2 rounded-full text-muted-foreground hover:bg-muted  hover:text-primary transition-colors disabled:opacity-50 cursor-pointer"
         >
           {isProcessing ? (
-            <div className="w-5 h-5 border-2 border-slate-400 border-t-transparent hover:text-primary rounded-full animate-spin" />
+            <Loader2 strokeWidth={1.6} size={22} className="animate-spin" />
           ) : (
             <Sparkles strokeWidth={1.6} size={22} />
           )}
