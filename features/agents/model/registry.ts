@@ -11,7 +11,7 @@ export interface ToolRegistry {
   system: Record<string, ToolHandler>
 }
 
-export const TOOL_REGISTRY: ToolRegistry = {
+export const DATABASE_TOOLS: ToolRegistry = {
   database: {
     CREATE_ITEMS: async (supabase, userId, data) => {
       const items = Array.isArray(data) ? data : [data]
