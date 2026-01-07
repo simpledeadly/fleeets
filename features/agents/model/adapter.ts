@@ -1,48 +1,18 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+// features/agents/model/adapter.ts
 import { createAdminClient } from '@/lib/supabase/admin'
 import { callGoogle } from './providerGoogle'
 import { callOpenAICompatible } from './providerOpenai'
-import { DATABASE_TOOLS } from './registry'
-import {
-  AgentSessionResult,
-  ExecutionTrace,
-  AgentUsage,
-  AgentRunContext,
-  AgentErrorCode,
-} from './types'
-import { PRICING } from './constants'
+import { AgentSessionResult, AgentRunContext } from './types'
 import { agentLogger } from './logger'
-
-/**
- * Извлекает манифест проекта: либо из описания родителя (если есть itemId),
- * либо возвращает название текущего Scope.
- */
-async function getProjectManifesto(
-  supabase: any,
-  scope: string,
-  itemId?: string
-) {
-  if (itemId) {
-    const { data } = await supabase
-      .from('items')
-      .select('parent:parent_id(description)')
-      .eq('id', itemId)
-      .single()
-    if (data?.parent?.description) return data.parent.description
-  }
-  return `Текущий Scope: ${scope}`
-}
-
-const ERROR_MAP: Record<string, { msg: string; code: AgentErrorCode }> = {
-  '401': { msg: 'Ошибка авторизации AI. Проверь ключи.', code: 'AI_AUTH_FAIL' },
-  '429': {
-    msg: 'Лимит запросов исчерпан. Подожди немного.',
-    code: 'AI_QUOTA_REACHED',
-  },
-  JSON_PARSE_ERROR: {
-    msg: 'ИИ прислал битые данные. Попробуй еще раз.',
-    code: 'INVALID_RESPONSE',
-  },
-}
+import {
+  getProjectManifesto,
+  calculateUsage,
+  calculateBreakdown,
+} from './logic'
+import { executeCommands } from './executor'
+import { GEN_UI_REGISTRY } from '@/features/gen-ui/registry'
+import { validateDailyBudget } from './guard'
 
 export async function processAgentTask({
   agentId,
@@ -58,64 +28,92 @@ export async function processAgentTask({
   const supabase = await createAdminClient()
   const start = Date.now()
 
-  let agent: any
-  if (isTest && context.agentOverride) {
-    agent = { id: agentId, name: 'DRAFT_TEST', ...context.agentOverride }
-  } else {
-    const { data } = await supabase
-      .from('agents')
-      .select('*')
-      .eq('id', agentId)
-      .single()
-    agent = data
+  try {
+    await validateDailyBudget(supabase, userId, 0.5)
+  } catch (e) {
+    // Формируем "безопасный" ответ об ошибке для UI
+    return {
+      content:
+        'Дневной лимит ИИ-запросов исчерпан. Попробуйте завтра или обратитесь в поддержку.',
+      commands: [],
+      technical_log: 'GUARD_BLOCKED: BUDGET_EXCEEDED',
+      usage: {
+        model: 'guard',
+        input: 0,
+        output: 0,
+        total_tokens: 0,
+        cost_usd: 0,
+      },
+      execution_trace: [],
+      finish_reason: 'error',
+      debug: {
+        full_system_prompt: '',
+        full_user_prompt: context.query,
+        raw_ai_response: 'Blocked by Budget Guard',
+        total_duration_ms: Date.now() - start,
+        breakdown: {} as any,
+      },
+    }
   }
-  if (!agent) throw new Error('Agent not found')
 
-  const rawPerms = agent.model_settings?.permissions?.tools
-  const perms = Array.isArray(rawPerms) ? rawPerms : []
+  // 1. Получаем Агента (Override для реактивности в Плейграунде)
+  const { data: agentData } = await supabase
+    .from('agents')
+    .select('*')
+    .eq('id', agentId)
+    .single()
+  const agent =
+    isTest && context.agentOverride
+      ? { ...agentData, ...context.agentOverride }
+      : agentData
+  if (!agent) throw new Error('AGENT_NOT_FOUND')
 
-  const hasTools = perms.length > 0
-  const userManifestoPerm =
-    agent.model_settings?.permissions?.user_manifesto ?? false
-  const projectManifestoPerm =
-    agent.model_settings?.permissions?.project_manifesto ?? false
+  const perms = agent.model_settings?.permissions || {
+    tools: [],
+    user_manifesto: false,
+    project_manifesto: false,
+  }
 
-  // 2. Сбор данных только по разрешению (Экономия токенов)
+  // 2. Сбор разрешенного контекста
   const [profile, projectDesc] = await Promise.all([
-    userManifestoPerm
+    perms.user_manifesto
       ? supabase.from('profiles').select('manifesto').eq('id', userId).single()
       : { data: null },
-    projectManifestoPerm
+    perms.project_manifesto
       ? getProjectManifesto(supabase, context.scope, context.itemId)
-      : Promise.resolve('Context Hidden'),
+      : Promise.resolve('Hidden'),
   ])
 
-  const allowedTools = perms.map((p) => p.toUpperCase()) // ["DATABASE:CREATE_ITEMS", "UI:DECOMPOSITION_TREE"]
+  // 3. Формирование инструментов (только разрешенных)
+  const allowedTools =
+    perms.tools?.length > 0
+      ? {
+          database: perms.tools
+            .filter((t: string) => t.startsWith('database:'))
+            .map((t: string) => t.split(':')[1]),
+          ui: Object.values(GEN_UI_REGISTRY)
+            .filter((t: any) => perms.tools.includes(`ui:${t.id}`))
+            .map((t: any) => ({ id: t.id, schema: t.jsonSchema })),
+        }
+      : null
 
-  // 4. СБОРКА ПРОМПТА (Универсальная инструкция)
+  // 4. Сборка промпта-конструктора
   const systemParts = [agent.system_prompt]
-  if (userManifestoPerm && profile.data?.manifesto)
+  if (profile.data?.manifesto)
     systemParts.push(`USER_PREFS: ${profile.data.manifesto}`)
-  if (projectManifestoPerm) systemParts.push(`PROJECT_CONTEXT: ${projectDesc}`)
-
-  if (hasTools) {
-    const toolsStr = perms.map((p) => p.toUpperCase()).join(', ')
+  if (projectDesc !== 'Hidden')
+    systemParts.push(`PROJECT_CONTEXT: ${projectDesc}`)
+  if (allowedTools) {
     systemParts.push(
-      `
-        AVAILABLE TOOLS:
-        ${toolsStr}
-        
-        STRICT ACTION RULE:
-        To use a tool, you MUST add an object to the "actions" array.
-        Structure: { "domain": "database" | "ui" | "system", "tool": "ID", "payload": {} }
-        The "tool" field must be the second part of the ID (e.g., if ID is "DATABASE:CREATE_ITEMS", tool is "CREATE_ITEMS").
-      `.trim()
+      `AVAILABLE TOOLS: ${JSON.stringify(
+        allowedTools
+      )}\nSTRICT RULE: To use tools, add to "commands" array: { domain: "database"|"ui", tool: "ID", payload: {} }`
     )
   }
-
   const finalSystemPrompt = systemParts.join('\n\n---\n')
 
-  const providerRes =
+  // 5. Вызов ИИ
+  const res =
     agent.model_settings.provider === 'google'
       ? await callGoogle(
           agent.model_settings.model,
@@ -128,129 +126,42 @@ export async function processAgentTask({
           context.query
         )
 
-  if (!providerRes || !providerRes.tokens) {
-    console.error(
-      '❌ [ADAPTER_FATAL] Provider response is corrupted:',
-      providerRes
-    )
-    throw new Error('PROVIDER_RESPONSE_INVALID: Check server logs for raw data')
+  // 6. Исполнение и сборка итога
+  const safeTokens = {
+    input: res.tokens?.input ?? 0,
+    output: res.tokens?.output ?? 0,
   }
-
-  const trace: ExecutionTrace[] = []
-  for (const cmd of providerRes.output.commands) {
-    const toolId = `${cmd.domain}:${cmd.tool}`
-    const isAllowed = perms.includes(toolId)
-
-    if (!isAllowed) {
-      trace.push({
-        tool: cmd.tool,
-        domain: cmd.domain,
-        status: 'blocked',
-        input_payload: cmd.payload,
-        error_details: `Access denied for ${toolId}`,
-      })
-      continue
-    }
-
-    try {
-      if (isTest) {
-        trace.push({
-          tool: cmd.tool,
-          domain: cmd.domain,
-          status: 'mocked',
-          input_payload: cmd.payload,
-        })
-      } else if (cmd.domain === 'database') {
-        const handler = (DATABASE_TOOLS as any)[cmd.tool]
-        if (!handler) throw new Error(`Tool ${cmd.tool} not found in Registry`)
-        const res = await handler(supabase, userId, cmd.payload)
-        trace.push({
-          tool: cmd.tool,
-          domain: cmd.domain,
-          status: res.error ? 'error' : 'success',
-          input_payload: cmd.payload,
-          error_details: res.error?.message,
-        })
-      }
-    } catch (e: any) {
-      trace.push({
-        tool: cmd.tool,
-        domain: cmd.domain,
-        status: 'error',
-        input_payload: cmd.payload,
-        error_details: e.message,
-      })
-    }
-  }
-
-  const p = PRICING[agent.model_settings.model] || PRICING['default']
-
-  const usage: AgentUsage = {
-    model: agent.model_settings.model,
-    input: providerRes.tokens.input ?? 0,
-    output: providerRes.tokens.output ?? 0,
-    total_tokens:
-      (providerRes.tokens.input ?? 0) + (providerRes.tokens.output ?? 0),
-    cost_usd:
-      (providerRes.tokens.input * p.input +
-        providerRes.tokens.output * p.output) /
-      1000000,
-  }
+  const trace = await executeCommands(
+    supabase,
+    userId,
+    res.output.commands,
+    perms.tools || [],
+    isTest
+  )
 
   const finalResult: AgentSessionResult = {
-    ...providerRes.output,
-    usage,
+    ...res.output,
+    usage: calculateUsage(agent.model_settings.model, safeTokens),
     execution_trace: trace,
-    finish_reason: providerRes.finish_reason,
+    finish_reason: res.finish_reason,
     debug: {
       full_system_prompt: finalSystemPrompt,
       full_user_prompt: context.query,
-      raw_ai_response: providerRes.raw_text,
+      raw_ai_response: res.raw_text,
       total_duration_ms: Date.now() - start,
       breakdown: calculateBreakdown(
         agent,
         profile.data,
         projectDesc,
-        hasTools ? JSON.stringify(allowedTools) : '',
+        allowedTools ? JSON.stringify(allowedTools) : '',
         context.query,
-        providerRes.tokens.input
+        safeTokens.input
       ),
     },
   }
 
-  await agentLogger.commit(supabase, userId, agentId, finalResult, isTest)
+  // 7. Логирование через наш внутренний агент-логгер
+  await agentLogger.commit(userId, agentId, agent, finalResult, isTest)
 
   return finalResult
-}
-
-/** Вспомогательная функция для расчета веса (вынесена для чистоты кода) */
-function calculateBreakdown(
-  agent: any,
-  profile: any,
-  project: any,
-  tools: string,
-  query: string,
-  totalTokens: number
-) {
-  const weights = {
-    system_base: agent.system_prompt.length,
-    user_manifesto: profile?.manifesto?.length || 0,
-    project_manifesto: project?.length || 0,
-    tools_definition: tools.length,
-    user_query: query.length,
-  }
-  const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0)
-  return {
-    system_base: Math.round((weights.system_base / totalWeight) * totalTokens),
-    user_manifesto: Math.round(
-      (weights.user_manifesto / totalWeight) * totalTokens
-    ),
-    project_manifesto: Math.round(
-      (weights.project_manifesto / totalWeight) * totalTokens
-    ),
-    tools_definition: Math.round(
-      (weights.tools_definition / totalWeight) * totalTokens
-    ),
-    user_query: Math.round((weights.user_query / totalWeight) * totalTokens),
-  }
 }

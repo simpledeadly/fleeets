@@ -28,8 +28,8 @@ export async function callOpenAICompatible(
   })
 
   // ЛОГИРУЕМ ВСЁ ЧТО ПРИШЛО
-  console.log('--- [DEBUG: OPENAI RAW RESPONSE] ---')
-  console.dir(completion, { depth: null })
+  // console.log('--- [DEBUG: OPENAI RAW RESPONSE] ---')
+  // console.dir(completion, { depth: null })
 
   const choice = completion.choices[0]
   const raw_text = choice.message.content || '{}'

@@ -111,3 +111,18 @@ export interface ProviderResult {
   raw_text: string
   finish_reason: AIFinishReason
 }
+
+export interface AgentAnalytics {
+  agent_id: string
+  agent_type: 'system' | 'custom'
+  model: string
+  provider: string
+  total_actions: number
+  db_mutations: number // сколько реально записей создано/изменено
+  ui_renders: number // сколько раз вызывался GenUI
+  has_error: boolean
+  is_test: boolean
+  latency_ms: number
+  cost_usd: number
+  scope: string
+}

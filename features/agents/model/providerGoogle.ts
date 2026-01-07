@@ -24,8 +24,8 @@ export async function callGoogle(
   const data = await res.json()
 
   // ЛОГ ДЛЯ ДЕБАГА
-  console.log('--- [DEBUG: GOOGLE RAW RESPONSE] ---')
-  console.dir(data, { depth: null })
+  // console.log('--- [DEBUG: GOOGLE RAW RESPONSE] ---')
+  // console.dir(data, { depth: null })
 
   if (data.error) throw new Error(`GOOGLE_API_ERROR: ${data.error.message}`)
   if (!data.candidates || data.candidates.length === 0)
