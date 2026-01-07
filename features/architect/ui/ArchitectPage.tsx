@@ -7,11 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import {
   Loader2,
-  FolderTree,
   Check,
   ArrowRight,
   Inbox,
-  ChevronRight,
   ChevronDown,
   Trash2,
   Plus,
@@ -66,7 +64,7 @@ export function ArchitectPage() {
         toast.success('Проекты найдены! Проверьте их.')
       }
     } catch (e) {
-      toast.error('Ошибка анализа')
+      toast.error(`Ошибка анализа: ${e}`)
     } finally {
       setIsDiscovering(false)
     }
@@ -85,7 +83,7 @@ export function ArchitectPage() {
         toast.success('Задачи разложены!')
       }
     } catch (e) {
-      toast.error('Ошибка сортировки')
+      toast.error(`Ошибка сортировки: ${e}`)
     } finally {
       setIsSorting(false)
     }
@@ -114,7 +112,7 @@ export function ArchitectPage() {
         setStructure(null)
       }
     } catch (e) {
-      toast.error('Ошибка сохранения')
+      toast.error(`Ошибка сохранения: ${e}`)
     } finally {
       setIsApplying(false)
     }
@@ -255,7 +253,7 @@ export function ArchitectPage() {
                               onChange={(e) =>
                                 updateRoot(idx, 'description', e.target.value)
                               }
-                              className="bg-background text-sm min-h-[100px]"
+                              className="bg-background text-sm min-h-25"
                             />
                           </div>
                           <div className="space-y-1">
@@ -271,7 +269,7 @@ export function ArchitectPage() {
                                   e.target.value.split(',').map((s) => s.trim())
                                 )
                               }
-                              className="bg-background text-sm min-h-[100px]"
+                              className="bg-background text-sm min-h-25"
                               placeholder="fleeets, my project, sharing reports (через запятую...)"
                             />
                           </div>
