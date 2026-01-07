@@ -13,10 +13,14 @@ export const MagicButton = ({
 
   const handleAction = async () => {
     try {
-      const result = await runAgent(agentId, { itemId })
+      const result = await runAgent(agentId, {
+        scope: 'Fleeets',
+        query: '',
+        itemId,
+      })
       console.log('🚀 [AGENT_RESULT]:', result)
 
-      toast.success(`Агент выполнил: ${result.intent}`, {
+      toast.success(`Агент выполнил: ${result.commands}`, {
         description: result.content?.substring(0, 100) + '...',
         action: {
           label: 'Log',
