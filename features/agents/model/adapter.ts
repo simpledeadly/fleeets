@@ -2,7 +2,12 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { callGoogle } from './providerGoogle'
 import { callOpenAICompatible } from './providerOpenai'
 import { DATABASE_TOOLS } from './registry'
-import { AgentResponse, ExecutionStep, AgentUsage } from './types'
+import {
+  AgentSessionResult,
+  ExecutionTrace,
+  AgentUsage,
+  AgentRunContext,
+} from './types'
 import { PRICING } from './constants'
 
 export async function processAgentTask({
@@ -10,9 +15,15 @@ export async function processAgentTask({
   userId,
   context,
   isTest = false,
-}: any): Promise<AgentResponse> {
+}: {
+  agentId: string
+  userId: string
+  context: AgentRunContext
+  isTest?: boolean
+}): Promise<AgentSessionResult> {
   const supabase = await createAdminClient()
   const start = Date.now()
+
   const { data: agent } = await supabase
     .from('agents')
     .select('*')
@@ -21,66 +32,82 @@ export async function processAgentTask({
   if (!agent) throw new Error('Agent not found')
 
   const systemPrompt = `${agent.system_prompt}\n\nCONTEXT: ${context.scope}`
-  const callParams = [
-    agent.model_settings,
-    systemPrompt,
-    context.query,
-    userId,
-  ] as const
 
-  const { object, usage, raw_text } =
+  const providerRes =
     agent.model_settings.provider === 'google'
       ? await callGoogle(
           agent.model_settings.model,
           systemPrompt,
           context.query
         )
-      : await callOpenAICompatible(...callParams)
+      : await callOpenAICompatible(
+          agent.model_settings,
+          systemPrompt,
+          context.query,
+          userId
+        )
 
-  const steps: ExecutionStep[] = []
+  const trace: ExecutionTrace[] = []
   const perms = agent.model_settings.permissions?.tools || []
 
-  for (const act of object.actions) {
-    const toolId = `${act.type}:${act.tool}`
+  for (const cmd of providerRes.output.commands) {
+    const toolId = `${cmd.domain}:${cmd.tool}`
     if (!perms.includes(toolId)) {
-      steps.push({ ...act, status: 'blocked', message: 'No permission' })
+      trace.push({
+        ...cmd,
+        status: 'blocked',
+        input_payload: cmd.payload,
+        error_details: 'No permission',
+      })
       continue
     }
-    if (isTest) {
-      steps.push({ ...act, status: 'mocked' })
-    } else if (act.type === 'database') {
-      const res = await (DATABASE_TOOLS as any)[act.tool](
-        supabase,
-        userId,
-        act.payload
-      )
-      steps.push({
-        ...act,
-        status: res.error ? 'error' : 'success',
-        message: res.error?.message,
+
+    try {
+      if (isTest) {
+        trace.push({ ...cmd, status: 'mocked', input_payload: cmd.payload })
+      } else if (cmd.domain === 'database') {
+        const handler = (DATABASE_TOOLS as any)[cmd.tool]
+        const res = await handler(supabase, userId, cmd.payload)
+        trace.push({
+          ...cmd,
+          status: res.error ? 'error' : 'success',
+          input_payload: cmd.payload,
+          error_details: res.error?.message,
+        })
+      }
+    } catch (e: any) {
+      trace.push({
+        ...cmd,
+        status: 'error',
+        input_payload: cmd.payload,
+        error_details: e.message,
+        validation_error: e.name === 'ZodError',
       })
     }
   }
 
   const p = PRICING[agent.model_settings.model] || { input: 0, output: 0 }
-  const usageObj: AgentUsage = {
+  const usage: AgentUsage = {
     model: agent.model_settings.model,
-    input_tokens: usage.input_tokens,
-    output_tokens: usage.output_tokens,
-    total_tokens: usage.input_tokens + usage.output_tokens,
+    input_tokens: providerRes.tokens.input,
+    output_tokens: providerRes.tokens.output,
+    total_tokens: providerRes.tokens.input + providerRes.tokens.output,
     cost_usd:
-      (usage.input_tokens * p.input + usage.output_tokens * p.output) / 1000000,
+      (providerRes.tokens.input * p.input +
+        providerRes.tokens.output * p.output) /
+      1000000,
   }
 
   return {
-    ...object,
-    usage: usageObj,
-    execution_steps: steps,
+    ...providerRes.output,
+    usage,
+    execution_trace: trace,
+    finish_reason: providerRes.finish_reason,
     debug: {
       full_system_prompt: systemPrompt,
       full_user_prompt: context.query,
-      raw_ai_response: raw_text,
-      duration_ms: Date.now() - start,
+      raw_ai_response: providerRes.raw_text,
+      total_duration_ms: Date.now() - start,
     },
   }
 }

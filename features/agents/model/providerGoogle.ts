@@ -1,11 +1,11 @@
-import { RawAIResult } from './types'
+import { ProviderResult } from './types'
 import { normalizeAIResponse } from './normalizer'
 
 export async function callGoogle(
   model: string,
   system: string,
   prompt: string
-): Promise<RawAIResult> {
+): Promise<ProviderResult> {
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`,
     {
@@ -26,11 +26,13 @@ export async function callGoogle(
 
   const text = data.candidates[0].content.parts[0].text
   return {
-    object: normalizeAIResponse(text),
-    usage: {
-      input_tokens: data.usageMetadata?.promptTokenCount || 0,
-      output_tokens: data.usageMetadata?.candidatesTokenCount || 0,
+    output: normalizeAIResponse(text),
+    tokens: {
+      input: data.usageMetadata?.promptTokenCount || 0,
+      output: data.usageMetadata?.candidatesTokenCount || 0,
     },
     raw_text: text,
+    finish_reason:
+      (data.candidates[0].finishReason?.toLowerCase() as any) || 'stop',
   }
 }

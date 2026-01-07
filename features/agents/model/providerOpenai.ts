@@ -1,5 +1,5 @@
 import { createAiClient } from '@/lib/ai/client'
-import { RawAIResult } from './types'
+import { ProviderResult } from './types'
 import { normalizeAIResponse } from './normalizer'
 
 export async function callOpenAICompatible(
@@ -7,7 +7,7 @@ export async function callOpenAICompatible(
   system: string,
   prompt: string,
   userId: string
-): Promise<RawAIResult> {
+): Promise<ProviderResult> {
   const client = createAiClient({
     apiKey:
       config.provider === 'groq'
@@ -24,21 +24,23 @@ export async function callOpenAICompatible(
   const completion = await client.chat.completions.create({
     model: config.model,
     messages: [
-      // Фикс ошибки 400: слово JSON обязательно в промпте
-      { role: 'system', content: system + '\nInstruction: Respond with JSON.' },
+      { role: 'system', content: system + '\nIMPORTANT: Return JSON.' },
       { role: 'user', content: prompt },
     ],
     response_format: { type: 'json_object' },
-    temperature: 1,
+    temperature: 1
   })
 
-  const text = completion.choices[0].message.content || '{}'
+  const choice = completion.choices[0]
+  const raw_text = choice.message.content || '{}'
+
   return {
-    object: normalizeAIResponse(text),
-    usage: {
-      input_tokens: completion.usage?.prompt_tokens || 0,
-      output_tokens: completion.usage?.completion_tokens || 0,
+    output: normalizeAIResponse(raw_text),
+    tokens: {
+      input: completion.usage?.prompt_tokens || 0,
+      output: completion.usage?.completion_tokens || 0,
     },
-    raw_text: text,
+    raw_text,
+    finish_reason: (choice.finish_reason as any) || 'stop',
   }
 }
