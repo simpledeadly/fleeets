@@ -1,5 +1,5 @@
 import { BrainCog, Loader2 } from 'lucide-react'
-import { useAgent } from '../hooks/use-agent'
+import { useAgent } from '../hooks/useAgent'
 import { toast } from 'sonner'
 
 export const MagicButton = ({

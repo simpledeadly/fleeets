@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { useStore, type Item } from '@/lib/store'
 import { createClient } from '../../lib/supabase/client'
 import { fetchActiveItems, fetchUserTier } from '@/lib/data'
 import { usePaywallStore } from '@/features/paywall'
+import { fetchAgents, useAgentsStore } from '@/features/agents'
 
 export default function StoreInitializer() {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
   const { isInitialized, setItems, addItem } = useStore()
 
   // Ref чтобы не подписываться дважды при React Strict Mode
@@ -19,17 +20,24 @@ export default function StoreInitializer() {
 
     const loadData = async () => {
       try {
-        // Запускаем параллельно для скорости
-        const [items, tier] = await Promise.all([
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
+        if (!user) return
+
+        const [items, tier, agents] = await Promise.all([
           fetchActiveItems(supabase),
           fetchUserTier(supabase),
+          fetchAgents(user.id),
         ])
 
         setItems(items)
-
-        // Устанавливаем тариф в стор пэйволла
         usePaywallStore.getState().setTier(tier)
-        console.log(`✅ Init complete. Items: ${items.length}, Tier: ${tier}`)
+        useAgentsStore.getState().setAgents(agents)
+
+        console.log(
+          `✅ Init complete. Items: ${items.length}, Agents: ${agents.length}`
+        )
       } catch (e) {
         console.error('❌ Failed to load initial data', e)
       }

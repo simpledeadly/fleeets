@@ -1,3 +1,6 @@
 export { MagicButton } from './ui/MagicButton'
+export { useAgent } from './hooks/useAgent'
+export { fetchAgents } from './model/actions'
+export { useAgentsStore } from './model/useAgentsStore'
+export type { Agent } from './model/useAgentsStore'
 export { processAgentTask } from './model/adapter'
-export { useAgent } from './hooks/use-agent'

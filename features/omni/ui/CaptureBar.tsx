@@ -337,7 +337,7 @@ export function CaptureBar() {
         </motion.div>
       )} */}
 
-      {currentView !== 'vault' && (
+      {currentView !== 'vault' && currentView !== 'agents' && (
         <form
           onSubmit={handleSubmit}
           className={cn(
