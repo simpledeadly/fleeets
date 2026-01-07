@@ -15,7 +15,7 @@ export async function callGoogle(
         contents: [{ parts: [{ text: `${system}\n\n${prompt}` }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          temperature: 0.1,
+          temperature: 1,
         },
       }),
     }
