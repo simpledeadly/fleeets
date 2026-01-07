@@ -14,6 +14,7 @@ export async function getProjectManifesto(
       .select('parent:parent_id(description)')
       .eq('id', itemId)
       .single()
+    // @ts-ignore
     if (data?.parent?.description) return data.parent.description
   }
   return `Scope: ${scope}`
