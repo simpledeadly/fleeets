@@ -13,7 +13,7 @@ export const MagicButton = ({
 
   const handleAction = async () => {
     try {
-      const result = await runAgent(itemId, agentId)
+      const result = await runAgent(agentId, { itemId })
       console.log('🚀 [AGENT_RESULT]:', result)
 
       toast.success(`Агент выполнил: ${result.intent}`, {

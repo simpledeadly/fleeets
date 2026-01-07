@@ -13,8 +13,15 @@ export async function POST(req: Request) {
 
     const body = await req.json()
     const result = await processAgentTask({
-      ...body,
+      agentId: body.agentId,
       userId: user.id,
+      isTest: body.isTest || false,
+      context: {
+        query: body.query || '',
+        scope: body.scope || 'general',
+        itemId: body.itemId,
+        itemIds: body.itemIds,
+      },
     })
 
     return NextResponse.json(result)
