@@ -1,5 +1,5 @@
-import { AgentOutput, AgentCommand } from './types'
-import { LEGACY_INTENT_MAP } from './constants'
+// features/agents/model/normalizer.ts
+import { AgentOutput } from './types'
 
 export function normalizeAIResponse(text: string): AgentOutput {
   try {
@@ -8,29 +8,48 @@ export function normalizeAIResponse(text: string): AgentOutput {
       .replace(/```/g, '')
       .trim()
     const parsed = JSON.parse(cleanJson)
-    const commands: AgentCommand[] = parsed.commands || parsed.actions || []
 
-    // Поддержка старых форматов (intent/data)
-    if (commands.length === 0 && (parsed.intent || parsed.action)) {
-      const tool = String(parsed.intent || parsed.action).toUpperCase()
-      commands.push({
-        domain: 'database',
-        tool: LEGACY_INTENT_MAP[tool] || tool,
-        payload: parsed.data || parsed.tasks || parsed.content || {},
-      })
-    }
+    const baseContent = Array.isArray(parsed)
+      ? parsed[0]
+      : parsed.content ||
+        parsed.response ||
+        parsed.message ||
+        parsed.answer ||
+        parsed.result ||
+        ''
+
+    const rawActions = parsed.actions || parsed.commands || []
 
     return {
       thought: parsed.thought || '',
-      content: parsed.content || parsed.message || '',
-      technical_log: parsed.technical_log || parsed.log_message || 'OK',
-      commands: commands.map((c) => ({
-        domain: c.domain || 'database',
-        tool: c.tool?.toUpperCase() || 'UPDATE_ITEM',
-        payload: c.payload || {},
-      })),
+      content: String(
+        baseContent || (typeof parsed === 'string' ? parsed : '')
+      ),
+      technical_log: parsed.technical_log || 'OK',
+      commands: rawActions.map((c: any) => {
+        const rawTool = String(c.tool || c.action || '').toUpperCase()
+
+        let finalDomain = (c.domain || c.type || 'database').toLowerCase()
+        let finalTool = rawTool
+
+        if (rawTool.includes(':')) {
+          const [d, t] = rawTool.split(':')
+          finalDomain = d.toLowerCase()
+          finalTool = t
+        }
+
+        return {
+          domain: finalDomain as any,
+          tool: finalTool,
+          payload: c.payload || {},
+        }
+      }),
     }
   } catch (e) {
-    return { content: text, commands: [], technical_log: `PARSE_ERROR: ${e}` }
+    return {
+      content: text,
+      commands: [],
+      technical_log: `RAW_TEXT_FALLBACK: ${e}`,
+    }
   }
 }

@@ -1,14 +1,13 @@
-import { createAiClient } from '@/lib/ai/client'
+import OpenAI from 'openai'
 import { ProviderResult } from './types'
 import { normalizeAIResponse } from './normalizer'
 
 export async function callOpenAICompatible(
   config: any,
   system: string,
-  prompt: string,
-  userId: string
+  prompt: string
 ): Promise<ProviderResult> {
-  const client = createAiClient({
+  const client = new OpenAI({
     apiKey:
       config.provider === 'groq'
         ? process.env.GROQ_API_KEY
@@ -17,19 +16,20 @@ export async function callOpenAICompatible(
       config.provider === 'groq'
         ? 'https://api.groq.com/openai/v1'
         : 'https://openrouter.ai/api/v1',
-    userId,
-    action: `agent_${config.provider}`,
   })
 
   const completion = await client.chat.completions.create({
     model: config.model,
     messages: [
-      { role: 'system', content: system + '\nIMPORTANT: Return JSON.' },
+      { role: 'system', content: system + '\nIMPORTANT: Return valid JSON.' },
       { role: 'user', content: prompt },
     ],
     response_format: { type: 'json_object' },
-    temperature: 1
   })
+
+  // ЛОГИРУЕМ ВСЁ ЧТО ПРИШЛО
+  console.log('--- [DEBUG: OPENAI RAW RESPONSE] ---')
+  console.dir(completion, { depth: null })
 
   const choice = completion.choices[0]
   const raw_text = choice.message.content || '{}'

@@ -13,6 +13,43 @@ export type AIFinishReason =
   | 'error'
   | 'unknown'
 
+export type AgentErrorCode =
+  | 'AI_TIMEOUT'
+  | 'AI_AUTH_FAIL'
+  | 'AI_QUOTA_REACHED'
+  | 'INVALID_RESPONSE'
+  | 'SECURITY_BLOCKED'
+  | 'DATABASE_FAIL'
+  | 'UNKNOWN'
+
+export interface HumanError {
+  code: AgentErrorCode
+  message: string // Для юзера
+  technical: string // Для тебя в логи
+}
+
+/** Переопределение настроек агента для тестирования */
+export interface AgentOverride {
+  system_prompt?: string
+  model_settings?: any
+}
+
+export interface ContextBreakdown {
+  system_base: number // Базовая роль агента
+  user_manifesto: number // Глобальный манифест
+  project_manifesto: number // Манифест проекта
+  tools_definition: number // Описание инструментов и правил JSON
+  user_query: number // Сам запрос
+}
+
+/** Метаданные провайдера (заголовки, статус, модель) */
+export interface ProviderMetadata {
+  status: number
+  statusText: string
+  model_id: string
+  finish_reason: string
+}
+
 export interface AgentCommand {
   domain: AgentTaskDomain
   tool: string
@@ -38,8 +75,8 @@ export interface ExecutionTrace {
 
 export interface AgentUsage {
   model: string
-  input_tokens: number
-  output_tokens: number
+  input: number
+  output: number
   total_tokens: number
   cost_usd: number
 }
@@ -48,11 +85,14 @@ export interface AgentSessionResult extends AgentOutput {
   usage: AgentUsage
   execution_trace: ExecutionTrace[]
   finish_reason: AIFinishReason
+  error?: HumanError
   debug: {
     full_system_prompt: string
     full_user_prompt: string
     raw_ai_response: string
     total_duration_ms: number
+    provider_meta?: ProviderMetadata
+    breakdown: ContextBreakdown
   }
 }
 
@@ -62,6 +102,7 @@ export interface AgentRunContext {
   itemId?: string
   itemIds?: string[]
   isTest?: boolean
+  agentOverride?: AgentOverride
 }
 
 export interface ProviderResult {

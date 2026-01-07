@@ -19,6 +19,8 @@ import {
   Loader2,
   Play,
 } from 'lucide-react'
+import { PlaygroundDebug } from './ui/PlaygroundDebug'
+import { PlaygroundTrace } from './ui/PlaygroundTrace'
 
 const MODELS_CONFIG = {
   google: [
@@ -56,6 +58,9 @@ export function AgentLab() {
   const [testQuery, setTestQuery] = useState('')
   const [testResult, setTestResult] = useState<any>(null)
   const [isTesting, setIsTesting] = useState(false)
+  const [activeTab, setActiveTab] = useState<'result' | 'trace' | 'debug'>(
+    'result'
+  )
 
   const getSettings = () => {
     const defaultSettings = {
@@ -80,6 +85,7 @@ export function AgentLab() {
   }
 
   const handleSave = async (e: React.FormEvent) => {
+    e.stopPropagation()
     e.preventDefault()
     if (!selectedAgent) return
 
@@ -232,10 +238,7 @@ export function AgentLab() {
             </button>
           </div>
 
-          <form
-            onSubmit={handleSave}
-            className="flex-1 overflow-y-auto px-4 py-2 space-y-4 custom-scrollbar"
-          >
+          <form className="flex-1 overflow-y-auto px-4 py-2 space-y-4 custom-scrollbar">
             <div className="grid grid-cols-4 gap-4 mt-1">
               <div className="col-span-3">
                 <label className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
@@ -451,6 +454,10 @@ export function AgentLab() {
                         query: testQuery,
                         isTest: true,
                         scope: 'test',
+                        agentOverride: {
+                          system_prompt: selectedAgent.system_prompt,
+                          model_settings: settings,
+                        },
                       })
                       setTestResult(res)
                       toast.success('Тест завершен')
@@ -472,91 +479,72 @@ export function AgentLab() {
               </div>
 
               {testResult && (
-                <div className="p-3 bg-black/40 rounded-lg border border-border overflow-hidden">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs text-muted-foreground uppercase font-bold">
-                      Результат AI:
-                    </span>
-                    <button
-                      onClick={() => setTestResult(null)}
-                      className="text-xs hover:text-white cursor-pointer"
-                    >
-                      Очистить
-                    </button>
-                  </div>
-                  <div className="text-xs space-y-2">
-                    {testResult.content && (
-                      <div className="text-xs text-blue-200 leading-relaxed bg-blue-500/5 p-2.5 rounded border border-blue-500/20">
-                        {testResult.content}
-                      </div>
-                    )}
-
-                    {testResult.test_report?.length > 0 && (
-                      <div className="space-y-2">
-                        <span className="text-xs text-green-400 font-bold uppercase tracking-tighter">
-                          Имитация мутаций БД:
-                        </span>
-                        {testResult.test_report.map(
-                          (report: any, i: number) => (
-                            <div key={i} className="group relative">
-                              <div className="text-xs font-mono mb-1 text-purple-400 font-bold">
-                                {report.tool}
-                              </div>
-                              <pre className="text-xs font-mono bg-black/60 p-2.5 rounded border border-white/10 overflow-x-auto custom-scrollbar text-white/80 leading-normal">
-                                {JSON.stringify(report.payload, null, 2)}
-                              </pre>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Метрики запроса */}
-                  {testResult.usage && (
-                    <div className="flex items-center gap-4 mb-3 pb-3 border-b border-white/5 overflow-x-auto no-scrollbar">
-                      <div className="shrink-0">
-                        <div className="text-[8px] text-muted-foreground uppercase font-bold">
-                          Tokens
-                        </div>
-                        <div className="text-xs font-mono text-blue-400">
-                          {testResult.usage.input_tokens}{' '}
-                          <span className="text-white/20">/</span>{' '}
-                          {testResult.usage.output_tokens}
-                        </div>
-                      </div>
-                      <div className="shrink-0">
-                        <div className="text-[8px] text-muted-foreground uppercase font-bold">
-                          Total
-                        </div>
-                        <div className="text-xs font-mono text-white/80">
-                          {testResult.usage.total_tokens}
-                        </div>
-                      </div>
-                      <div className="shrink-0">
-                        <div className="text-[8px] text-muted-foreground uppercase font-bold">
-                          Cost
-                        </div>
-                        <div className="text-xs font-mono text-green-400">
-                          ${testResult.usage.cost_usd.toFixed(5)}
-                        </div>
-                      </div>
-                      <div className="shrink-0 ml-auto">
-                        <div className="text-[8px] text-muted-foreground uppercase font-bold text-right">
-                          Model
-                        </div>
-                        <div className="text-[10px] font-mono text-white/40">
-                          {testResult.usage.model}
-                        </div>
-                      </div>
+                <div className="flex flex-col h-125 bg-card rounded-xl border border-border overflow-hidden">
+                  {/* Header & Tabs */}
+                  <div className="flex items-center justify-between px-3 py-2 bg-muted/20 border-b border-border shrink-0">
+                    <div className="flex gap-4">
+                      {['result', 'trace', 'debug'].map((t: any) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setActiveTab(t)}
+                          className={`text-xs uppercase font-bold tracking-widest transition-colors cursor-pointer ${
+                            activeTab === t
+                              ? 'text-blue-400'
+                              : 'text-white/40 hover:text-muted-foreground'
+                          }`}
+                        >
+                          {t}
+                        </button>
+                      ))}
                     </div>
-                  )}
+                    <div className="flex items-center gap-3 font-mono text-xs">
+                      <span className="text-green-400">
+                        ${testResult.usage.cost_usd.toFixed(5)}
+                      </span>
+                      <span className="text-white/20">
+                        {testResult.usage.total_tokens} tokens
+                      </span>
+                      <button
+                        onClick={() => setTestResult(null)}
+                        className="hover:text-red-400 transition-colors"
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Content Area */}
+                  <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                    {activeTab === 'result' && (
+                      <div className="space-y-4">
+                        <div className="text-sm text-blue-100 leading-relaxed italic border-l-2 border-blue-500/30 pl-4">
+                          {testResult.thought && (
+                            <p className="mb-2 text-white/30 text-xs">
+                              {testResult.thought}
+                            </p>
+                          )}
+                          {testResult.content}
+                        </div>
+                        <div className="text-xs text-white/40 font-mono bg-white/5 p-2 rounded">
+                          LOG: {testResult.technical_log}
+                        </div>
+                      </div>
+                    )}
+
+                    {activeTab === 'trace' && (
+                      <PlaygroundTrace trace={testResult.execution_trace} />
+                    )}
+                    {activeTab === 'debug' && (
+                      <PlaygroundDebug result={testResult} />
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
             <button
-              type="submit"
+              onClick={handleSave}
               className="w-full mb-2 bg-blue-500/80 hover:bg-blue-500 text-white py-3 rounded-md font-bold flex items-center justify-center gap-2 transition-all mt-auto cursor-pointer"
             >
               <Save size={20} /> Сохранить

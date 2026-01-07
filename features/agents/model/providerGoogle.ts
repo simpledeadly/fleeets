@@ -15,16 +15,24 @@ export async function callGoogle(
         contents: [{ parts: [{ text: `${system}\n\n${prompt}` }] }],
         generationConfig: {
           responseMimeType: 'application/json',
-          temperature: 1,
+          temperature: 0.1,
         },
       }),
     }
   )
 
   const data = await res.json()
-  if (data.error) throw new Error(data.error.message)
 
-  const text = data.candidates[0].content.parts[0].text
+  // ЛОГ ДЛЯ ДЕБАГА
+  console.log('--- [DEBUG: GOOGLE RAW RESPONSE] ---')
+  console.dir(data, { depth: null })
+
+  if (data.error) throw new Error(`GOOGLE_API_ERROR: ${data.error.message}`)
+  if (!data.candidates || data.candidates.length === 0)
+    throw new Error('GOOGLE_EMPTY_CANDIDATES')
+
+  const text = data.candidates[0].content.parts[0].text || '{}'
+
   return {
     output: normalizeAIResponse(text),
     tokens: {
@@ -32,7 +40,6 @@ export async function callGoogle(
       output: data.usageMetadata?.candidatesTokenCount || 0,
     },
     raw_text: text,
-    finish_reason:
-      (data.candidates[0].finishReason?.toLowerCase() as any) || 'stop',
+    finish_reason: data.candidates[0].finishReason || 'stop',
   }
 }

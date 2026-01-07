@@ -53,3 +53,19 @@ export async function deleteAgent(agentId: string) {
   if (error) throw error
   return { success: true }
 }
+
+/** Получить историю сессий Агента со всеми дебаг-данными */
+export async function getAgentSessionHistory(agentId: string, limit = 10) {
+  const supabase = await createClient()
+
+  const { data, error } = await supabase
+    .from('activity_logs')
+    .select('*')
+    .eq('source', 'agent_adapter')
+    .eq('details->>agent_id', agentId)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return data
+}
