@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Command, CommandInput, CommandList } from '@/components/ui/command'
-import { askBrain } from '@/features/ai'
 import { toast } from 'sonner'
 import { BrainResponse } from './BrainResponse'
 import { GEN_UI_REGISTRY, isGenUITool } from '@/features/gen-ui'
 import { cn } from '@/lib/utils'
+import { agentIds, useAgent } from '@/features/agents'
+
+const BRAIN_AGENT_ID = agentIds.orchestratorAgentId
 
 export function OmniChat({
   initialQuery,
@@ -17,35 +19,64 @@ export function OmniChat({
 }) {
   const [query, setQuery] = useState(initialQuery.replace(/^\?/, '').trim())
 
-  // Стейт теперь хранит или обычный ответ, или GenUI данные
+  // Стейты UI (оставляем как было для совместимости)
   const [brainData, setBrainData] = useState<{
     answer: string
     sources: any[]
   } | null>(null)
+
   const [genUIData, setGenUIData] = useState<{
     type: string
     data: any
   } | null>(null)
 
-  const [isThinking, setIsThinking] = useState(false)
+  // Подключаем новый хук
+  const { runAgent, isLoading } = useAgent()
   const hasFetched = useRef(false)
 
   const performSearch = async (text: string) => {
-    setIsThinking(true)
+    // Сбрасываем старые данные
     setBrainData(null)
     setGenUIData(null)
 
-    const result = await askBrain(text)
+    try {
+      // 1. Вызов Адаптера
+      const result = await runAgent(BRAIN_AGENT_ID, {
+        query: text,
+        scope: 'general', // Или динамический скоуп, если есть
+        // Адаптер сам решит, вызывать RAG или нет, если это прописано в Агенте
+      })
+      console.log('📥 [OMNI_RESULT_PACKET]:', result)
 
-    setIsThinking(false)
+      // 2. Поиск GenUI в действиях (actions)
+      const uiCommand = result.commands?.find((a) => a.domain === 'ui')
 
-    if (result.genUI) {
-      setGenUIData(result.genUI)
-      // setBrainData({ answer: "Сгенерировал интерфейс:", sources: result.sources || [] })
-    } else if (result.answer) {
-      setBrainData({ answer: result.answer, sources: result.sources || [] })
-    } else {
-      toast.error('Мозг не ответил')
+      if (uiCommand) {
+        const toolId = uiCommand.tool.toLowerCase()
+        // Если агент вернул UI-компонент
+        setGenUIData({
+          type: toolId,
+          data: uiCommand.payload,
+        })
+      }
+
+      // 3. Поиск Источников в Трейсе (если был RAG)
+      // Мы ищем шаг выполнения, где tool === 'RAG_SEARCH' и статус success
+      const ragStep = result.execution_trace?.find(
+        (t) => t.tool === 'RAG_SEARCH' && t.status === 'success'
+      )
+      const sources = ragStep?.output_data || [] // Данные из БД, которые вернул инструмент
+
+      // 4. Установка Текста и Источников
+      if (result.content || sources.length > 0) {
+        setBrainData({
+          answer: result.content,
+          sources: sources,
+        })
+      }
+    } catch (e) {
+      console.error(e)
+      toast.error('Ошибка связи с мозгом')
     }
   }
 
@@ -54,25 +85,30 @@ export function OmniChat({
 
     if (!hasFetched.current && cleanQuery.length > 0) {
       hasFetched.current = true
-
       const t = setTimeout(() => {
         performSearch(cleanQuery)
       }, 0)
-
       return () => clearTimeout(t)
     }
   }, [])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !isThinking) {
+    if (e.key === 'Enter' && !isLoading) {
       performSearch(query)
     }
   }
 
+  // Динамический рендер GenUI (без изменений)
   const ToolComponent =
     genUIData && isGenUITool(genUIData.type)
       ? GEN_UI_REGISTRY[genUIData.type].component
       : null
+
+  console.log('🎨 [RENDER_CHECK]:', {
+    hasGenUI: !!genUIData,
+    type: genUIData?.type,
+    isValidTool: genUIData ? isGenUITool(genUIData.type) : false,
+  })
 
   return (
     <Command shouldFilter={false}>
@@ -91,8 +127,8 @@ export function OmniChat({
           mode === 'modal' ? 'h-full max-h-120' : 'min-h-full pb-8'
         )}
       >
-        {/* Индикатор загрузки текстом (опционально) */}
-        {isThinking && !brainData && (
+        {/* Индикатор загрузки от хука */}
+        {isLoading && !brainData && !genUIData && (
           <div className="text-sm text-muted-foreground animate-pulse pl-2">
             Анализирую базу знаний...
           </div>
@@ -105,7 +141,7 @@ export function OmniChat({
           </div>
         )}
 
-        {/* 2. РЕНДЕР ТЕКСТА */}
+        {/* 2. РЕНДЕР ТЕКСТА И ИСТОЧНИКОВ */}
         {brainData && (
           <BrainResponse text={brainData.answer} sources={brainData.sources} />
         )}

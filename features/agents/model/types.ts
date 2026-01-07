@@ -5,6 +5,7 @@ export type CommandStatus =
   | 'blocked'
   | 'mocked'
   | 'interrupted'
+  | 'pending'
 export type AIFinishReason =
   | 'stop'
   | 'length'

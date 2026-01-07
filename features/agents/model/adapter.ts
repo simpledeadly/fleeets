@@ -24,6 +24,14 @@ export async function processAgentTask({
   const supabase = await createAdminClient()
   const start = Date.now()
 
+  const now = new Date()
+  const currentDate = now.toLocaleDateString('ru-RU', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
   // 1. Финансовый контроль
   await validateDailyBudget(
     supabase,
@@ -52,16 +60,47 @@ export async function processAgentTask({
     context,
     perms
   )
-  const toolsStr =
-    perms.tools?.length > 0
-      ? perms.tools.map((p: string) => p.toUpperCase()).join(', ')
-      : ''
+  console.log('🔍 [DEBUG] Perms from DB:', perms.tools)
 
+  // 1. Получаем список UI компонентов
+  const uiCapabilities = ADAPTER_POLICY.get_ui_capabilities(perms.tools || [])
+  console.log('🔍 [DEBUG] UI Capabilities found:', uiCapabilities.length)
+
+  // 2. Системные инструменты (RAG, Reports)
+  const systemTools = perms.tools
+    .filter((t: string) => t.startsWith('system:'))
+    .join(', ')
+
+  // 3. Формируем ПОДРОБНОЕ описание для промпта
+  const toolsParts = []
+  if (systemTools) toolsParts.push(`SYSTEM TOOLS: ${systemTools}`)
+  if (uiCapabilities.length > 0) {
+    const uiDesc = uiCapabilities
+      .map(
+        (t) =>
+          `- ID: ${t.id.toUpperCase()}\n  DESCRIPTION: ${
+            t.description
+          }\n  EXPECTED PAYLOAD: ${t.schema}`
+      )
+      .join('\n')
+    toolsParts.push(`UI COMPONENTS:\n${uiDesc}`)
+  }
+
+  // Если есть БД инструменты, добавим и их
+  const dbTools = perms.tools.filter((t: string) => t.startsWith('database:'))
+  if (dbTools.length > 0)
+    toolsParts.push(`DATABASE TOOLS: ${dbTools.join(', ')}`)
+
+  const toolsStr = toolsParts.join('\n\n')
+  console.log('🚀 [DEBUG] Final tools string weight:', toolsStr.length)
+
+  // 4. Сборка промпта
   const systemPrompt = ADAPTER_POLICY.prompts.system_template(
     finalAgent.system_prompt,
     userPrefs,
     projectContext,
-    toolsStr
+    toolsStr,
+    currentDate
   )
 
   // 4. Вызов ИИ
@@ -88,8 +127,15 @@ export async function processAgentTask({
   )
   const usage = calculateUsage(finalAgent.model_settings.model, res.tokens)
 
+  const finalContent =
+    res.output.content ||
+    (trace.length > 0
+      ? `Выполняю команды: ${trace.map((t) => t.tool).join(', ')}`
+      : '')
+
   const finalResult: AgentSessionResult = {
     ...res.output,
+    content: finalContent,
     usage,
     execution_trace: trace,
     finish_reason: res.finish_reason,

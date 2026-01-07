@@ -1,5 +1,7 @@
 // features/agents/model/agentPolicy.ts
 
+import { GEN_UI_REGISTRY } from '@/features/gen-ui'
+
 /** Глобальные настройки поведения Адаптера */
 export const ADAPTER_POLICY = {
   budget: {
@@ -12,10 +14,15 @@ export const ADAPTER_POLICY = {
       base: string,
       prefs: string,
       project: string,
-      tools: string
+      tools: string,
+      currentDate: string
     ) =>
       `
         ${base}
+
+        ---
+        ТЕКУЩЕЕ ВРЕМЯ: ${currentDate}
+        (Всегда используй эту дату для запросов отчётов и планирования).
 
         ---
         STRICT CONTEXT:
@@ -25,13 +32,30 @@ export const ADAPTER_POLICY = {
         ---
         ${
           tools
-            ? `AVAILABLE TOOLS:\n${tools}\n\nSTRICT ACTION RULE: To use tools, fill "commands" array.`
-            : 'NOTE: No tools allowed for this agent.'
+            ? `AVAILABLE TOOLS & INTERFACES:
+        ${tools}
+
+        STRICT RULE:
+        To use tools, add objects to the "commands" array.
+        Structure: { "domain": "database" | "ui" | "system", "tool": "ID", "payload": {} }`
+            : 'NO TOOLS AVAILABLE.'
         }
-      `.trim(),
+        `.trim(),
 
     // Техническая приписка для OpenAI/Groq (fix 400 error)
     openai_suffix: '\nIMPORTANT: Respond with valid RAW JSON only.',
+  },
+  get_ui_capabilities: (perms: string[]) => {
+    const normalizedPerms = perms.map((p) => p.toLowerCase())
+    return Object.values(GEN_UI_REGISTRY)
+      .filter((t: any) =>
+        normalizedPerms.includes(`ui:${t.type.toLowerCase()}`)
+      )
+      .map((t: any) => ({
+        id: t.type,
+        description: t.description,
+        schema: t.jsonSchema,
+      }))
   },
   defaults: {
     model: 'gemini-3-flash-preview',

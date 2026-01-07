@@ -18,7 +18,8 @@ export function normalizeAIResponse(text: string): AgentOutput {
         parsed.result ||
         ''
 
-    const rawActions = parsed.actions || parsed.commands || []
+    const rawCommands =
+      parsed.actions || parsed.commands || parsed.tool_calls || []
 
     return {
       thought: parsed.thought || '',
@@ -26,22 +27,34 @@ export function normalizeAIResponse(text: string): AgentOutput {
         baseContent || (typeof parsed === 'string' ? parsed : '')
       ),
       technical_log: parsed.technical_log || 'OK',
-      commands: rawActions.map((c: any) => {
-        const rawTool = String(c.tool || c.action || '').toUpperCase()
+      commands: rawCommands.map((c: any) => {
+        const rawTool = String(
+          c.tool || c.action || c.name || c.function?.name || ''
+        ).toLowerCase()
 
-        let finalDomain = (c.domain || c.type || 'database').toLowerCase()
-        let finalTool = rawTool
+        let domain = (c.domain || c.type || 'database').toLowerCase()
+        let tool = rawTool
 
         if (rawTool.includes(':')) {
-          const [d, t] = rawTool.split(':')
-          finalDomain = d.toLowerCase()
-          finalTool = t
+          const parts = rawTool.split(':')
+          domain = parts[0].toLowerCase()
+          tool = parts[1]
+        }
+
+        let payload =
+          c.payload || c.arguments || c.args || c.parameters || c.data || {}
+
+        // Если payload пришел строкой (бывает у некоторых моделей), парсим его
+        if (typeof payload === 'string') {
+          try {
+            payload = JSON.parse(payload)
+          } catch {}
         }
 
         return {
-          domain: finalDomain as any,
-          tool: finalTool,
-          payload: c.payload || {},
+          domain,
+          tool,
+          payload,
         }
       }),
     }
