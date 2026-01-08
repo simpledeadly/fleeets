@@ -82,6 +82,13 @@ export interface AgentUsage {
   cost_usd: number
 }
 
+export interface IterationLog {
+  index: number
+  tokens: { input: number; output: number }
+  requested_tools: string[]
+  finish_reason: string
+}
+
 export interface AgentSessionResult extends AgentOutput {
   usage: AgentUsage
   execution_trace: ExecutionTrace[]
@@ -95,6 +102,7 @@ export interface AgentSessionResult extends AgentOutput {
     total_duration_ms: number
     provider_meta?: ProviderMetadata
     breakdown: ContextBreakdown
+    iteration_logs: IterationLog[]
   }
 }
 

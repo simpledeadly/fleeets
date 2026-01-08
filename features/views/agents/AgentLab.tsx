@@ -18,6 +18,7 @@ import {
   Terminal,
   Loader2,
   Play,
+  Zap,
 } from 'lucide-react'
 import { PlaygroundDebug } from './ui/PlaygroundDebug'
 import { PlaygroundTrace } from './ui/PlaygroundTrace'
@@ -354,6 +355,66 @@ export function AgentLab() {
                     ))}
                   </select>
                 </div>
+              </div>
+            </div>
+
+            {/* СЕКЦИЯ ПАРАМЕТРОВ ИНТЕЛЛЕКТА */}
+            <div className="p-3 bg-muted/10 rounded-md border border-border space-y-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Zap size={16} className="text-primary" />
+                <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                  Параметры интеллекта
+                </span>
+              </div>
+
+              <div className="space-y-4">
+                {/* Рекурсивный цикл */}
+                <label className="flex items-start justify-between gap-4 cursor-pointer group">
+                  <div className="space-y-1">
+                    <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                      Рекурсивный цикл (Agentic Loop)
+                    </span>
+                    <p className="text-[10px] text-muted-foreground leading-relaxed">
+                      Позволяет агенту делать дозапросы данных (RAG, отчеты)
+                      перед финальным ответом. Повышает точность, но увеличивает
+                      время и стоимость.
+                    </p>
+                  </div>
+                  <div className="relative flex items-center pt-1">
+                    <input
+                      type="checkbox"
+                      checked={settings.enable_agentic_loop || false}
+                      onChange={(e) =>
+                        updateSetting('enable_agentic_loop', e.target.checked)
+                      }
+                      className="w-5 h-5 rounded border-border bg-card text-primary accent-primary cursor-pointer transition-all"
+                    />
+                  </div>
+                </label>
+
+                {/* Настройка итераций (появляется только если цикл включен) */}
+                {settings.enable_agentic_loop && (
+                  <div className="flex items-center justify-between pt-3 border-t border-border animate-in fade-in slide-in-from-top-1">
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                        Глубина мышления
+                      </span>
+                      <span className="text-[9px] text-muted-foreground/60 italic">
+                        Максимальное кол-во кругов
+                      </span>
+                    </div>
+                    <select
+                      value={settings.max_iterations || 2}
+                      onChange={(e) =>
+                        updateSetting('max_iterations', Number(e.target.value))
+                      }
+                      className="bg-card text-foreground border border-border rounded-md px-2 py-1 text-xs font-mono outline-none focus:border-primary transition-all cursor-pointer"
+                    >
+                      <option value={2}>2 (Оптимально)</option>
+                      <option value={3}>3 (Глубоко)</option>
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
 

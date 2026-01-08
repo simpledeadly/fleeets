@@ -2,7 +2,12 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { callGoogle } from './providerGoogle'
 import { callOpenAICompatible } from './providerOpenai'
-import { AgentSessionResult, AgentRunContext, ExecutionTrace } from './types'
+import {
+  AgentSessionResult,
+  AgentRunContext,
+  ExecutionTrace,
+  IterationLog,
+} from './types'
 import { agentLogger } from './logger'
 import { calculateUsage, calculateBreakdown } from './logic'
 import { executeCommands } from './executor'
@@ -102,6 +107,7 @@ export async function processAgentTask({
 
   let currentQuery = context.query
   let iterations = 0
+  const iterationLogs: IterationLog[] = []
   let accumulatedTrace: ExecutionTrace[] = []
   const totalTokens = { input: 0, output: 0 }
   let lastProviderRes: any = null
@@ -126,6 +132,13 @@ export async function processAgentTask({
     totalTokens.input += res.tokens.input
     totalTokens.output += res.tokens.output
 
+    iterationLogs.push({
+      index: iterations,
+      tokens: res.tokens,
+      requested_tools: res.output.commands.map((c: any) => c.tool),
+      finish_reason: res.finish_reason,
+    })
+
     // Выполняем команды
     const currentTrace = await executeCommands(
       supabase,
@@ -137,14 +150,22 @@ export async function processAgentTask({
     accumulatedTrace = [...accumulatedTrace, ...currentTrace]
 
     // ПРОВЕРКА: НУЖЕН ЛИ СЛЕДУЮЩИЙ ШАГ?
-    const systemResults = currentTrace.filter(
+    const systemData = currentTrace.filter(
       (t) => t.domain === 'system' && t.status === 'success'
     )
 
-    if (systemResults.length > 0 && iterations < maxIterations) {
-      currentQuery += `\n\nSYSTEM_OBSERVATION: ${JSON.stringify(
-        systemResults.map((r) => r.output_data)
-      )}\nAnalyze this and finish.`
+    if (systemData.length > 0 && iterations < maxIterations) {
+      const observation = systemData
+        .map((r) => `TOOL_RESULT [${r.tool}]: ${JSON.stringify(r.output_data)}`)
+        .join('\n')
+
+      // ВОТ ОНИ - СПЕЦИФИЧНЫЕ ИНСТРУКЦИИ
+      const nextStepInstruction =
+        iterations === maxIterations - 1
+          ? 'Analyze this data and provide your FINAL response to the user now. Do not call more tools.'
+          : 'Analyze this data. If you need more info, use tools. If not, answer the user.'
+
+      currentQuery += `\n\nOBSERVATION:\n${observation}\n\n${nextStepInstruction}`
       continue
     }
     break // Выходим, если системных вызовов нет или лимит исчерпан
@@ -166,8 +187,9 @@ export async function processAgentTask({
     finish_reason: lastProviderRes.finish_reason,
     debug: {
       full_system_prompt: systemPrompt,
-      full_user_prompt: currentQuery, // Показывает финальный склеенный запрос
+      full_user_prompt: currentQuery,
       raw_ai_response: lastProviderRes.raw_text,
+      iteration_logs: iterationLogs,
       total_duration_ms: Date.now() - start,
       breakdown: calculateBreakdown(
         agent,
