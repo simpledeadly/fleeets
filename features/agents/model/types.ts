@@ -87,6 +87,7 @@ export interface AgentSessionResult extends AgentOutput {
   execution_trace: ExecutionTrace[]
   finish_reason: AIFinishReason
   error?: HumanError
+  steps_taken: number
   debug: {
     full_system_prompt: string
     full_user_prompt: string
@@ -111,6 +112,7 @@ export interface ProviderResult {
   tokens: { input: number; output: number }
   raw_text: string
   finish_reason: AIFinishReason
+  needs_iteration?: boolean
 }
 
 export interface AgentAnalytics {

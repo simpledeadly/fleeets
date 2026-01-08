@@ -60,5 +60,7 @@ export const ADAPTER_POLICY = {
   defaults: {
     model: 'gemini-3-flash-preview',
     scope: 'general',
+    max_iterations: 2, // Глобальный предел для безопасности
+    enable_agentic_loop: false, // По умолчанию выключено
   },
 }
