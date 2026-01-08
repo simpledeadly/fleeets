@@ -29,6 +29,14 @@ export default async function RootLayout({
 
   return (
     <html lang="ru" suppressHydrationWarning>
+      <head>
+        <script
+          defer
+          data-website-id="dfid_IIIw1GwhMjMbem9ip0p2b"
+          data-domain="fleeets.vercel.app"
+          src="https://datafa.st/js/script.js"
+        ></script>
+      </head>
       <body className={`min-h-screen bg-card font-sans antialiased`}>
         <ThemeProvider
           attribute="class"
