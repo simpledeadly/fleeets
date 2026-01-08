@@ -13,6 +13,8 @@ export async function executeCommands(
   const trace: ExecutionTrace[] = []
   const upPerms = perms.map((p) => p.toUpperCase())
 
+  let lastSystemOutput: any = null
+
   for (const cmd of commands) {
     const toolId = `${cmd.domain}:${cmd.tool}`.toUpperCase()
     const isAllowed = upPerms.includes(toolId)
@@ -50,9 +52,10 @@ export async function executeCommands(
         const handler = (SYSTEM_TOOLS as any)[cmd.tool.toUpperCase()]
         if (!handler) throw new Error(`System tool ${cmd.tool} not found`)
         output_data = await handler(supabase, userId, cmd.payload)
+        lastSystemOutput = output_data
       } else if (cmd.domain === 'ui') {
         status = 'success'
-        output_data = { rendered: true }
+        output_data = lastSystemOutput || cmd.payload
       }
 
       trace.push({ ...cmd, status, input_payload: cmd.payload, output_data })

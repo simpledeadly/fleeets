@@ -49,14 +49,16 @@ export function OmniChat({
       console.log('📥 [OMNI_RESULT_PACKET]:', result)
 
       // 2. Поиск GenUI в действиях (actions)
-      const uiCommand = result.commands?.find((a) => a.domain === 'ui')
+      const uiStep = result.execution_trace?.find(
+        (t) => t.domain === 'ui' && t.status === 'success'
+      )
 
-      if (uiCommand) {
-        const toolId = uiCommand.tool.toLowerCase()
+      if (uiStep) {
+        const toolId = uiStep.tool.toLowerCase()
         // Если агент вернул UI-компонент
         setGenUIData({
           type: toolId,
-          data: uiCommand.payload,
+          data: uiStep.output_data,
         })
       }
 
@@ -71,7 +73,9 @@ export function OmniChat({
       if (result.content || sources.length > 0) {
         setBrainData({
           answer: result.content,
-          sources: sources,
+          sources:
+            result.execution_trace?.find((t) => t.tool === 'RAG_SEARCH')
+              ?.output_data || [],
         })
       }
     } catch (e) {

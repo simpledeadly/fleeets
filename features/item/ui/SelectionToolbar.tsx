@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -11,17 +11,12 @@ import {
   FolderMinus,
   Loader2,
   Trash2,
-  Tag,
-  Wand2,
+  MapPin,
 } from 'lucide-react'
-import {
-  bulkAddTag,
-  bulkRemoveTag,
-  softDeleteItem,
-  suggestGroupForItems,
-} from '../model/actions'
+import { bulkAddTag, bulkRemoveTag, softDeleteItem } from '../model/actions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { agentIds, useAgent } from '@/features/agents'
 
 export function SelectionToolbar() {
   const {
@@ -33,7 +28,7 @@ export function SelectionToolbar() {
     addItem,
   } = useStore()
   const [groupName, setGroupName] = useState('')
-  const [isPending, setIsPending] = useState(false)
+  const { runAgent, isLoading } = useAgent()
 
   // Получаем список всех уникальных существующих групп
   const existingGroups = Array.from(
@@ -91,7 +86,7 @@ export function SelectionToolbar() {
       }
     } catch (e) {
       originalItems.forEach((item) => updateItem(item))
-      toast.error('Ошибка соединения')
+      toast.error(`Ошибка соединения: ${e}`)
     }
   }
 
@@ -124,7 +119,7 @@ export function SelectionToolbar() {
     } catch (e) {
       // Full Rollback
       originalItems.forEach((item) => addItem(item))
-      toast.error('Ошибка при удалении')
+      toast.error(`Ошибка при удалении: ${e}`)
     }
   }
 
@@ -153,26 +148,20 @@ export function SelectionToolbar() {
     if (e.key === 'Escape') clearSelection()
   }
 
-  const handleMagic = async () => {
-    setIsPending(true)
-    const selectedItems = selectedIds
-      .map((id) => items.find((i) => i.id === id))
-      .filter(Boolean) as any[]
-
-    const contents = selectedItems.map((i) => i.content)
-
+  const handleArchitect = async () => {
     try {
-      const result = await suggestGroupForItems(contents)
-      if (result.success && result.group) {
-        setGroupName(result.group)
-        toast.success(`Предложено: ${result.group}`)
-      } else {
-        toast.error(result.error || 'Не удалось подобрать группу')
-      }
+      const result = await runAgent(agentIds.architectAgentId, {
+        // query: selectedIds.map((i) => i.toString()).join(',\n'),
+        query: items
+          .filter((item) => item.id === selectedIds[0])
+          .map((i) => i.content)
+          .join(',\n'),
+        scope: 'general',
+      })
+      console.log('📥 [VAULT_RESULT_PACKET]:', result)
     } catch (e) {
-      toast.error('Ошибка AI')
-    } finally {
-      setIsPending(false)
+      console.error(e)
+      toast.error(`Ошибка связи с мозгом: ${e}`)
     }
   }
 
@@ -230,7 +219,7 @@ export function SelectionToolbar() {
               size="sm"
               variant="ghost"
               onClick={() => handleAction('add')}
-              disabled={!groupName.trim() || isPending}
+              disabled={!groupName.trim() || isLoading}
               className="h-8 w-8 p-0 rounded-full hover:bg-primary/20 hover:text-green-400 cursor-pointer"
               title="Добавить в группу (Enter)"
             >
@@ -240,7 +229,7 @@ export function SelectionToolbar() {
               size="sm"
               variant="ghost"
               onClick={() => handleAction('remove')}
-              disabled={!groupName.trim() || isPending}
+              disabled={!groupName.trim() || isLoading}
               className="h-8 w-8 p-0 rounded-full hover:bg-destructive/10 hover:text-destructive cursor-pointer"
               title="Убрать из группы (Shift+Enter)"
             >
@@ -256,15 +245,15 @@ export function SelectionToolbar() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleMagic}
-            disabled={isPending}
+            onClick={handleArchitect}
+            disabled={isLoading}
             className="h-8 w-8 p-0 rounded-full hover:bg-violet-500/20 hover:text-violet-500 cursor-pointer transition-all"
             title="Авто-группировка (AI)"
           >
-            {isPending ? (
+            {isLoading ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
-              <Wand2 className="size-4" />
+              <MapPin className="size-4" />
             )}
           </Button>
 
@@ -274,7 +263,7 @@ export function SelectionToolbar() {
             variant="ghost"
             size="icon"
             onClick={handleDelete}
-            disabled={isPending}
+            disabled={isLoading}
             className="h-8 w-8 p-0 rounded-full hover:bg-primary/20 hover:text-destructive cursor-pointer"
             title="Удалить выбранное"
           >

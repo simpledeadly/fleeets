@@ -46,6 +46,7 @@ const AVAILABLE_TOOLS = [
   { id: 'database:CREATE_ITEMS', name: 'Создание элементов', category: 'DB' },
   { id: 'database:UPDATE_ITEM', name: 'Обновление элементов', category: 'DB' },
   { id: 'system:RAG_SEARCH', name: 'Поиск по базе (RAG)', category: 'SYSTEM' },
+  { id: 'system:FETCH_REPORT', name: 'Запросить отчёт', category: 'SYSTEM' },
   { id: 'ui:decomposition', name: 'Декомпозиция', category: 'UI' },
   { id: 'ui:daily_report', name: 'Отчет за день', category: 'UI' },
   { id: 'ui:weekly_report', name: 'Отчет за неделю', category: 'UI' },
