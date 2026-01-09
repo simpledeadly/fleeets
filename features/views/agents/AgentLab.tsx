@@ -46,6 +46,8 @@ const MODELS_CONFIG = {
 const AVAILABLE_TOOLS = [
   { id: 'database:CREATE_ITEMS', name: 'Создание элементов', category: 'DB' },
   { id: 'database:UPDATE_ITEM', name: 'Обновление элементов', category: 'DB' },
+  { id: 'database:UPDATE_SCOPE_VIEW', name: 'Обновление вида Скоупа', category: 'DB' },
+  { id: 'database:UPDATE_PROJECT_MANIFESTO', name: 'Обновление манифеста проекта', category: 'DB' },
   { id: 'system:RAG_SEARCH', name: 'Поиск по базе (RAG)', category: 'SYSTEM' },
   { id: 'system:FETCH_REPORT', name: 'Запросить отчёт', category: 'SYSTEM' },
   { id: 'ui:decomposition', name: 'Декомпозиция', category: 'UI' },

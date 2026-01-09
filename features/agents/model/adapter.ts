@@ -145,7 +145,8 @@ export async function processAgentTask({
       userId,
       res.output.commands,
       perms.tools || [],
-      isTest
+      isTest,
+      context
     )
     accumulatedTrace = [...accumulatedTrace, ...currentTrace]
 

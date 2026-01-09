@@ -4,11 +4,9 @@ import type { SubscriptionTier } from '@/features/paywall'
 
 export async function fetchActiveItems(
   supabase: SupabaseClient,
-  scopeId?: string
+  scopeId?: string | null
 ) {
-  console.log(
-    `🚀 [API] Fetching items${scopeId ? ` for scope ${scopeId}` : ''}...`
-  )
+  console.log(`🚀 [API] Fetching items for: ${scopeId || 'GLOBAL (ALL)'}...`)
 
   // Fetch ALL items (no limit), but exclude heavy columns like 'embedding'
   let query = supabase

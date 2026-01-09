@@ -71,12 +71,53 @@ export const DATABASE_TOOLS = {
   CREATE_ITEMS: async (
     supabase: SupabaseClient,
     userId: string,
-    payload: any
+    payload: any,
+    context?: any
   ) => {
-    const valid = TOOL_SCHEMAS.CREATE_ITEMS.parse(payload)
-    return await supabase
+    let rawItems = []
+    if (Array.isArray(payload)) {
+      rawItems = payload
+    } else if (payload.items && Array.isArray(payload.items)) {
+      rawItems = payload.items
+    } else {
+      rawItems = [payload]
+    }
+
+    let targetScopeId = context?.scopeId
+    const targetScopeName = context?.scope || 'general'
+
+    // Если ID не пришел, но есть имя - ищем ID в базе
+    if (!targetScopeId && targetScopeName) {
+      const { data: scopeData } = await supabase
+        .from('scopes')
+        .select('id')
+        .eq('slug', targetScopeName)
+        .eq('user_id', userId) // Важно: ищем только свои
+        .single()
+
+      if (scopeData) targetScopeId = scopeData.id
+    }
+
+    // 2. Маппинг с ИНЪЕКЦИЕЙ СКОУПА
+    const itemsToInsert = rawItems.map((i: any) => ({
+      user_id: userId,
+      content: i.content || i.title || 'Новая задача',
+      description: i.description || null,
+      type: i.type || 'task',
+      priority: i.priority || 'medium',
+      status: 'inbox',
+      // ВАЖНО: Берем из payload, или из контекста, или дефолт
+      scope: i.scope || context?.scope || 'general',
+      scope_id: context?.scopeId || null, // <--- ВОТ ЭТОГО НЕ ХВАТАЛО
+      metadata: i.parent_context ? { context_note: i.parent_context } : {},
+    }))
+
+    const { data, error } = await supabase
       .from('items')
-      .insert(valid.map((i) => ({ ...i, user_id: userId })))
+      .insert(itemsToInsert)
+      .select()
+    if (error) throw error
+    return data
   },
   UPDATE_ITEM: async (
     supabase: SupabaseClient,

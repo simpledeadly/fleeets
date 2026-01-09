@@ -8,7 +8,8 @@ export async function executeCommands(
   userId: string,
   commands: AgentCommand[],
   perms: string[],
-  isTest: boolean
+  isTest: boolean,
+  context?: any
 ): Promise<ExecutionTrace[]> {
   const trace: ExecutionTrace[] = []
   const upPerms = perms.map((p) => p.toUpperCase())
@@ -44,14 +45,14 @@ export async function executeCommands(
         } else {
           const handler = (DATABASE_TOOLS as any)[cmd.tool.toUpperCase()]
           if (!handler) throw new Error(`DB Tool ${cmd.tool} not found`)
-          const res = await handler(supabase, userId, cmd.payload)
+          const res = await handler(supabase, userId, cmd.payload, context)
           if (res.error) throw new Error(res.error.message)
           output_data = res.data || res
         }
       } else if (cmd.domain === 'system') {
         const handler = (SYSTEM_TOOLS as any)[cmd.tool.toUpperCase()]
         if (!handler) throw new Error(`System tool ${cmd.tool} not found`)
-        output_data = await handler(supabase, userId, cmd.payload)
+        output_data = await handler(supabase, userId, cmd.payload, context)
         lastSystemOutput = output_data
       } else if (cmd.domain === 'ui') {
         status = 'success'

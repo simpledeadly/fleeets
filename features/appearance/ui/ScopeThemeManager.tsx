@@ -59,11 +59,19 @@ export function ScopeThemeManager() {
   const { activeScope } = useScopeStore()
 
   useEffect(() => {
-    if (!activeScope) return
+    const styleId = 'scope-theme-dynamic'
+    let styleTag = document.getElementById(styleId)
 
+    // ЛОГИКА ПРЕДБАННИКА:
+    // Если скоуп не выбран ИЛИ это General — удаляем кастомные стили.
+    if (!activeScope || activeScope.slug === 'general') {
+      if (styleTag) styleTag.remove()
+      console.log('🎨 [Theme] Reset to Default (General)')
+      return
+    }
+
+    // ДАЛЬШЕ ЛОГИКА ДЛЯ КОНКРЕТНЫХ ПРОЕКТОВ (как было)
     const theme = activeScope.theme_config || {}
-
-    // Если в базе нет цветов, используем стандартные Shadcn Zinc
     const lightVal = theme.card_light
       ? hexToChannels(theme.card_light)
       : '0 0% 100%'
@@ -71,31 +79,18 @@ export function ScopeThemeManager() {
       ? hexToChannels(theme.card_dark)
       : '240 10% 3.9%'
 
-    // Мы переопределяем переменную --card (и --popover, чтобы меню тоже красились)
-    // Важно: мы не трогаем --background, чтобы общий фон оставался чистым
     const css = `
-      :root {
-        --card: ${lightVal};
-        --popover: ${lightVal};
-      }
-      .dark {
-        --card: ${darkVal};
-        --popover: ${darkVal};
-      }
+      :root { --card: ${lightVal}; --popover: ${lightVal}; }
+      .dark { --card: ${darkVal}; --popover: ${darkVal}; }
     `
 
-    let styleTag = document.getElementById('scope-theme-dynamic')
     if (!styleTag) {
       styleTag = document.createElement('style')
-      styleTag.id = 'scope-theme-dynamic'
+      styleTag.id = styleId
       document.head.appendChild(styleTag)
     }
     styleTag.innerHTML = css
-
-    // ДЕБАГ: Пишем в консоль, чтобы ты видел, что применилось
-    console.log(
-      `🎨 [Theme] Applied Card Colors | Light: ${lightVal} | Dark: ${darkVal}`
-    )
+    console.log(`🎨 [Theme] Applied Project Theme: ${activeScope.name}`)
   }, [activeScope])
 
   return null

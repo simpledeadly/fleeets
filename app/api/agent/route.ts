@@ -19,6 +19,7 @@ export async function POST(req: Request) {
       context: {
         query: body.query || '',
         scope: body.scope || 'general',
+        scopeId: body.scopeId,
         itemId: body.itemId,
         itemIds: body.itemIds,
         agentOverride: body.agentOverride,

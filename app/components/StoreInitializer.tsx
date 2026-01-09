@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef } from 'react'
-import { useStore } from '@/lib/store'
+import { Item, useStore } from '@/lib/store'
 import { createClient } from '../../lib/supabase/client'
 import { fetchActiveItems, fetchUserTier } from '@/lib/data'
 import { usePaywallStore } from '@/features/paywall'
@@ -103,7 +103,10 @@ export default function StoreInitializer() {
       console.log(`🔄 Switching items to: ${activeScope.name}`)
       try {
         lastFetchedScopeId.current = activeScope.id
-        const items = await fetchActiveItems(supabase, activeScope.id)
+        const targetScopeId =
+          activeScope.slug === 'general' ? null : activeScope.id
+
+        const items = await fetchActiveItems(supabase, targetScopeId)
         setItems(items)
       } catch (e) {
         console.error('❌ Switch failed', e)
@@ -117,19 +120,30 @@ export default function StoreInitializer() {
   useEffect(() => {
     if (!activeScope) return
 
+    const channelName =
+      activeScope.slug === 'general'
+        ? `items_global_user`
+        : `items_realtime_${activeScope.id}`
+
     const channel = supabase
-      .channel(`items_realtime_${activeScope.id}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'items' },
         (payload) => {
-          // Игнорируем события не из нашего скоупа
-          if (payload.new.scope_id !== activeScope.id) return
+          const realItem = payload.new as Item
 
-          // Игнорируем, если уже есть в сторе (защита от дублей)
-          const store = useStore.getState()
-          if (!store.items.some((i) => i.id === payload.new.id)) {
-            store.addItem(payload.new as any)
+          // ФИЛЬТР REALTIME:
+          // 1. Если мы в General -> принимаем ВСЁ (так как это глобальный вид)
+          // 2. Если мы в Проекте -> принимаем только если совпадает ID
+          const isGlobalView = activeScope.slug === 'general'
+          const isBelongToScope = realItem.scope_id === activeScope.id
+
+          if (isGlobalView || isBelongToScope) {
+            const store = useStore.getState()
+            if (!store.items.some((i) => i.id === realItem.id)) {
+              store.addItem(realItem)
+            }
           }
         }
       )
