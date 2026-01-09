@@ -19,12 +19,23 @@ type Item = Database['public']['Tables']['items']['Row']
 /**
  * 1. СОЗДАНИЕ (Легкое, без векторов)
  */
-export async function createItem(text: string) {
+export async function createItem(text: string, scopeId?: string) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
+
+  let targetScopeId = scopeId
+
+  if (!targetScopeId) {
+    // Фаллбэк: ищем активный скоуп юзера
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('active_scope_id')
+      .single()
+    targetScopeId = profile?.active_scope_id
+  }
 
   let finalContent = text
   let parentId: string | null = null
@@ -66,6 +77,7 @@ export async function createItem(text: string) {
       .insert({
         user_id: user.id,
         content: finalContent,
+        scope_id: targetScopeId,
         status: 'inbox',
         type: 'task',
         raw_content: text,

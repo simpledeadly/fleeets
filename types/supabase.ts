@@ -204,6 +204,7 @@ export type Database = {
           raw_content: string | null
           revision_count: number | null
           scope: string | null
+          scope_id: string | null
           sentiment: string | null
           status: Database["public"]["Enums"]["item_status"] | null
           triaged_at: string | null
@@ -230,6 +231,7 @@ export type Database = {
           raw_content?: string | null
           revision_count?: number | null
           scope?: string | null
+          scope_id?: string | null
           sentiment?: string | null
           status?: Database["public"]["Enums"]["item_status"] | null
           triaged_at?: string | null
@@ -256,6 +258,7 @@ export type Database = {
           raw_content?: string | null
           revision_count?: number | null
           scope?: string | null
+          scope_id?: string | null
           sentiment?: string | null
           status?: Database["public"]["Enums"]["item_status"] | null
           triaged_at?: string | null
@@ -269,6 +272,13 @@ export type Database = {
             columns: ["parent_id"]
             isOneToOne: false
             referencedRelation: "items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "items_scope_id_fkey"
+            columns: ["scope_id"]
+            isOneToOne: false
+            referencedRelation: "scopes"
             referencedColumns: ["id"]
           },
           {
@@ -321,6 +331,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_scope_id: string | null
           billing_customer_id: string | null
           created_at: string | null
           id: string
@@ -330,6 +341,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          active_scope_id?: string | null
           billing_customer_id?: string | null
           created_at?: string | null
           id: string
@@ -339,6 +351,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          active_scope_id?: string | null
           billing_customer_id?: string | null
           created_at?: string | null
           id?: string
@@ -346,6 +359,56 @@ export type Database = {
           settings?: Json | null
           telegram_id?: number | null
           updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_scope_id_fkey"
+            columns: ["active_scope_id"]
+            isOneToOne: false
+            referencedRelation: "scopes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scopes: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          manifesto: string | null
+          name: string
+          slug: string
+          theme_config: Json | null
+          updated_at: string | null
+          user_id: string
+          view_config: Json | null
+          view_type: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          manifesto?: string | null
+          name: string
+          slug: string
+          theme_config?: Json | null
+          updated_at?: string | null
+          user_id: string
+          view_config?: Json | null
+          view_type?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          manifesto?: string | null
+          name?: string
+          slug?: string
+          theme_config?: Json | null
+          updated_at?: string | null
+          user_id?: string
+          view_config?: Json | null
+          view_type?: string | null
         }
         Relationships: []
       }
@@ -467,25 +530,38 @@ export type Database = {
         Args: { target_date: string; user_uuid: string }
         Returns: Json
       }
+      get_daily_usage: { Args: { uid: string }; Returns: number }
       get_item_total_duration: { Args: { item_uuid: string }; Returns: number }
       get_weekly_report: { Args: { user_uuid: string }; Returns: Json }
       get_weekly_summary: { Args: { user_uuid: string }; Returns: Json }
       match_items: {
         Args: {
           filter_scope?: string
-          filter_user_id: string
           match_count: number
           match_threshold: number
           query_embedding: string
+          user_id_input: string
         }
         Returns: {
+          ai_tags: string[]
+          completed_at: string
           content: string
+          created_at: string
           description: string
+          embedding: string
+          execution_log: string
           id: string
+          is_quick: boolean
           metadata: Json
+          parent_id: string
+          planned_at: string
+          priority: Database["public"]["Enums"]["priority_level"]
+          raw_content: string
+          scope: string
           similarity: number
           status: Database["public"]["Enums"]["item_status"]
           type: Database["public"]["Enums"]["item_type"]
+          user_id: string
         }[]
       }
     }

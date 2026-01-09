@@ -21,16 +21,14 @@ import { useDebounce } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
 import { usePaywall } from '@/features/paywall'
 import { BrainResponse } from './BrainResponse'
+import { useScopeStore } from '@/features/scopes'
 
 export function CaptureBar() {
   const [text, setText] = useState('')
-  const { increment, decrement, togglePalette } = useOmniStore()
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [suggestions, setSuggestions] = useState<Item[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const debouncedText = useDebounce(text, 700)
-  const { currentView, items, setFocusItem, addItem } = useStore()
-  const { isPro, openPaywall } = usePaywall()
   const [brainMode, setBrainMode] = useState(false)
   const [brainAnswer, setBrainAnswer] = useState<{
     answer: string
@@ -38,6 +36,11 @@ export function CaptureBar() {
   } | null>(null)
   const [isThinking, setIsThinking] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  const { currentView, items, setFocusItem, addItem } = useStore()
+  const { increment, decrement, togglePalette } = useOmniStore()
+  const { isPro, openPaywall } = usePaywall()
+  const { activeScope } = useScopeStore()
 
   // 👇 Авто-расширение высоты
   useEffect(() => {
@@ -192,7 +195,7 @@ export function CaptureBar() {
       setText('')
 
       // 2. Отправляем запрос в фоне
-      createItem(content)
+      createItem(content, activeScope?.id)
         .then((result) => {
           // 3. Обрабатываем результат, когда он придет
           if (result.error) {
@@ -401,7 +404,7 @@ export function CaptureBar() {
             spellCheck="false"
             placeholder={brainMode ? 'Спроси базу знаний...' : 'Новая мысль...'}
             className={cn(
-              'flex-1 bg-transparent text-md focus:outline-none transition-all resize-none py-0.5 px-1 max-h-[250px] custom-scrollbar overflow-y-auto min-h-[38px]',
+              'flex-1 bg-transparent text-md focus:outline-none transition-all resize-none py-0.5 px-1 max-h-62.5 custom-scrollbar overflow-y-auto min-h-9.5',
               brainMode
                 ? 'text-foreground placeholder:text-secondary'
                 : 'placeholder:text-muted-foreground/60'

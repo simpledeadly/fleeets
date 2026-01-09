@@ -2,17 +2,28 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Item } from '@/lib/store'
 import type { SubscriptionTier } from '@/features/paywall'
 
-export async function fetchActiveItems(supabase: SupabaseClient) {
-  console.log('🚀 [API] Fetching ALL items (optimized columns)...')
+export async function fetchActiveItems(
+  supabase: SupabaseClient,
+  scopeId?: string
+) {
+  console.log(
+    `🚀 [API] Fetching items${scopeId ? ` for scope ${scopeId}` : ''}...`
+  )
 
   // Fetch ALL items (no limit), but exclude heavy columns like 'embedding'
-  const { data, error } = await supabase
+  let query = supabase
     .from('items')
     .select(
-      'id, user_id, content, description, status, type, priority, is_quick, parent_id, metadata, created_at, updated_at, completed_at, planned_at, triaged_at, revision_count, interaction_count, ai_tags, raw_content, execution_log'
+      'id, user_id, content, description, status, type, priority, is_quick, parent_id, metadata, created_at, updated_at, completed_at, planned_at, triaged_at, revision_count, interaction_count, ai_tags, raw_content, execution_log, scope_id'
     )
     .in('status', ['inbox', 'planned', 'archived', 'today', 'done'])
     .order('created_at', { ascending: false })
+
+  if (scopeId) {
+    query = query.eq('scope_id', scopeId)
+  }
+
+  const { data, error } = await query
 
   if (error) {
     console.error('❌ [API] Error fetching items:', error)

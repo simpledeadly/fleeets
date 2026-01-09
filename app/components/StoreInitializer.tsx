@@ -6,10 +6,12 @@ import { createClient } from '../../lib/supabase/client'
 import { fetchActiveItems, fetchUserTier } from '@/lib/data'
 import { usePaywallStore } from '@/features/paywall'
 import { fetchAgents, useAgentsStore } from '@/features/agents'
+import { useScopeStore } from '@/features/scopes'
 
 export default function StoreInitializer() {
   const supabase = useMemo(() => createClient(), [])
   const { isInitialized, setItems, addItem } = useStore()
+  const { setActiveScope, setScopes } = useScopeStore()
 
   // Ref чтобы не подписываться дважды при React Strict Mode
   const isMounted = useRef(false)
@@ -25,8 +27,31 @@ export default function StoreInitializer() {
         } = await supabase.auth.getUser()
         if (!user) return
 
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('active_scope_id')
+          .eq('id', user.id)
+          .single()
+        const { data: scopes } = await supabase
+          .from('scopes')
+          .select('*')
+          .eq('user_id', user.id)
+
+        // Определяем текущий скоуп
+        const scopeList = scopes || []
+        setScopes(scopeList) // Сохраняем в стор
+
+        // Определяем текущий
+        const activeId = profile?.active_scope_id
+        const currentScope =
+          scopeList.find((s) => s.id === activeId) || scopeList[0]
+
+        if (currentScope) {
+          setActiveScope(currentScope) // Устанавливаем активный (ESLint доволен)
+        }
+
         const [items, tier, agents] = await Promise.all([
-          fetchActiveItems(supabase),
+          fetchActiveItems(supabase, currentScope?.id),
           fetchUserTier(supabase),
           fetchAgents(user.id),
         ])
@@ -44,7 +69,7 @@ export default function StoreInitializer() {
     }
 
     loadData()
-  }, [isInitialized, setItems, supabase])
+  }, [isInitialized, setItems, supabase, setActiveScope, setScopes])
 
   // 2. REALTIME
   useEffect(() => {
@@ -61,7 +86,15 @@ export default function StoreInitializer() {
         { event: 'INSERT', schema: 'public', table: 'items' },
         (payload) => {
           const store = useStore.getState()
+          const scopeStore = useScopeStore.getState()
           const realItem = payload.new as Item
+
+          if (
+            scopeStore.activeScope &&
+            realItem.scope_id !== scopeStore.activeScope.id
+          ) {
+            return
+          }
 
           // Защита от дублей (если мы сами создали задачу через CaptureBar)
           const exists = store.items.some((item) => item.id === realItem.id)

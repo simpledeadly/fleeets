@@ -5,9 +5,11 @@ import { cn } from '@/lib/utils'
 import { VIEW_REGISTRY } from '@/features/views'
 import { PlusCircle, Settings } from 'lucide-react'
 import { createItem } from '@/features/item'
+import { useScopeStore } from '@/features/scopes'
 
 export default function BottomNav() {
   const { currentView, setView, items, setIsSettingsOpen } = useStore()
+  const { activeScope } = useScopeStore()
 
   const inboxCount = items.filter((i) => i.status === 'inbox').length
 
@@ -19,7 +21,7 @@ export default function BottomNav() {
 
   const handleAddNewItem = async () => {
     setView('inbox')
-    await createItem('')
+    await createItem('', activeScope?.id)
   }
 
   return (

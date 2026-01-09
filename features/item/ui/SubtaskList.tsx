@@ -4,16 +4,19 @@ import { Plus, CheckCircle2, CornerDownRight } from 'lucide-react'
 import { createItem } from '@/features/item'
 import { toast } from 'sonner'
 import { Item } from '@/lib/store'
+import { useScopeStore } from '@/features/scopes'
 
 export function SubtaskList({ items }: { parentId: string; items: Item[] }) {
   const [value, setValue] = useState('')
   const [isCreating, setIsCreating] = useState(false)
 
+  const { activeScope } = useScopeStore()
+
   const handleAdd = async () => {
     if (!value.trim()) return
     setIsCreating(true)
 
-    const result = await createItem(value)
+    const result = await createItem(value, activeScope?.id)
 
     setIsCreating(false)
     if (result.success) {
