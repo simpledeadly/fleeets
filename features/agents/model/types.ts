@@ -108,6 +108,7 @@ export interface AgentSessionResult extends AgentOutput {
 
 export interface AgentRunContext {
   scope: string
+  scopeId?: string
   query: string
   itemId?: string
   itemIds?: string[]

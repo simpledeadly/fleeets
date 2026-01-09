@@ -2,7 +2,7 @@
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server' // Добавь этот импорт
-import { Agent } from './useAgentsStore'
+import { Agent } from './store'
 
 export async function fetchAgents(userId: string) {
   const supabase = await createAdminClient()

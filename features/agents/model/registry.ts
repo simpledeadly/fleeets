@@ -90,4 +90,30 @@ export const DATABASE_TOOLS = {
       .eq('id', valid.id)
       .eq('user_id', userId)
   },
+  UPDATE_SCOPE_VIEW: async (
+    supabase: SupabaseClient,
+    userId: string,
+    payload: { scopeId: string; view: string; config?: any }
+  ) => {
+    return await supabase
+      .from('scopes')
+      .update({
+        view_type: payload.view,
+        view_config: payload.config || {},
+      })
+      .eq('id', payload.scopeId)
+  },
+  // Инструмент для Летописца: Обновить манифест
+  UPDATE_PROJECT_MANIFESTO: async (
+    supabase: SupabaseClient,
+    userId: string,
+    payload: { scopeId: string; manifesto: string }
+  ) => {
+    return await supabase
+      .from('scopes')
+      .update({
+        manifesto: payload.manifesto,
+      })
+      .eq('id', payload.scopeId)
+  },
 }

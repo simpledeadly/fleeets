@@ -6,6 +6,7 @@ import { useStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { VIEW_REGISTRY, type ViewType } from '@/features/views'
 import { usePaywall } from '@/features/paywall'
+import { ScopeSwitcher } from '@/features/scopes'
 
 export function Sidebar() {
   const { currentView, setView, setIsSettingsOpen } = useStore()
@@ -59,6 +60,8 @@ export function Sidebar() {
 
       {/* 3. Нижний блок: Настройки и Юзер */}
       <div className="flex flex-col items-center gap-2 pt-2 border-t border-border/80 dark:border-border/70">
+        <ScopeSwitcher isCollapsed={true} />
+
         <button
           onClick={() => setIsSettingsOpen(true)}
           title="Настройки"

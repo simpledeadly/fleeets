@@ -7,6 +7,7 @@ import { BrainResponse } from './BrainResponse'
 import { GEN_UI_REGISTRY, isGenUITool } from '@/features/gen-ui'
 import { cn } from '@/lib/utils'
 import { agentIds, useAgent } from '@/features/agents'
+import { useScopeStore } from '@/features/scopes'
 
 const BRAIN_AGENT_ID = agentIds.orchestratorAgentId
 
@@ -30,9 +31,11 @@ export function OmniChat({
     data: any
   } | null>(null)
 
+  const hasFetched = useRef(false)
+
   // Подключаем новый хук
   const { runAgent, isLoading } = useAgent()
-  const hasFetched = useRef(false)
+  const { activeScope } = useScopeStore()
 
   const performSearch = async (text: string) => {
     // Сбрасываем старые данные
@@ -43,8 +46,8 @@ export function OmniChat({
       // 1. Вызов Адаптера
       const result = await runAgent(BRAIN_AGENT_ID, {
         query: text,
-        scope: 'general', // Или динамический скоуп, если есть
-        // Адаптер сам решит, вызывать RAG или нет, если это прописано в Агенте
+        scope: activeScope?.slug || 'general', // <-- ТЕПЕРЬ СЮДА ЛЕТИТ РЕАЛЬНЫЙ SLUG
+        scopeId: activeScope?.id, // <-- И ID для точного контекста
       })
       console.log('📥 [OMNI_RESULT_PACKET]:', result)
 
