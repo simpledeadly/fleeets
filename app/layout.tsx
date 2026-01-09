@@ -8,6 +8,7 @@ import { ThemeProvider } from './components/ThemeProvider'
 import { LayoutClient } from './components/LayoutClient'
 import { Sidebar } from '@/features/navigation'
 import { createClient } from '../lib/supabase/server'
+// import { ScopeThemeManager } from '@/features/appearance'
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -45,6 +46,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <StoreInitializer />
+          {/* <ScopeThemeManager /> */}
 
           {user ? (
             <div className="flex min-h-screen">

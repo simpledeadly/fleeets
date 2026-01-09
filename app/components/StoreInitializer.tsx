@@ -1,118 +1,144 @@
 'use client'
 
 import { useEffect, useMemo, useRef } from 'react'
-import { useStore, type Item } from '@/lib/store'
+import { useStore } from '@/lib/store'
 import { createClient } from '../../lib/supabase/client'
 import { fetchActiveItems, fetchUserTier } from '@/lib/data'
 import { usePaywallStore } from '@/features/paywall'
 import { fetchAgents, useAgentsStore } from '@/features/agents'
-import { useScopeStore } from '@/features/scopes'
+import { useScopeStore } from '@/features/scopes/model/store'
 
 export default function StoreInitializer() {
   const supabase = useMemo(() => createClient(), [])
-  const { isInitialized, setItems, addItem } = useStore()
-  const { setActiveScope, setScopes } = useScopeStore()
+  const { setItems, addItem, setIsInitialized } = useStore()
+  const { setActiveScope, setScopes, activeScope } = useScopeStore()
 
-  // Ref чтобы не подписываться дважды при React Strict Mode
-  const isMounted = useRef(false)
+  // Флаги состояния для предотвращения двойных вызовов
+  const isBootstrapped = useRef(false)
+  const lastFetchedScopeId = useRef<string | null>(null)
 
-  // 1. ЗАГРУЗКА ДАННЫХ
+  // 1. ЕДИНАЯ "ХОЛОДНАЯ" ИНИЦИАЛИЗАЦИЯ (PARALLEL FETCH)
   useEffect(() => {
-    if (isInitialized) return
+    if (isBootstrapped.current) return
+    isBootstrapped.current = true // Блокируем повторный запуск в StrictMode
 
-    const loadData = async () => {
+    const bootstrap = async () => {
+      console.time('⚡️ App Bootstrap')
       try {
         const {
           data: { user },
         } = await supabase.auth.getUser()
         if (!user) return
 
-        const { data: profile } = await supabase
+        // А. Запускаем независимые запросы параллельно
+        const tierPromise = fetchUserTier(supabase)
+        const agentsPromise = fetchAgents(user.id)
+        const profilePromise = supabase
           .from('profiles')
           .select('active_scope_id')
           .eq('id', user.id)
           .single()
-        const { data: scopes } = await supabase
+        const scopesPromise = supabase
           .from('scopes')
           .select('*')
           .eq('user_id', user.id)
+          .order('name')
 
-        // Определяем текущий скоуп
-        const scopeList = scopes || []
-        setScopes(scopeList) // Сохраняем в стор
-
-        // Определяем текущий
-        const activeId = profile?.active_scope_id
-        const currentScope =
-          scopeList.find((s) => s.id === activeId) || scopeList[0]
-
-        if (currentScope) {
-          setActiveScope(currentScope) // Устанавливаем активный (ESLint доволен)
-        }
-
-        const [items, tier, agents] = await Promise.all([
-          fetchActiveItems(supabase, currentScope?.id),
-          fetchUserTier(supabase),
-          fetchAgents(user.id),
+        // Б. Ждем критические данные для определения контекста (Профиль + Скоупы)
+        const [profileRes, scopesRes] = await Promise.all([
+          profilePromise,
+          scopesPromise,
         ])
 
-        setItems(items)
+        // В. Определяем активный скоуп СРАЗУ (без рендера)
+        const scopeList = scopesRes.data || []
+        const activeId = profileRes.data?.active_scope_id
+        const currentScope =
+          scopeList.find((s: any) => s.id === activeId) || scopeList[0]
+
+        // Г. Запускаем загрузку задач для этого скоупа (не дожидаясь рендера!)
+        const itemsPromise = currentScope
+          ? fetchActiveItems(supabase, currentScope.id)
+          : Promise.resolve([])
+
+        // Д. Ждем вообще всё
+        const [tier, agents, items] = await Promise.all([
+          tierPromise,
+          agentsPromise,
+          itemsPromise,
+        ])
+
+        // Е. Обновляем все сторы ОДНИМ МАХОМ (Batch Update)
+        // Это вызывает только один ре-рендер вместо пяти
         usePaywallStore.getState().setTier(tier)
         useAgentsStore.getState().setAgents(agents)
+        setScopes(scopeList)
 
-        console.log(
-          `✅ Init complete. Items: ${items.length}, Agents: ${agents.length}`
-        )
+        if (currentScope) {
+          setActiveScope(currentScope)
+          lastFetchedScopeId.current = currentScope.id // Запоминаем, что для него уже загрузили
+        }
+
+        setItems(items)
+        setIsInitialized(true)
+
+        console.timeEnd('⚡️ App Bootstrap')
       } catch (e) {
-        console.error('❌ Failed to load initial data', e)
+        console.error('❌ Bootstrap failed', e)
       }
     }
 
-    loadData()
-  }, [isInitialized, setItems, supabase, setActiveScope, setScopes])
+    bootstrap()
+  }, [supabase, setScopes, setActiveScope, setItems, setIsInitialized])
 
-  // 2. REALTIME
+  // 2. РЕАКТИВНОЕ ПЕРЕКЛЮЧЕНИЕ (Только если юзер кликнул в меню)
   useEffect(() => {
-    if (isMounted.current) return
-    isMounted.current = true
+    // Если еще не загрузились или скоуп не выбран — выходим
+    if (!activeScope || !isBootstrapped.current) return
 
-    console.log('🔌 Connecting to partial realtime...')
+    // Если мы уже загрузили данные для этого скоупа (например, при инициализации) — выходим
+    if (activeScope.id === lastFetchedScopeId.current) return
+
+    const switchScope = async () => {
+      console.log(`🔄 Switching items to: ${activeScope.name}`)
+      try {
+        lastFetchedScopeId.current = activeScope.id
+        const items = await fetchActiveItems(supabase, activeScope.id)
+        setItems(items)
+      } catch (e) {
+        console.error('❌ Switch failed', e)
+      }
+    }
+
+    switchScope()
+  }, [activeScope, supabase, setItems])
+
+  // 3. REALTIME (Только для текущего скоупа)
+  useEffect(() => {
+    if (!activeScope) return
 
     const channel = supabase
-      .channel('items_realtime')
+      .channel(`items_realtime_${activeScope.id}`)
       .on(
         'postgres_changes',
-        // 👇 СЛУШАЕМ ТОЛЬКО INSERT (Новые задачи из ТГ/других устройств)
         { event: 'INSERT', schema: 'public', table: 'items' },
         (payload) => {
+          // Игнорируем события не из нашего скоупа
+          if (payload.new.scope_id !== activeScope.id) return
+
+          // Игнорируем, если уже есть в сторе (защита от дублей)
           const store = useStore.getState()
-          const scopeStore = useScopeStore.getState()
-          const realItem = payload.new as Item
-
-          if (
-            scopeStore.activeScope &&
-            realItem.scope_id !== scopeStore.activeScope.id
-          ) {
-            return
-          }
-
-          // Защита от дублей (если мы сами создали задачу через CaptureBar)
-          const exists = store.items.some((item) => item.id === realItem.id)
-          if (!exists) {
-            console.log('📨 Incoming item from external source', realItem.id)
-            store.addItem(realItem)
+          if (!store.items.some((i) => i.id === payload.new.id)) {
+            store.addItem(payload.new as any)
           }
         }
       )
-      // УДАЛИЛИ UPDATE И DELETE
-      // Теперь серверное эхо не будет дергать твой интерфейс.
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
-      isMounted.current = false
     }
-  }, [supabase, addItem])
+  }, [activeScope, supabase, addItem])
 
   return null
 }

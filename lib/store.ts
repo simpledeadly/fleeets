@@ -22,6 +22,7 @@ interface AppState {
   removeItem: (itemId: string) => void
   isLoading: boolean
   isInitialized: boolean
+  setIsInitialized: (val: boolean) => void
   currentView: ViewType
   setView: (view: ViewType) => void
   focusItem: Item | null // Для модалки фокуса
@@ -52,6 +53,7 @@ export const useStore = create<AppState>()(
       items: [],
       isLoading: true,
       isInitialized: false,
+      setIsInitialized: (val) => set({ isInitialized: val }),
       currentView: 'inbox',
       setView: (view) => set({ currentView: view }),
       setItems: (items) =>
