@@ -19,7 +19,7 @@ type Item = Database['public']['Tables']['items']['Row']
 /**
  * 1. СОЗДАНИЕ (Легкое, без векторов)
  */
-export async function createItem(text: string, scopeId?: string) {
+export async function createItem(text: string, scopeId?: string | null) {
   const supabase = await createClient()
   const {
     data: { user },
@@ -28,7 +28,7 @@ export async function createItem(text: string, scopeId?: string) {
 
   let targetScopeId = scopeId
 
-  if (!targetScopeId) {
+  if (!targetScopeId && targetScopeId !== null) {
     // Фаллбэк: ищем активный скоуп юзера
     const { data: profile } = await supabase
       .from('profiles')

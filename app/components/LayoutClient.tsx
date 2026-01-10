@@ -12,15 +12,14 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ItemEditor } from '@/features/item'
 import { FocusModal } from '@/features/focus'
 import { useStore } from '@/lib/store'
-import { SelectionToolbar } from '@/features/item'
 import { getHotkeys } from '@/features/hotkeys'
 import { SnowLayer } from '@/features/appearance'
 import BottomNav from './BottomNav'
+import { QuickCaptureModal } from '@/features/capture'
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
   const { isPaletteOpen } = useOmniStore()
-  const { focusItem, setFocusItem, currentView, selectedIds, clearSelection } =
-    useStore()
+  const { focusItem, setFocusItem, currentView, clearSelection } = useStore()
 
   // 1. Очистка выделения при переключении страниц или ЗАКРЫТИИ палитры
   useEffect(() => {
@@ -38,8 +37,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
 
   useHotkeys(toggleOmniHotkey)
   useHotkeys(navigationHotkeys, {
-    // ЖЕСТКАЯ изоляция: если Omni открыта — глобальные хоткеи СТРОГО выкл
-    enabled: !isPaletteOpen && currentView !== 'vault',
+    enabled: !isPaletteOpen,
   })
 
   return (
@@ -47,6 +45,7 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
       {children}
       <SnowLayer />
       <OmniModal />
+      <QuickCaptureModal />
 
       <FocusModal
         // key={focusItem?.id || 'modal-closed'}

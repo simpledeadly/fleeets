@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import {
   Command,
   CommandEmpty,
@@ -27,7 +27,6 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useHotkeys } from '@/lib/hooks'
 import { SelectionToolbar } from '@/features/item'
-import { OmniFooter } from './OmniFooter'
 
 interface OmniBaseProps {
   mode: 'standalone' | 'modal'
@@ -44,7 +43,6 @@ export function OmniBase({ mode }: OmniBaseProps) {
     clearSelection,
   } = useStore()
   const setFocusItem = useStore((state) => state.setFocusItem)
-  const items = useStore((state) => state.items)
 
   const isPaletteOpen = useOmniStore((state) => state.isPaletteOpen)
   const closePalette = useOmniStore((state) => state.closePalette)
@@ -188,23 +186,57 @@ export function OmniBase({ mode }: OmniBaseProps) {
 
   useHotkeys(
     [
-      ['mod+d', () => triggerAction('toggleDone')],
-      ['mod+f', () => triggerAction('toggleFocused')],
-      ['mod+i', () => triggerAction('toggleInbox')],
+      [
+        'mod+d',
+        (e) => {
+          e.preventDefault() // Блокируем "Добавить закладку"
+          triggerAction('toggleDone')
+        },
+      ],
+      [
+        'mod+f',
+        (e) => {
+          e.preventDefault() // Блокируем "Поиск"
+          triggerAction('toggleFocused')
+        },
+      ],
+      [
+        'mod+i',
+        (e) => {
+          e.preventDefault()
+          triggerAction('toggleInbox')
+        },
+      ],
       [
         'mod+x',
-        () => {
+        (e) => {
+          e.preventDefault() // Блокируем "Вырезать"
           if (effectiveActiveItem) toggleSelection(effectiveActiveItem.id, true)
         },
       ],
       [
         'Escape',
-        () => {
-          if (selectedIds.length > 0) clearSelection()
+        (e) => {
+          if (selectedIds.length > 0) {
+            e.preventDefault() // Блокируем закрытие фулскрина/диалогов браузера
+            clearSelection()
+          }
         },
       ],
-      ['mod+Delete', () => triggerAction('delete')],
-      ['mod+e', () => triggerAction('openItemEditor')],
+      [
+        'mod+Delete',
+        (e) => {
+          e.preventDefault()
+          triggerAction('delete')
+        },
+      ],
+      [
+        'mod+e',
+        (e) => {
+          e.preventDefault() // Блокируем фокус на адресной строке
+          triggerAction('openItemEditor')
+        },
+      ],
     ],
     {
       enabled: mode === 'standalone' ? !isPaletteOpen : isPaletteOpen,
@@ -245,6 +277,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
         }
 
         if (inputRef.current && document.activeElement !== inputRef.current) {
+          e.preventDefault()
           inputRef.current.focus()
           // Не прерываем событие, чтобы cmdk его поймал сразу после фокуса
         }

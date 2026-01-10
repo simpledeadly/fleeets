@@ -1,8 +1,9 @@
 import { useStore } from '@/lib/store'
-import { createItem } from '@/features/item'
 import { useOmniStore } from '@/features/omni'
+import { useScopeStore } from '../scopes'
+import { useQuickCaptureStore } from '../capture'
 
-type HotkeyAction = () => void
+type HotkeyAction = (e: KeyboardEvent) => void
 
 export const HOTKEY_MAP: Record<
   string,
@@ -10,7 +11,8 @@ export const HOTKEY_MAP: Record<
 > = {
   'mod+k': {
     label: 'Открыть Omni',
-    action: () => {
+    action: (e) => {
+      e?.preventDefault()
       const { isPaletteOpen, closePalette, openPalette } =
         useOmniStore.getState()
       if (isPaletteOpen) closePalette()
@@ -19,28 +21,91 @@ export const HOTKEY_MAP: Record<
   },
   'mod+j': {
     label: 'Фокус на Capture Bar',
-    action: () => {
+    action: (e) => {
+      e.preventDefault()
       const input = document.getElementById(
         'capture-bar-input'
       ) as HTMLInputElement
       input?.focus()
     },
   },
-  'mod+i': {
+  'mod+1': {
     label: 'Перейти в Inbox',
-    action: () => useStore.getState().setView('inbox'),
+    action: (e) => {
+      e.preventDefault()
+      useStore.getState().setView('inbox')
+    },
   },
-  'mod+f': {
+  'mod+2': {
     label: 'Перейти в Focus',
-    action: () => useStore.getState().setView('focus'),
+    action: (e) => {
+      e.preventDefault()
+      useStore.getState().setView('focus')
+    },
   },
-  'mod+g': {
+  'mod+3': {
     label: 'Перейти в Vault',
-    action: () => useStore.getState().setView('vault'),
+    action: (e) => {
+      e.preventDefault()
+      useStore.getState().setView('vault')
+    },
+  },
+  'mod+4': {
+    label: 'Перейти в AgentLab',
+    action: (e) => {
+      e.preventDefault()
+      useStore.getState().setView('agents')
+    },
+  },
+  'mod+5': {
+    label: 'Перейти в Project Home Page',
+    action: (e) => {
+      e.preventDefault()
+      useStore.getState().setView('project')
+    },
+  },
+  'mod+6': {
+    label: 'Перейти в Strategic Hub',
+    action: (e) => {
+      e.preventDefault()
+      useStore.getState().setView('hub')
+    },
+  },
+  'mod+c': {
+    label: 'Быстрое создание (Активный проект)',
+    action: (e) => {
+      // 1. ПРОВЕРКА НА КОПИРОВАНИЕ
+      const selection = window.getSelection()?.toString()
+      if (selection && selection.length > 0) {
+        return // Не блокируем, пусть копирует
+      }
+
+      e.preventDefault() // Блокируем, открываем модалку
+
+      const { activeScope } = useScopeStore.getState()
+      const { openCapture } = useQuickCaptureStore.getState()
+
+      // Если есть активный проект - используем его, иначе General
+      if (activeScope) {
+        openCapture(activeScope.id, activeScope.name)
+      } else {
+        openCapture(null, 'General')
+      }
+    },
+  },
+
+  'mod+shift+c': {
+    label: 'Быстрое создание (Общее)',
+    action: (e) => {
+      e.preventDefault()
+      const { openCapture } = useQuickCaptureStore.getState()
+      openCapture(null, 'General')
+    },
   },
   'mod+e': {
     label: 'Редактировать элемент',
-    action: () => {
+    action: (e) => {
+      e.preventDefault()
       const store = useStore.getState()
       // 1. Если открыта модалка фокуса — редактируем её айтем
       if (store.focusItem) {

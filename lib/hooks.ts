@@ -26,27 +26,46 @@ export function useHotkeys(
     const targetNode = node ?? window
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      hotkeys.forEach(([key, handler]) => {
-        const parts = key.split('+')
-        const hasMod = parts.length > 1 && parts[0] === 'mod'
-        const k = hasMod ? parts[1] : parts[0]
+      // Итерируемся по всем хоткеям
+      for (const [combo, handler] of hotkeys) {
+        const parts = combo.toLowerCase().split('+')
+        const mainKey = parts[parts.length - 1] // Последняя часть — кнопка
+        const modifiers = new Set(parts.slice(0, -1)) // Всё остальное — модификаторы
 
-        // Проверяем соответствие клавиши
-        const keyMatch =
-          event.key.toLowerCase() === k.toLowerCase() ||
-          event.code.toLowerCase() === `key${k.toLowerCase()}`
+        // 1. Проверка нажатой клавиши (поддержка и key, и code)
+        const isKeyMatch =
+          event.key.toLowerCase() === mainKey ||
+          event.code.toLowerCase() === `key${mainKey}` ||
+          event.code.toLowerCase() === `digit${mainKey}` // Для цифр (Digit1)
 
-        if (keyMatch) {
-          const modMatch = hasMod
-            ? event.metaKey || event.ctrlKey
-            : !event.metaKey && !event.ctrlKey
+        if (!isKeyMatch) continue
 
-          if (modMatch) {
-            event.preventDefault()
-            handler(event)
-          }
+        // 2. Проверка модификаторов
+        const modPressed = event.metaKey || event.ctrlKey
+        const shiftPressed = event.shiftKey
+        const altPressed = event.altKey
+
+        const modRequired =
+          modifiers.has('mod') || modifiers.has('ctrl') || modifiers.has('meta')
+        const shiftRequired = modifiers.has('shift')
+        const altRequired = modifiers.has('alt')
+
+        // 3. Если всё совпало — вызываем
+        if (
+          modPressed === modRequired &&
+          shiftPressed === shiftRequired &&
+          altPressed === altRequired
+        ) {
+          // ВАЖНО: Мы НЕ делаем preventDefault здесь автоматически для ВСЕХ,
+          // чтобы работало копирование (mod+c).
+          // Но мы передаем event в handler, чтобы он мог это сделать.
+          handler(event)
+
+          // Лайфхак: если мы нашли совпадение и это не mod+c (где может быть выделение),
+          // можно было бы стопнуть тут. Но лучше управлять в конфиге.
+          return
         }
-      })
+      }
     }
 
     targetNode.addEventListener('keydown', handleKeyDown as EventListener)

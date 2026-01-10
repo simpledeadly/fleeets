@@ -7,7 +7,6 @@ import { toast } from 'sonner'
 import {
   Plus,
   Trash2,
-  Bot,
   Settings2,
   Save,
   Cpu,
@@ -21,6 +20,7 @@ import {
   Zap,
   Copy,
   Lock,
+  User,
 } from 'lucide-react'
 import { PlaygroundDebug } from './ui/PlaygroundDebug'
 import { PlaygroundTrace } from './ui/PlaygroundTrace'
@@ -242,7 +242,7 @@ export function AgentLab() {
                       className="w-8 h-8 rounded-full flex items-center justify-center"
                       style={{ backgroundColor: agent.color || '#fff' }}
                     >
-                      <Bot size={20} className="text-white" />
+                      <User size={20} className="text-white" />
                     </div>
                     <div className="flex flex-col gap-0.5">
                       <h3 className="font-semibold ">{agent.name}</h3>
