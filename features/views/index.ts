@@ -1,4 +1,5 @@
 export { InboxDeck } from './inbox/InboxDeck'
 export { FocusList } from './focus/FocusList'
 export { AgentLab } from './agents/AgentLab'
+export { ProjectHub } from './hub/ProjectHub'
 export { VIEW_REGISTRY, type ViewType } from './registry'

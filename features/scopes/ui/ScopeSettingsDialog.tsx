@@ -4,7 +4,7 @@ import { useScopeStore } from '../model/store'
 import { updateScope, deleteScope } from '../model/actions'
 import { toast } from 'sonner'
 
-export function ScopeSettings({ onClose }: { onClose?: () => void }) {
+export function ScopeSettings() {
   const { activeScope, updateScopeInStore, removeScopeFromStore } =
     useScopeStore()
   const [name, setName] = useState(activeScope?.name || '')

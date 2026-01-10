@@ -16,7 +16,7 @@ import {
 import { bulkAddTag, bulkRemoveTag, softDeleteItem } from '../model/actions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { agentIds, useAgent } from '@/features/agents'
+import { useAgent, useSystemAgent } from '@/features/agents'
 import { useScopeStore } from '@/features/scopes'
 
 export function SelectionToolbar() {
@@ -29,6 +29,8 @@ export function SelectionToolbar() {
     addItem,
   } = useStore()
   const [groupName, setGroupName] = useState('')
+
+  const architectId = useSystemAgent('architect')
   const { runAgent, isLoading } = useAgent()
   const { activeScope } = useScopeStore()
 
@@ -151,8 +153,10 @@ export function SelectionToolbar() {
   }
 
   const handleArchitect = async () => {
+    if (!architectId) return toast.error('Агент Архитектор не найден')
+
     try {
-      const result = await runAgent(agentIds.architectAgentId, {
+      const result = await runAgent(architectId, {
         query: groupName, // Например: "Объедини эти задачи в одну"
         scope: activeScope?.slug || 'general',
         scopeId: activeScope?.id,

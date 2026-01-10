@@ -14,8 +14,8 @@ import { FocusModal } from '@/features/focus'
 import { useStore } from '@/lib/store'
 import { getHotkeys } from '@/features/hotkeys'
 import { SnowLayer } from '@/features/appearance'
-import BottomNav from './BottomNav'
 import { QuickCaptureModal } from '@/features/capture'
+import { BottomNav } from '@/features/navigation'
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
   const { isPaletteOpen } = useOmniStore()

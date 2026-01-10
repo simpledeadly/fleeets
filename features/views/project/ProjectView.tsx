@@ -26,7 +26,7 @@ const ViewRenderer = memo(({ viewType, scope, items }: any) => {
 
 ViewRenderer.displayName = 'ViewRenderer'
 
-export function ScopeView() {
+export function ProjectView() {
   const { activeScope, isLoading, isSwitching } = useScopeStore()
   const { items } = useStore()
 

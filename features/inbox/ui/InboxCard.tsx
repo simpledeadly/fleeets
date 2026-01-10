@@ -34,9 +34,6 @@ export function InboxCard({
     isProcessing,
     swipeState,
     isHeld,
-    similarItems,
-    isSearching,
-    hasSimilar,
     handlers,
   } = useInboxCard(item, isTop, onSwipeDown)
   const { update, remove } = useItemActions(item)
@@ -122,7 +119,6 @@ export function InboxCard({
               item={item}
               isProcessing={isProcessing}
               onRefine={handlers.handleRefine}
-              hasSimilar={hasSimilar}
               onFlip={handlers.handleFlip}
               index={index}
               total={total}
@@ -132,8 +128,6 @@ export function InboxCard({
               item={item}
               onFlip={handlers.handleFlip}
               setEditing={setIsEditing}
-              similarItems={similarItems}
-              isSearching={isSearching}
             />
           </motion.div>
 

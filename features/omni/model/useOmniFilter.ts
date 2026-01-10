@@ -38,16 +38,6 @@ export function useOmniFilter() {
       result = result.filter((item) => item.status === activeStatus)
     }
 
-    // 3. Типы и Теги - между собой работают по ИЛИ
-    const activeFilters = {
-      isQuick,
-      isTask,
-      isThought,
-      isNote,
-      isResource,
-      tags: activeTags,
-    }
-
     const hasAnyTypeOrTagFilter =
       isQuick ||
       isTask ||

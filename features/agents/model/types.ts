@@ -1,4 +1,5 @@
 export type AgentTaskDomain = 'database' | 'ui' | 'system'
+
 export type CommandStatus =
   | 'success'
   | 'error'
@@ -6,6 +7,7 @@ export type CommandStatus =
   | 'mocked'
   | 'interrupted'
   | 'pending'
+
 export type AIFinishReason =
   | 'stop'
   | 'length'

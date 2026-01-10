@@ -1,13 +1,10 @@
 'use server'
 
-import { createAdminClient } from '../../../lib/supabase/admin'
 import { createClient } from '../../../lib/supabase/server'
 import type { Database } from '@/types/supabase'
 import OpenAI from 'openai'
 import { logTokenUsage } from '@/features/ai'
-import { logEvent } from '@/lib/logging'
 import { createAiClient } from '@/lib/ai/client'
-// Used only for embeddings
 
 const openai = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
@@ -189,9 +186,6 @@ export async function updateItem(itemId: string, data: Partial<Item>) {
       data.content || '',
       currentItem.description || '',
       data.description || '',
-      currentItem.raw_content || '',
-      currentItem.execution_log || '',
-      data.execution_log || '',
     ]
       .filter(Boolean)
       .join('\n')
@@ -256,8 +250,6 @@ export async function vectorizeItem(itemId: string) {
     const textForEmbedding = `
       ${item.content}
       ${item.description || ''}
-      ${item.raw_content || ''}
-      ${item.execution_log || ''}
     `.trim()
 
     const embeddingModel = 'openai/text-embedding-3-small'
@@ -316,120 +308,6 @@ export async function hardDeleteItem(itemId: string) {
   const { error } = await supabase.from('items').delete().eq('id', itemId)
   if (error) return { error: error.message }
   return { success: true }
-}
-
-export async function decomposeTask(itemId: string) {
-  'use server'
-
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-  if (!user) return { error: 'Unauthorized' }
-
-  const { data: item } = await supabase
-    .from('items')
-    .select('*')
-    .eq('id', itemId)
-    .single()
-
-  const supabaseAdmin = createAdminClient()
-  const { data: profile } = await supabaseAdmin
-    .from('profiles')
-    .select('manifesto')
-    .eq('id', user.id)
-    .single()
-
-  if (!item) return { error: 'Задача не найдена' }
-
-  const userManifesto = profile?.manifesto
-    ? `ПРИНЦИПЫ ПОЛЬЗОВАТЕЛЯ: ${JSON.stringify(profile.manifesto)}`
-    : ''
-
-  // 👇 НОВЫЙ, БОЛЕЕ "МЯГКИЙ" ПРОМПТ, КОТОРЫЙ НЕ БЕСИТ ФАЙРВОЛ
-  const systemPrompt = `
-    Ты — креативный ассистент. Твоя задача — разбить большую задачу на 3-5 простых и понятных шага.
-    Учитывай принципы пользователя, если они есть.
-    Твой ответ ДОЛЖЕН быть в формате JSON.
-    
-    Пример ответа:
-    {
-      "steps": ["Первый шаг", "Второй шаг", "Третий шаг"]
-    }
-    
-    ЗАДАЧА ПОЛЬЗОВАТЕЛЯ: "${item.content}"
-    ${userManifesto}
-  `
-
-  try {
-    const completion = await openai.chat.completions.create({
-      messages: [
-        { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: `Разбей задачу "${item.content}" на конкретные шаги.`,
-        },
-      ],
-      model: 'meta-llama/llama-3.1-8b-instruct',
-      response_format: { type: 'json_object' },
-      temperature: 0.7,
-    })
-
-    const content = completion.choices[0].message.content || ''
-    console.log('🤖 AI Decomposer Returned:', content)
-    const parsed = JSON.parse(content)
-    const subtasks: string[] =
-      parsed.steps || parsed.subtasks || parsed.data || []
-
-    if (subtasks.length === 0) {
-      // Если массив пустой, значит, AI вернул JSON, но не смог придумать шаги
-      console.error('AI returned valid JSON but with empty steps:', parsed)
-      return { error: 'AI не смог разбить задачу. Попробуй переформулировать.' }
-    }
-
-    const newItems = subtasks
-      .map((taskContent) => ({
-        user_id: user.id,
-        content: taskContent,
-        status: 'inbox',
-        type: 'task',
-        parent_id: item.id,
-        raw_content: taskContent,
-        metadata: { source: 'ai_decomposition' },
-      }))
-      .reverse()
-
-    const { data: createdItems, error: insertError } = await supabase
-      .from('items')
-      .insert(newItems)
-      .select()
-
-    if (insertError) {
-      console.error('Insert failed after decomposition:', insertError)
-      return { error: 'Не удалось сохранить подзадачи.' }
-    }
-
-    await updateItem(item.id, { status: 'archived' })
-
-    // Логирование декомпозиции (можно оставить в коде, так как это сложное событие с метаданными подзадач,
-    // которые триггер не видит)
-    await logEvent({
-      userId: user.id,
-      itemId: item.id,
-      eventType: 'item.decompose',
-      meta: {
-        subtask_count: subtasks.length,
-        subtask_ids: createdItems?.map((i) => i.id) || [],
-        original_content: item.content,
-      },
-    })
-
-    return { success: true, count: subtasks.length, newItems: createdItems }
-  } catch (e: any) {
-    // Если упал JSON.parse или сам fetch
-    console.error('Decomposition failed:', e)
-    return { error: 'Ошибка AI: не удалось обработать ответ.' }
-  }
 }
 
 /**

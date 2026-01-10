@@ -14,7 +14,6 @@ import {
 import { cn } from '@/lib/utils'
 import { type Item } from '@/lib/store'
 import { useItemActions } from '@/features/item'
-import { MagicButton } from '@/features/agents'
 
 interface CardFaceProps {
   item: Item
@@ -24,7 +23,6 @@ interface CardFaceProps {
   index: number
   total: number
   setEditing: (isEditing: boolean) => void
-  hasSimilar: boolean
 }
 
 export function CardFace({
@@ -144,10 +142,6 @@ export function CardFace({
 
       {/* --- Нижняя часть (Кнопки действий) --- */}
       <div className="flex justify-around items-center pt-2 border-t border-border">
-        <MagicButton
-          itemId={item.id}
-          agentId={'ec8de888-28e0-41ea-9a7b-bbe41ea0460e'}
-        />
         <button
           onClick={onRefine}
           disabled={isProcessing}

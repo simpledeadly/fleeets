@@ -4,15 +4,13 @@ import { useState } from 'react'
 import { Reorder } from 'framer-motion'
 import { useStore } from '@/lib/store'
 import { BrainCircuit, Loader2, RefreshCw } from 'lucide-react'
-import { toast } from 'sonner'
-import { generateDailyPlan, resetTodayView } from '@/features/planning'
 import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 
 export function FocusList() {
   const { items, setFocusItem, reorderItems, promoteToHero } = useStore()
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isGenerating] = useState(false)
+  const [isLoading] = useState(false)
   const [theme, setTheme] = useState('')
 
   const focusItems = items.filter((i) => i.status === 'today')
@@ -26,22 +24,9 @@ export function FocusList() {
     reorderItems([...reordered, ...nonFocusItems])
   }
 
-  const handleAction = async (action: () => Promise<any>) => {
-    setIsLoading(true)
-    await action()
-    setIsLoading(false)
-  }
-
-  const handleGenerate = async () => {
-    setIsGenerating(true)
-    const result = await generateDailyPlan(theme)
-    setIsGenerating(false)
-    if (result?.error) toast.error('Ошибка', { description: result.error })
-  }
-
   if (focusItems.length === 0) {
     return (
-      <div className=" flex flex-col items-center justify-center h-[60vh] text-center space-y-6 animate-in fade-in duration-150">
+      <div className=" flex flex-col items-center justify-center h-[60vh] text-center space-y-6 animate-in fade-in duration-100">
         <div className="space-y-1">
           <h2 className="text-xl font-medium tracking-tight text-foreground">
             Чистый лист
@@ -58,7 +43,6 @@ export function FocusList() {
             onChange={(e) => setTheme(e.target.value)}
           />
           <button
-            onClick={handleGenerate}
             disabled={isGenerating}
             className="flex items-center justify-center bg-foreground text-background w-10 h-10 rounded-full hover:opacity-80 transition-all disabled:opacity-30 cursor-pointer"
           >
@@ -81,7 +65,6 @@ export function FocusList() {
     <div className="sm:w-xl lg:w-3xl xl:w-4xl mx-auto min-h-[90vh] my-auto pb-30 flex flex-col justify-center p-6 relative">
       {/* Кнопка сброса (сверху справа, очень тонко) */}
       <button
-        onClick={() => handleAction(resetTodayView)}
         disabled={isLoading}
         className="absolute top-0 right-0 p-3 text-muted-foreground opacity-20 hover:opacity-100 transition-all cursor-pointer"
       >

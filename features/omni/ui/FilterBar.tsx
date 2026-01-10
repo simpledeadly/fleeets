@@ -31,7 +31,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { useOmniStore } from '../model/store'
 import { cn } from '@/lib/utils'
 import { useStore } from '@/lib/store'
 import { TagBadge } from './TagBadge'
@@ -83,7 +82,7 @@ const STATUS_FILTERS: StatusConfig[] = [
 
 export function FilterBar(props: FilterBarProps) {
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
-  const { activeStatus, setActiveStatus, activeTags, toggleTag, topTags } =
+  const { activeTags, toggleTag, topTags } =
     props
 
   const groupTags = topTags.filter((t) => t.startsWith('group:'))

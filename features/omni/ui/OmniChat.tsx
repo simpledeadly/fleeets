@@ -6,10 +6,8 @@ import { toast } from 'sonner'
 import { BrainResponse } from './BrainResponse'
 import { GEN_UI_REGISTRY, isGenUITool } from '@/features/gen-ui'
 import { cn } from '@/lib/utils'
-import { agentIds, useAgent, useSystemAgent } from '@/features/agents'
+import { useAgent, useSystemAgent } from '@/features/agents'
 import { useScopeStore } from '@/features/scopes'
-
-const BRAIN_AGENT_ID = agentIds.orchestratorAgentId
 
 export function OmniChat({
   initialQuery,

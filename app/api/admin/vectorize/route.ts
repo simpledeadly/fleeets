@@ -26,7 +26,7 @@ export async function GET() {
   await Promise.all(
     items.map(async (item) => {
       try {
-        const text = `${item.content} \n ${item.description || ''} \n ${item.raw_content}`.trim()
+        const text = `${item.content} \n ${item.description || ''}`.trim()
         if (!text) return
 
         const response = await openai.embeddings.create({

@@ -1,29 +1,19 @@
 'use client'
 import { motion } from 'framer-motion'
-import { Calendar, EyeClosed, Link, Loader2, Text } from 'lucide-react'
-import { useStore, type Item } from '@/lib/store'
+import { Calendar, EyeClosed, Text } from 'lucide-react'
+import { type Item } from '@/lib/store'
 import { useItemActions } from '@/features/item'
 import { format } from 'date-fns'
 import { ru } from 'date-fns/locale'
-import { cn } from '@/lib/utils'
 
 interface CardBackProps {
   item: Item
   onFlip: (e: React.MouseEvent) => void
   setEditing: (val: boolean) => void
-  similarItems: Item[]
-  isSearching: boolean
 }
 
-export function CardBack({
-  item,
-  onFlip,
-  setEditing,
-  similarItems,
-  isSearching,
-}: CardBackProps) {
+export function CardBack({ item, onFlip, setEditing }: CardBackProps) {
   const { update } = useItemActions(item)
-  const { setFocusItem } = useStore()
 
   return (
     <motion.div
@@ -74,57 +64,6 @@ export function CardBack({
           className="w-full h-full block bg-transparent text-foreground overflow-y-auto no-scrollbar whitespace-pre-wrap resize-none focus:outline-none"
         />
       </div>
-
-      <div className="mt-2 pt-3 border-t border-border">
-        <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-zinc-500 mb-2">
-          <Link size={14} />
-          <span>Найденные связи ({similarItems.length} лучших)</span>
-        </div>
-
-        {isSearching && (
-          <div className="flex justify-center p-4">
-            <Loader2 className="animate-spin text-zinc-500" />
-          </div>
-        )}
-
-        {!isSearching && similarItems.length > 0 && (
-          <div className="grid grid-cols-2 2xl:grid-cols-3 gap-1">
-            {similarItems.map((similar: any) => (
-              <button
-                key={similar.id}
-                onClick={() => setFocusItem(similar)}
-                className="w-full text-left text-xs p-2 rounded text-foreground dark:bg-white/5 dark:hover:bg-white/10 bg-muted hover:bg-border transition-colors truncate cursor-pointer"
-              >
-                <span
-                  className={cn(
-                    similar.status === 'done' &&
-                      'line-through text-muted-foreground'
-                  )}
-                >
-                  {similar.content}
-                </span>
-                <span className="font-mono opacity-50 ml-2">
-                  ({Math.round(similar.similarity * 100)}%)
-                </span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        {!isSearching && similarItems.length === 0 && (
-          <p className="text-xs text-zinc-600 italic">
-            Похожие записи не найдены
-          </p>
-        )}
-      </div>
-
-      {/* <div className="mt-2 border-t border-border">
-        {!isSearching && similarItems.length > 0 && (
-        <div className="space-y-1">
-          <SubtaskList parentId={item.id} items={[]} />
-        </div>
-        )}
-      </div> */}
     </motion.div>
   )
 }

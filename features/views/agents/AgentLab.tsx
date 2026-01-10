@@ -66,7 +66,6 @@ const AVAILABLE_TOOLS = [
   },
   { id: 'system:RAG_SEARCH', name: 'Поиск по базе (RAG)', category: 'SYSTEM' },
   { id: 'system:FETCH_REPORT', name: 'Запросить отчёт', category: 'SYSTEM' },
-  { id: 'ui:decomposition', name: 'Декомпозиция', category: 'UI' },
   { id: 'ui:daily_report', name: 'Отчет за день', category: 'UI' },
   { id: 'ui:weekly_report', name: 'Отчет за неделю', category: 'UI' },
 ]
@@ -195,7 +194,7 @@ export function AgentLab() {
   const canEdit = isOwner || !selectedAgent?.id
 
   return (
-    <div className="flex h-screen max-h-screen w-full gap-0 overflow-hidden bg-card">
+    <div className="flex h-screen max-h-screen w-full gap-0 overflow-hidden bg-card animate-in fade-in duration-100">
       {/* Список Агентов */}
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
         <div className="px-4 py-2 border-b border-border flex items-center justify-between shrink-0">

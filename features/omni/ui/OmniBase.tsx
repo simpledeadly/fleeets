@@ -83,6 +83,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
   // В standalone моде мы всегда считаем палитру "открытой" для работы наблюдателя
   const activeItem = useCmdkObserver(
     mode === 'standalone' ? true : isPaletteOpen,
+    // eslint-disable-next-line react-hooks/refs
     containerRef.current
   )
 

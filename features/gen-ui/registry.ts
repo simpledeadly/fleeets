@@ -1,13 +1,8 @@
-import { GenDecompose } from './ui/GenDecompose'
 import { GenDailyReport } from './ui/GenDailyReport'
 import { GenWeeklyReport } from './ui/GenWeeklyReport'
 
 // 1. Список ключей
-export const GEN_UI_KEYS = [
-  'decomposition',
-  'daily_report',
-  'weekly_report',
-] as const
+export const GEN_UI_KEYS = ['daily_report', 'weekly_report'] as const
 
 // 2. Тип на основе ключей
 export type GenUIToolType = (typeof GEN_UI_KEYS)[number]
@@ -20,12 +15,6 @@ export interface ToolDefinition {
 }
 
 export const GEN_UI_REGISTRY: Record<GenUIToolType, ToolDefinition> = {
-  decomposition: {
-    type: 'decomposition',
-    description: 'Разбить задачу на подзадачи, составить план действий.',
-    jsonSchema: '{ "type": "decomposition", "data": ["Шаг 1", "Шаг 2"] }',
-    component: GenDecompose,
-  },
   daily_report: {
     type: 'daily_report',
     description:

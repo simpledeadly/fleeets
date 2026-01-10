@@ -7,7 +7,7 @@ import { PlusCircle, Settings } from 'lucide-react'
 import { createItem } from '@/features/item'
 import { useScopeStore } from '@/features/scopes'
 
-export default function BottomNav() {
+export function BottomNav() {
   const { currentView, setView, items, setIsSettingsOpen } = useStore()
   const { activeScope } = useScopeStore()
 

@@ -13,11 +13,10 @@ import {
   Square,
 } from 'lucide-react'
 import { createItem } from '@/features/item'
-import { searchWithAI, transcribeAudio, askBrain } from '@/features/ai'
+import { transcribeAudio } from '@/features/ai'
 import { useOmniStore } from '../model/store'
 import { useAudioRecorder } from '@/lib/hooks/useAudioRecorder'
 import { Item, useStore } from '@/lib/store'
-import { useDebounce } from '@/lib/hooks'
 import { cn } from '@/lib/utils'
 import { usePaywall } from '@/features/paywall'
 import { BrainResponse } from './BrainResponse'
@@ -27,14 +26,11 @@ export function CaptureBar() {
   const [text, setText] = useState('')
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [suggestions, setSuggestions] = useState<Item[]>([])
-  const [isSearching, setIsSearching] = useState(false)
-  const debouncedText = useDebounce(text, 700)
   const [brainMode, setBrainMode] = useState(false)
   const [brainAnswer, setBrainAnswer] = useState<{
     answer: string
     sources: any[]
   } | null>(null)
-  const [isThinking, setIsThinking] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const { currentView, items, setFocusItem, addItem } = useStore()
@@ -89,32 +85,6 @@ export function CaptureBar() {
     }
     handleTranscription()
   }, [audioBlob])
-
-  // --- ПРОАКТИВНЫЙ ПОИСК ---
-  useEffect(() => {
-    const performSearch = async () => {
-      if (debouncedText.length > 2 && !brainMode) {
-        if (isPro) {
-          console.log(
-            '⚡️ Проактивный поиск активирован (доступно только для PRO)'
-          )
-          setIsSearching(true)
-          const results = await searchWithAI(debouncedText)
-          setSuggestions(results)
-          setIsSearching(false)
-        } else {
-          setSuggestions([
-            {
-              content: 'Семантический поиск доступен в PRO',
-            },
-          ] as any)
-        }
-      } else {
-        setSuggestions([])
-      }
-    }
-    performSearch()
-  }, [debouncedText])
 
   // РЕЖИМ ДОБАВЛЕНИЯ ЭЛЕМЕНТА В ПРОЕКТ
   useEffect(() => {
@@ -174,52 +144,35 @@ export function CaptureBar() {
     e?.preventDefault()
     const content = text.trim()
     if (!content) return
+    // 1. Мгновенно обновляем UI
+    increment()
+    setText('')
 
-    if (brainMode) {
-      // --- ЛОГИКА МОЗГА ---
-      setIsThinking(true)
-      setBrainAnswer(null) // Очищаем старый
-      const query = text.replace('?', '').trim()
-
-      const result = await askBrain(query)
-
-      setIsThinking(false)
-      if (result.answer) {
-        setBrainAnswer({ answer: result.answer, sources: result.sources || [] })
-      } else {
-        toast.error('Мозг не ответил')
-      }
-    } else {
-      // 1. Мгновенно обновляем UI
-      increment()
-      setText('')
-
-      // 2. Отправляем запрос в фоне
-      createItem(content, activeScope?.id)
-        .then((result) => {
-          // 3. Обрабатываем результат, когда он придет
-          if (result.error) {
-            toast.error('Ошибка создания', {
-              description: 'Задача не была сохранена.',
+    // 2. Отправляем запрос в фоне
+    createItem(content, activeScope?.id)
+      .then((result) => {
+        // 3. Обрабатываем результат, когда он придет
+        if (result.error) {
+          toast.error('Ошибка создания', {
+            description: 'Задача не была сохранена.',
+          })
+          setText(content)
+        } else {
+          if (result.parentTitle) {
+            toast.success('Задача добавлена в проект', {
+              description: `«${result.parentTitle}» > ${result.item.content}`,
             })
-            setText(content)
           } else {
-            if (result.parentTitle) {
-              toast.success('Задача добавлена в проект', {
-                description: `«${result.parentTitle}» > ${result.item.content}`,
-              })
-            } else {
-              toast.success('Задача в Inbox!')
-            }
-            // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ UI (не дожидаясь Realtime)
-            addItem(result.item)
+            toast.success('Задача в Inbox!')
           }
-        })
-        .finally(() => {
-          // 4. Уменьшаем счетчик в любом случае
-          decrement()
-        })
-    }
+          // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ UI (не дожидаясь Realtime)
+          addItem(result.item)
+        }
+      })
+      .finally(() => {
+        // 4. Уменьшаем счетчик в любом случае
+        decrement()
+      })
   }
 
   const handleMicClick = () => {
@@ -233,7 +186,7 @@ export function CaptureBar() {
   return (
     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-4xl z-20">
       <AnimatePresence>
-        {!brainMode && (suggestions.length > 0 || isSearching) && isPro ? (
+        {!brainMode && suggestions.length > 0 && isPro ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -258,7 +211,7 @@ export function CaptureBar() {
           </motion.div>
         ) : (
           !brainMode &&
-          (suggestions.length > 0 || isSearching) &&
+          suggestions.length > 0 &&
           !isPro && (
             <button
               onClick={() => openPaywall('proactive_semantic_search')}
@@ -415,7 +368,7 @@ export function CaptureBar() {
           <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
             <AnimatePresence>
               {/* 1. Кнопка "Отправить" (если есть текст) */}
-              {text.trim() && !isRecording && !isTranscribing && !isThinking ? (
+              {text.trim() && !isRecording && !isTranscribing && (
                 <motion.button
                   key="send"
                   type="submit"
@@ -426,10 +379,6 @@ export function CaptureBar() {
                 >
                   <ArrowUp size={20} strokeWidth={2.6} />
                 </motion.button>
-              ) : (
-                isThinking && (
-                  <Loader2 className="animate-spin text-amber-400" size={20} />
-                )
               )}
 
               {/* 2. Кнопка "Микрофон / Стоп" (если текста нет) */}
