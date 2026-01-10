@@ -56,10 +56,13 @@ export default function StoreInitializer() {
         const currentScope =
           scopeList.find((s: any) => s.id === activeId) || scopeList[0]
 
-        // Г. Запускаем загрузку задач для этого скоупа (не дожидаясь рендера!)
-        const itemsPromise = currentScope
-          ? fetchActiveItems(supabase, currentScope.id)
-          : Promise.resolve([])
+        let targetId = null
+
+        if (currentScope && currentScope.slug !== 'general') {
+          targetId = currentScope.id
+        }
+
+        const itemsPromise = fetchActiveItems(supabase, targetId)
 
         // Д. Ждем вообще всё
         const [tier, agents, items] = await Promise.all([
@@ -93,14 +96,14 @@ export default function StoreInitializer() {
 
   // 2. РЕАКТИВНОЕ ПЕРЕКЛЮЧЕНИЕ (Только если юзер кликнул в меню)
   useEffect(() => {
-    // Если еще не загрузились или скоуп не выбран — выходим
     if (!activeScope || !isBootstrapped.current) return
-
-    // Если мы уже загрузили данные для этого скоупа (например, при инициализации) — выходим
     if (activeScope.id === lastFetchedScopeId.current) return
 
     const switchScope = async () => {
       console.log(`🔄 Switching items to: ${activeScope.name}`)
+
+      useScopeStore.getState().setIsSwitching(true)
+
       try {
         lastFetchedScopeId.current = activeScope.id
         const targetScopeId =
@@ -110,6 +113,8 @@ export default function StoreInitializer() {
         setItems(items)
       } catch (e) {
         console.error('❌ Switch failed', e)
+      } finally {
+        useScopeStore.getState().setIsSwitching(false)
       }
     }
 

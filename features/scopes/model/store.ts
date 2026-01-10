@@ -13,7 +13,8 @@ interface ScopeState {
   scopes: Scope[]
   activeScope: Scope | null
   isLoading: boolean
-
+  isSwitching: boolean
+  setIsSwitching: (val: boolean) => void
   setScopes: (scopes: Scope[]) => void
   setActiveScope: (scope: Scope) => void
   setIsLoading: (loading: boolean) => void
@@ -26,7 +27,8 @@ export const useScopeStore = create<ScopeState>((set) => ({
   scopes: [],
   activeScope: null,
   isLoading: true,
-
+  isSwitching: false,
+  setIsSwitching: (val) => set({ isSwitching: val }),
   setScopes: (scopes) => set({ scopes }),
   setActiveScope: (scope) => set({ activeScope: scope }),
   setIsLoading: (isLoading) => set({ isLoading }),

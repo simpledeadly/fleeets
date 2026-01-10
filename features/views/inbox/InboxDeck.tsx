@@ -9,6 +9,7 @@ import { Zap, Clock, CheckCircle2, RefreshCw, Loader2 } from 'lucide-react'
 import { fetchActiveItems } from '@/lib/data'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
+import { useScopeStore } from '@/features/scopes'
 // import { CoolEmoji } from './CoolEmoji'
 // import { Loveduck } from './Loveduck'
 // import { YourKickAss } from './YourKickAss'
@@ -39,6 +40,7 @@ export function InboxDeck() {
   const setItems = useStore((state) => state.setItems)
   const inboxStats = useStore((state) => state.inboxStats)
   const setInboxStats = useStore((state) => state.setInboxStats)
+  const { activeScope } = useScopeStore()
   const [isGridMode, setIsGridMode] = useState(false)
   const [forcedTopId, setForcedTopId] = useState<string | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -47,7 +49,8 @@ export function InboxDeck() {
   const handleRefresh = async () => {
     setIsRefreshing(true)
     try {
-      const updatedItems = await fetchActiveItems(supabase)
+      const targetId = activeScope?.slug === 'general' ? null : activeScope?.id
+      const updatedItems = await fetchActiveItems(supabase, targetId)
       setItems(updatedItems)
       const stats = await getInboxStats()
       setInboxStats(stats)

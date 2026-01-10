@@ -27,7 +27,7 @@ const ViewRenderer = memo(({ viewType, scope, items }: any) => {
 ViewRenderer.displayName = 'ViewRenderer'
 
 export function ScopeView() {
-  const { activeScope, isLoading } = useScopeStore()
+  const { activeScope, isLoading, isSwitching } = useScopeStore()
   const { items } = useStore()
 
   if (isLoading)
@@ -42,6 +42,10 @@ export function ScopeView() {
         Выберите проект
       </div>
     )
+
+  if (isSwitching) {
+    return <div className="p-10 animate-pulse">Загрузка контекста...</div>
+  }
 
   return (
     <ViewRenderer
