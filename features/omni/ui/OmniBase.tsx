@@ -371,7 +371,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
                   )}
                 </CommandList>
 
-                <OmniFooter item={effectiveActiveItem} />
+                {/* <OmniFooter item={effectiveActiveItem} /> */}
               </Command>
             )}
           </div>
