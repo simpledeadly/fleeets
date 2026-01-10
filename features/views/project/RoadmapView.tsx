@@ -15,7 +15,6 @@ import {
   getActiveBlueprint,
   restoreBlueprint,
 } from '@/features/blueprints'
-import { ScopeSettings } from '@/features/scopes'
 
 export function RoadmapView({ scope, items }: { scope: Scope; items: Item[] }) {
   const [goal, setGoal] = useState('')
@@ -400,8 +399,6 @@ export function RoadmapView({ scope, items }: { scope: Scope; items: Item[] }) {
               </div>
             </div>
           )}
-
-          <ScopeSettings />
         </div>
       </div>
     </div>
