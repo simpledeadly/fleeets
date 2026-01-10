@@ -27,15 +27,9 @@ const ViewRenderer = memo(({ viewType, scope, items }: any) => {
 ViewRenderer.displayName = 'ViewRenderer'
 
 export function ProjectView() {
-  const { activeScope, isLoading, isSwitching } = useScopeStore()
+  const { activeScope, isSwitching } = useScopeStore()
   const { items } = useStore()
 
-  if (isLoading)
-    return (
-      <div className="flex h-full items-center justify-center text-muted-foreground">
-        Загрузка...
-      </div>
-    )
   if (!activeScope)
     return (
       <div className="flex h-full items-center justify-center text-muted-foreground">

@@ -1,6 +1,6 @@
 import {
-  CircleDotDashed,
   Focus,
+  Folders,
   Inbox,
   MapPinned,
   Users2,
@@ -19,7 +19,7 @@ export const VIEW_REGISTRY = {
   vault: { component: VaultSpace, name: 'Хранилище', icon: Vault },
   agents: { component: AgentLab, name: 'Агенты', icon: Users2 },
   project: { component: ProjectView, name: 'Главная Проекта', icon: MapPinned },
-  hub: { component: ProjectHub, name: 'Хаб Проектов', icon: CircleDotDashed },
+  hub: { component: ProjectHub, name: 'Хаб Проектов', icon: Folders },
 } as const
 
 export type ViewType = keyof typeof VIEW_REGISTRY

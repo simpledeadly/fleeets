@@ -222,13 +222,13 @@ export function RoadmapView({ scope, items }: { scope: Scope; items: Item[] }) {
     <div className="absolute inset-0 flex flex-col bg-card overflow-hidden">
       {/* ХЕДЕР */}
       <div
-        className={`shrink-0 px-4 py-3 border-b border-border z-10 transition-colors ${
+        className={`shrink-0 px-4 py-3 bg-muted/20 border-b border-border z-10 transition-colors ${
           isPreviewMode ? 'bg-purple-500/10' : 'bg-card'
         }`}
       >
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
+          <div className="flex gap-4 items-center">
+            <h1 className="text-xl font-bold tracking-tight flex items-center gap-3">
               {scope.name}
               {isPreviewMode && (
                 <span className="text-xs bg-purple-500 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
@@ -277,8 +277,8 @@ export function RoadmapView({ scope, items }: { scope: Scope; items: Item[] }) {
 
           {/* ГЕНЕРАТОР / РЕВЬЮ */}
           {!pendingBlueprint && !isPreviewMode && (
-            <div className="group relative bg-muted/20 border border-border/50 hover:border-primary/30 p-1 rounded-2xl transition-all shadow-sm">
-              <div className="absolute -inset-0.5 bg-linear-to-r from-pink-500/20 to-blue-500/20 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+            <div className="mt-6 group relative bg-muted/20 border border-border/50 hover:border-primary/10 p-1 rounded-2xl transition-all shadow-sm">
+              <div className="absolute -inset-0.5 bg-linear-to-r from-pink-500/20 to-blue-500/20 rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-300"></div>
               <div className="relative bg-card rounded-xl p-4 flex gap-4 items-center">
                 <div className="flex-1 space-y-1">
                   <input
@@ -288,14 +288,14 @@ export function RoadmapView({ scope, items }: { scope: Scope; items: Item[] }) {
                     placeholder="Опиши цель (например: Запуск MVP за месяц)..."
                     className="w-full bg-transparent text-lg font-medium placeholder:text-muted-foreground/40 outline-none"
                   />
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground/80">
                     Нажми Enter для генерации стратегии
                   </p>
                 </div>
                 <button
                   onClick={handleGenerate}
                   disabled={isGenerating}
-                  className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-bold shadow-lg shadow-primary/20 transition-all active:scale-95"
+                  className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-bold shadow-lg shadow-primary/20 transition-all active:scale-95 cursor-pointer"
                 >
                   {isGenerating ? (
                     <Loader2 className="animate-spin" />
