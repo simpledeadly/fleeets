@@ -56,7 +56,7 @@ export async function getFocusViewData(itemId: string) {
     // Получаем эмбеддинг и текущий скоуп
     const { data: currentItem } = await supabase
       .from('items')
-      .select('embedding, scope')
+      .select('embedding, scope_id')
       .eq('id', itemId)
       .single()
 
@@ -67,7 +67,7 @@ export async function getFocusViewData(itemId: string) {
       match_threshold: 0.5,
       match_count: 11,
       user_id_input: user.id, // Теперь это снова совпадает с SQL
-      filter_scope: currentItem.scope || 'general', // Ищем только в этом проекте
+      filter_scope_id: currentItem.scope_id, // Ищем только в этом проекте
     })
 
     if (error) {

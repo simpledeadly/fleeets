@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useScopeStore, Scope } from '../model/store'
-import { getScopes, switchScopeAction } from '../model/actions'
+import { createScope, getScopes, switchScopeAction } from '../model/actions'
 import { ChevronsUpDown, Plus, Box, Check } from 'lucide-react'
 import { cn } from '@/lib/utils' // Убедись, что у тебя есть cn (clsx + tailwind-merge)
 
@@ -137,7 +137,10 @@ export function ScopeSwitcher({ isCollapsed = false }: ScopeSwitcherProps) {
           </div>
 
           <div className="p-1 border-t border-border">
-            <button className="w-full flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-md transition-colors">
+            <button
+              onClick={() => createScope('dora')}
+              className="w-full flex items-center gap-2 px-2 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-md transition-colors"
+            >
               <Plus size={14} />
               <span>Создать проект</span>
             </button>

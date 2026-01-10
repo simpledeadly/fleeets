@@ -46,9 +46,32 @@ export async function gatherContext(
       : Promise.resolve(''),
   ])
 
+  let selectedItemsContext = ''
+
+  if (context.itemIds && context.itemIds.length > 0) {
+    const { data: items } = await supabase
+      .from('items')
+      .select('id, content, description, status, type')
+      .in('id', context.itemIds)
+
+    if (items && items.length > 0) {
+      selectedItemsContext = items
+        .map(
+          (i: any) =>
+            `[ITEM id=${i.id} type=${i.type} status=${i.status}]\nCONTENT: ${
+              i.content
+            }\nDESC: ${i.description || 'N/A'}`
+        )
+        .join('\n---\n')
+
+      selectedItemsContext = `\n\nUSER SELECTED THESE ITEMS:\n${selectedItemsContext}`
+    }
+  }
+
   return {
     userPrefs: profile.data?.manifesto || '',
     projectContext: project,
+    selectedItems: selectedItemsContext,
   }
 }
 

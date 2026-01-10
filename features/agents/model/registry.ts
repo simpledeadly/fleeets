@@ -2,25 +2,52 @@ import { SupabaseClient } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { getEmbedding } from './embedding'
 
+const ItemSchema = z.object({
+  content: z.string().min(1),
+  type: z.string().default('task'),
+  priority: z.string().optional(),
+  description: z.string().optional(),
+  parent_context: z.string().optional(),
+})
+
 export const TOOL_SCHEMAS = {
-  CREATE_ITEMS: z.array(
-    z.object({
-      content: z.string().min(1),
-      type: z.string().default('task'),
-      priority: z.string().optional(),
-      scope: z.string().optional(),
-    })
-  ),
+  CREATE_ITEMS: z.union([
+    z.array(ItemSchema),
+    z.object({ items: z.array(ItemSchema) }),
+  ]),
+
   UPDATE_ITEM: z.object({
     id: z.uuid(),
     description: z.string().optional(),
     status: z.string().optional(),
     metadata: z.record(z.string(), z.any()).optional(),
   }),
+
+  CREATE_BLUEPRINT: z.object({
+    title: z.string(),
+    description: z.string().optional(),
+    new_items: z.array(ItemSchema),
+    include_ids: z.array(z.string()).optional(),
+    exclude_ids: z.array(z.string()).optional(),
+    relations: z
+      .array(
+        z.object({
+          item_id: z.string().describe('ID существующей задачи'),
+          parent_context: z
+            .string()
+            .describe(
+              'Название Фазы (новой или старой), куда перенести эту задачу'
+            ),
+        })
+      )
+      .optional(),
+  }),
+
   RAG_SEARCH: z.object({
     query: z.string().min(1),
     limit: z.number().optional().default(5),
   }),
+
   FETCH_REPORT: z.object({
     type: z.enum(['daily', 'weekly']),
     date: z.string().optional(),
@@ -31,15 +58,17 @@ export const SYSTEM_TOOLS = {
   RAG_SEARCH: async (
     supabase: SupabaseClient,
     userId: string,
-    payload: any
+    payload: any,
+    context?: any
   ) => {
     const queryVector = await getEmbedding(payload.query, userId)
+    const targetScopeId = payload.global ? null : context?.scopeId
     const { data, error } = await supabase.rpc('match_items', {
       query_embedding: queryVector,
-      match_threshold: 0.3,
+      match_threshold: 0.35,
       match_count: payload.limit || 10,
       user_id_input: userId,
-      filter_scope: 'all',
+      filter_scope_id: targetScopeId,
     })
     if (error) {
       console.error('🔴 RPC match_items error:', error)
@@ -47,6 +76,7 @@ export const SYSTEM_TOOLS = {
     }
     return data
   },
+
   FETCH_REPORT: async (
     supabase: SupabaseClient,
     userId: string,
@@ -83,20 +113,9 @@ export const DATABASE_TOOLS = {
       rawItems = [payload]
     }
 
-    let targetScopeId = context?.scopeId
-    const targetScopeName = context?.scope || 'general'
+    const targetScopeId = context?.scopeId || null
 
-    // Если ID не пришел, но есть имя - ищем ID в базе
-    if (!targetScopeId && targetScopeName) {
-      const { data: scopeData } = await supabase
-        .from('scopes')
-        .select('id')
-        .eq('slug', targetScopeName)
-        .eq('user_id', userId) // Важно: ищем только свои
-        .single()
-
-      if (scopeData) targetScopeId = scopeData.id
-    }
+    const agentId = context?.agentId || null
 
     // 2. Маппинг с ИНЪЕКЦИЕЙ СКОУПА
     const itemsToInsert = rawItems.map((i: any) => ({
@@ -106,10 +125,11 @@ export const DATABASE_TOOLS = {
       type: i.type || 'task',
       priority: i.priority || 'medium',
       status: 'inbox',
-      // ВАЖНО: Берем из payload, или из контекста, или дефолт
-      scope: i.scope || context?.scope || 'general',
-      scope_id: context?.scopeId || null, // <--- ВОТ ЭТОГО НЕ ХВАТАЛО
-      metadata: i.parent_context ? { context_note: i.parent_context } : {},
+      scope_id: targetScopeId,
+      created_by_agent_id: agentId,
+      metadata: i.parent_context
+        ? { context_note: i.parent_context, agent_generated: !!agentId }
+        : {},
     }))
 
     const { data, error } = await supabase
@@ -119,6 +139,7 @@ export const DATABASE_TOOLS = {
     if (error) throw error
     return data
   },
+
   UPDATE_ITEM: async (
     supabase: SupabaseClient,
     userId: string,
@@ -131,6 +152,7 @@ export const DATABASE_TOOLS = {
       .eq('id', valid.id)
       .eq('user_id', userId)
   },
+
   UPDATE_SCOPE_VIEW: async (
     supabase: SupabaseClient,
     userId: string,
@@ -144,6 +166,7 @@ export const DATABASE_TOOLS = {
       })
       .eq('id', payload.scopeId)
   },
+
   // Инструмент для Летописца: Обновить манифест
   UPDATE_PROJECT_MANIFESTO: async (
     supabase: SupabaseClient,
@@ -156,5 +179,56 @@ export const DATABASE_TOOLS = {
         manifesto: payload.manifesto,
       })
       .eq('id', payload.scopeId)
+  },
+
+  CREATE_BLUEPRINT: async (
+    supabase: SupabaseClient,
+    userId: string,
+    payload: any,
+    context?: any
+  ) => {
+    // 1. Валидация
+    const validPayload = TOOL_SCHEMAS.CREATE_BLUEPRINT.parse(payload)
+
+    // 2. Получение ID скоупа
+    let targetScopeId = context?.scopeId
+    if (!targetScopeId && context?.scope) {
+      const { data } = await supabase
+        .from('scopes')
+        .select('id')
+        .eq('slug', context.scope)
+        .single()
+      targetScopeId = data?.id
+    }
+
+    if (!targetScopeId)
+      throw new Error('CREATE_BLUEPRINT requires a valid Scope ID context')
+
+    // 3. Создание записи
+    const { data, error } = await supabase
+      .from('blueprints')
+      .insert({
+        user_id: userId,
+        scope_id: targetScopeId,
+        created_by_agent_id: context?.agentId || null,
+        name: validPayload.title,
+        description: validPayload.description,
+        // Сохраняем структуру как есть, не создавая задач
+        data_snapshot: {
+          new_items: validPayload.new_items,
+          include_ids: validPayload.include_ids || [],
+          exclude_ids: validPayload.exclude_ids || [],
+        },
+        is_applied: false, // Это черновик
+      })
+      .select()
+      .single()
+
+    if (error) throw error
+    return {
+      message: 'Blueprint created successfully',
+      blueprint_id: data.id,
+      stats: `${validPayload.new_items.length} new items proposed`,
+    }
   },
 }

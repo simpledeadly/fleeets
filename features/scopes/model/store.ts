@@ -17,6 +17,9 @@ interface ScopeState {
   setScopes: (scopes: Scope[]) => void
   setActiveScope: (scope: Scope) => void
   setIsLoading: (loading: boolean) => void
+  addScope: (scopes: Scope) => void
+  updateScopeInStore: (id: string, updates: any) => void
+  removeScopeFromStore: (id: string) => void
 }
 
 export const useScopeStore = create<ScopeState>((set) => ({
@@ -27,4 +30,22 @@ export const useScopeStore = create<ScopeState>((set) => ({
   setScopes: (scopes) => set({ scopes }),
   setActiveScope: (scope) => set({ activeScope: scope }),
   setIsLoading: (isLoading) => set({ isLoading }),
+  addScope: (scope) => set((state) => ({ scopes: [...state.scopes, scope] })),
+  updateScopeInStore: (id, updates) =>
+    set((state) => ({
+      scopes: state.scopes.map((s) => (s.id === id ? { ...s, ...updates } : s)),
+      // Если обновили активный - обновляем и его
+      activeScope:
+        state.activeScope?.id === id
+          ? { ...state.activeScope, ...updates }
+          : state.activeScope,
+    })),
+  removeScopeFromStore: (id) =>
+    set((state) => ({
+      scopes: state.scopes.filter((s) => s.id !== id),
+      activeScope:
+        state.activeScope?.id === id
+          ? state.scopes.find((s) => s.id !== id) || null
+          : state.activeScope,
+    })),
 }))

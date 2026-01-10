@@ -15,7 +15,8 @@ export const ADAPTER_POLICY = {
       prefs: string,
       project: string,
       tools: string,
-      currentDate: string
+      currentDate: string,
+      selectedItems: string
     ) =>
       `
         ${base}
@@ -28,6 +29,7 @@ export const ADAPTER_POLICY = {
         STRICT CONTEXT:
         ${prefs ? `USER_PREFS: ${prefs}` : ''}
         ${project ? `PROJECT_CONTEXT: ${project}` : ''}
+        ${selectedItems && selectedItems}
 
         ---
         ${

@@ -154,6 +154,63 @@ export type Database = {
         }
         Relationships: []
       }
+      blueprints: {
+        Row: {
+          created_at: string | null
+          created_by_agent_id: string | null
+          data_snapshot: Json | null
+          description: string | null
+          id: string
+          is_applied: boolean | null
+          manifesto_snapshot: string | null
+          name: string
+          scope_id: string
+          user_id: string | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by_agent_id?: string | null
+          data_snapshot?: Json | null
+          description?: string | null
+          id?: string
+          is_applied?: boolean | null
+          manifesto_snapshot?: string | null
+          name: string
+          scope_id: string
+          user_id?: string | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by_agent_id?: string | null
+          data_snapshot?: Json | null
+          description?: string | null
+          id?: string
+          is_applied?: boolean | null
+          manifesto_snapshot?: string | null
+          name?: string
+          scope_id?: string
+          user_id?: string | null
+          version?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "blueprints_created_by_agent_id_fkey"
+            columns: ["created_by_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "blueprints_scope_id_fkey"
+            columns: ["scope_id"]
+            isOneToOne: false
+            referencedRelation: "scopes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inbox: {
         Row: {
           created_at: string | null
@@ -190,11 +247,13 @@ export type Database = {
           completed_at: string | null
           content: string
           created_at: string | null
+          created_by_agent_id: string | null
           description: string | null
           embedding: string | null
           execution_log: string | null
           first_interaction_at: string | null
           id: string
+          in_roadmap: boolean | null
           interaction_count: number | null
           is_quick: boolean | null
           metadata: Json | null
@@ -203,7 +262,6 @@ export type Database = {
           priority: Database["public"]["Enums"]["priority_level"] | null
           raw_content: string | null
           revision_count: number | null
-          scope: string | null
           scope_id: string | null
           sentiment: string | null
           status: Database["public"]["Enums"]["item_status"] | null
@@ -217,11 +275,13 @@ export type Database = {
           completed_at?: string | null
           content: string
           created_at?: string | null
+          created_by_agent_id?: string | null
           description?: string | null
           embedding?: string | null
           execution_log?: string | null
           first_interaction_at?: string | null
           id?: string
+          in_roadmap?: boolean | null
           interaction_count?: number | null
           is_quick?: boolean | null
           metadata?: Json | null
@@ -230,7 +290,6 @@ export type Database = {
           priority?: Database["public"]["Enums"]["priority_level"] | null
           raw_content?: string | null
           revision_count?: number | null
-          scope?: string | null
           scope_id?: string | null
           sentiment?: string | null
           status?: Database["public"]["Enums"]["item_status"] | null
@@ -244,11 +303,13 @@ export type Database = {
           completed_at?: string | null
           content?: string
           created_at?: string | null
+          created_by_agent_id?: string | null
           description?: string | null
           embedding?: string | null
           execution_log?: string | null
           first_interaction_at?: string | null
           id?: string
+          in_roadmap?: boolean | null
           interaction_count?: number | null
           is_quick?: boolean | null
           metadata?: Json | null
@@ -257,7 +318,6 @@ export type Database = {
           priority?: Database["public"]["Enums"]["priority_level"] | null
           raw_content?: string | null
           revision_count?: number | null
-          scope?: string | null
           scope_id?: string | null
           sentiment?: string | null
           status?: Database["public"]["Enums"]["item_status"] | null
@@ -267,6 +327,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "items_created_by_agent_id_fkey"
+            columns: ["created_by_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "items_parent_id_fkey"
             columns: ["parent_id"]
@@ -372,6 +439,7 @@ export type Database = {
       }
       scopes: {
         Row: {
+          active_blueprint_id: string | null
           created_at: string | null
           description: string | null
           id: string
@@ -385,6 +453,7 @@ export type Database = {
           view_type: string | null
         }
         Insert: {
+          active_blueprint_id?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -398,6 +467,7 @@ export type Database = {
           view_type?: string | null
         }
         Update: {
+          active_blueprint_id?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
@@ -410,7 +480,15 @@ export type Database = {
           view_config?: Json | null
           view_type?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "scopes_active_blueprint_id_fkey"
+            columns: ["active_blueprint_id"]
+            isOneToOne: false
+            referencedRelation: "blueprints"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -536,7 +614,7 @@ export type Database = {
       get_weekly_summary: { Args: { user_uuid: string }; Returns: Json }
       match_items: {
         Args: {
-          filter_scope?: string
+          filter_scope_id?: string
           match_count: number
           match_threshold: number
           query_embedding: string
@@ -544,24 +622,15 @@ export type Database = {
         }
         Returns: {
           ai_tags: string[]
-          completed_at: string
           content: string
-          created_at: string
           description: string
-          embedding: string
-          execution_log: string
           id: string
           is_quick: boolean
-          metadata: Json
-          parent_id: string
-          planned_at: string
           priority: Database["public"]["Enums"]["priority_level"]
-          raw_content: string
-          scope: string
+          scope_id: string
           similarity: number
           status: Database["public"]["Enums"]["item_status"]
           type: Database["public"]["Enums"]["item_type"]
-          user_id: string
         }[]
       }
     }

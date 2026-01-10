@@ -54,7 +54,7 @@ export async function processAgentTask({
   if (!agent) throw new Error('AGENT_NOT_FOUND')
 
   const perms = agent.model_settings?.permissions || { tools: [] }
-  const { userPrefs, projectContext } = await gatherContext(
+  const { userPrefs, projectContext, selectedItems } = await gatherContext(
     supabase,
     userId,
     agentId,
@@ -94,7 +94,8 @@ export async function processAgentTask({
     userPrefs,
     projectContext,
     toolsStr,
-    currentDate
+    currentDate,
+    selectedItems
   )
 
   const agentSettings = agent.model_settings || {}
@@ -146,7 +147,7 @@ export async function processAgentTask({
       res.output.commands,
       perms.tools || [],
       isTest,
-      context
+      { ...context, agentId }
     )
     accumulatedTrace = [...accumulatedTrace, ...currentTrace]
 

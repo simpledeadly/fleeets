@@ -17,6 +17,7 @@ import { bulkAddTag, bulkRemoveTag, softDeleteItem } from '../model/actions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { agentIds, useAgent } from '@/features/agents'
+import { useScopeStore } from '@/features/scopes'
 
 export function SelectionToolbar() {
   const {
@@ -29,6 +30,7 @@ export function SelectionToolbar() {
   } = useStore()
   const [groupName, setGroupName] = useState('')
   const { runAgent, isLoading } = useAgent()
+  const { activeScope } = useScopeStore()
 
   // Получаем список всех уникальных существующих групп
   const existingGroups = Array.from(
@@ -151,17 +153,17 @@ export function SelectionToolbar() {
   const handleArchitect = async () => {
     try {
       const result = await runAgent(agentIds.architectAgentId, {
-        // query: selectedIds.map((i) => i.toString()).join(',\n'),
-        query: items
-          .filter((item) => item.id === selectedIds[0])
-          .map((i) => i.content)
-          .join(',\n'),
-        scope: 'general',
+        query: groupName, // Например: "Объедини эти задачи в одну"
+        scope: activeScope?.slug || 'general',
+        scopeId: activeScope?.id,
+        itemIds: selectedIds,
       })
+
+      if (result.content) toast.success('Готово!')
       console.log('📥 [VAULT_RESULT_PACKET]:', result)
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
-      toast.error(`Ошибка связи с мозгом: ${e}`)
+      toast.error(`Ошибка связи с мозгом: ${e.message}`)
     }
   }
 
