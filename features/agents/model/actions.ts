@@ -9,7 +9,7 @@ export async function fetchAgents(userId: string) {
   const { data, error } = await supabase
     .from('agents')
     .select('*')
-    .eq('user_id', userId)
+    .or(`user_id.eq.${userId},is_system.eq.true`)
     .order('created_at', { ascending: false })
 
   if (error) throw error

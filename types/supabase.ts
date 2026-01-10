@@ -63,6 +63,7 @@ export type Database = {
           is_system: boolean | null
           model_settings: Json | null
           name: string
+          slug: string | null
           system_prompt: string
           user_id: string
         }
@@ -73,6 +74,7 @@ export type Database = {
           is_system?: boolean | null
           model_settings?: Json | null
           name: string
+          slug?: string | null
           system_prompt: string
           user_id: string
         }
@@ -83,6 +85,7 @@ export type Database = {
           is_system?: boolean | null
           model_settings?: Json | null
           name?: string
+          slug?: string | null
           system_prompt?: string
           user_id?: string
         }

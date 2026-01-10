@@ -3,14 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Item, useStore } from '@/lib/store'
 import { Scope } from '@/features/scopes/model/store'
-import {
-  Plus,
-  Loader2,
-  Box,
-  ArrowLeft,
-  RotateCcw,
-} from 'lucide-react'
-import { agentIds, useAgent } from '@/features/agents' // Твой хук
+import { Plus, Loader2, Box, ArrowLeft, RotateCcw } from 'lucide-react'
+import { useAgent, useSystemAgent } from '@/features/agents' // Твой хук
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
 import { fetchActiveItems } from '@/lib/data'
@@ -23,9 +17,6 @@ import {
 } from '@/features/blueprints'
 import { ScopeSettings } from '@/features/scopes'
 
-// ID Архитектора из базы (в реальном проекте вынеси в константы или ищи по имени)
-const ARCHITECT_ID = agentIds.architectAgentId
-
 export function RoadmapView({ scope, items }: { scope: Scope; items: Item[] }) {
   const [goal, setGoal] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -33,6 +24,7 @@ export function RoadmapView({ scope, items }: { scope: Scope; items: Item[] }) {
   const [pendingBlueprint, setPendingBlueprint] = useState<any>(null)
   const [selectedBlueprint, setSelectedBlueprint] = useState<any>(null)
 
+  const architectId = useSystemAgent('architect')
   const { runAgent } = useAgent()
   const { setItems } = useStore()
 
@@ -103,11 +95,12 @@ export function RoadmapView({ scope, items }: { scope: Scope; items: Item[] }) {
 
   const handleGenerate = async () => {
     if (!goal.trim()) return
+    if (!architectId) return toast.error('Агент Архитектор не найден')
     setIsGenerating(true)
     const toastId = toast.loading('Архитектор проектирует...')
 
     try {
-      const result = await runAgent(ARCHITECT_ID, {
+      const result = await runAgent(architectId, {
         query: `Цель: ${goal}.`,
         scope: scope.slug,
         scopeId: scope.id,

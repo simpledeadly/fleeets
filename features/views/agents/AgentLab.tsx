@@ -19,9 +19,12 @@ import {
   Loader2,
   Play,
   Zap,
+  Copy,
+  Lock,
 } from 'lucide-react'
 import { PlaygroundDebug } from './ui/PlaygroundDebug'
 import { PlaygroundTrace } from './ui/PlaygroundTrace'
+import { useUser } from '@/features/auth'
 
 const MODELS_CONFIG = {
   google: [
@@ -71,6 +74,7 @@ const AVAILABLE_TOOLS = [
 export function AgentLab() {
   const { agents, addAgent, updateAgent, removeAgent } = useAgentsStore()
   const { runAgent } = useAgent()
+  const { user } = useUser()
 
   const [selectedAgent, setSelectedAgent] = useState<Partial<Agent> | null>(
     null
@@ -159,6 +163,36 @@ export function AgentLab() {
       toast.error(`Не удалось удалить: ${e}`)
     }
   }
+
+  const handleClone = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedAgent || !user) return
+
+    const toastId = toast.loading('Клонирование...')
+    try {
+      const newAgent = {
+        ...selectedAgent,
+        id: undefined, // Сброс ID
+        user_id: user.id, // Теперь ты владелец
+        is_system: false, // Это уже не системный
+        name: `${selectedAgent.name} (Копия)`,
+        // Slug можно оставить или сбросить, чтобы не конфликтовал
+        slug: `${selectedAgent.slug || 'agent'}-copy-${Date.now()}`,
+      }
+
+      const res = await upsertAgent(newAgent)
+      addAgent(res)
+      setSelectedAgent(res) // Переключаемся на копию
+      toast.success('Агент склонирован', { id: toastId })
+    } catch (e) {
+      toast.error(`Ошибка клонирования: ${e}`, { id: toastId })
+    }
+  }
+
+  // Логика прав
+  const isOwner = user?.id === selectedAgent?.user_id
+  // Если это новый агент (еще нет id), то мы считаемся владельцем
+  const canEdit = isOwner || !selectedAgent?.id
 
   return (
     <div className="flex h-screen max-h-screen w-full gap-0 overflow-hidden bg-card">
@@ -258,254 +292,271 @@ export function AgentLab() {
             </button>
           </div>
 
-          <form className="flex-1 overflow-y-auto px-4 py-2 space-y-4 custom-scrollbar">
-            <div className="grid grid-cols-4 gap-4 mt-1">
-              <div className="col-span-3">
+          <form
+            onSubmit={canEdit ? handleSave : handleClone}
+            className="flex-1 overflow-y-auto px-4 py-2 space-y-4 custom-scrollbar"
+          >
+            <fieldset
+              disabled={!canEdit}
+              className={!canEdit ? 'opacity-75' : ''}
+            >
+              <div className="grid grid-cols-4 gap-4 mt-1">
+                <div className="col-span-3">
+                  <label className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
+                    Публичное имя
+                  </label>
+                  <input
+                    value={selectedAgent.name || ''}
+                    onChange={(e) =>
+                      setSelectedAgent({
+                        ...selectedAgent,
+                        name: e.target.value,
+                      })
+                    }
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck="false"
+                    className="w-full bg-card border border-border rounded-md px-2 py-1.5 text-sm focus:border-blue-500/50 outline-none transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
+                    Цвет
+                  </label>
+                  <input
+                    type="color"
+                    value={selectedAgent.color || '#3B82F6'}
+                    onChange={(e) =>
+                      setSelectedAgent({
+                        ...selectedAgent,
+                        color: e.target.value,
+                      })
+                    }
+                    className="w-full h-8.5 bg-transparent border-none cursor-pointer rounded-lg overflow-hidden"
+                  />
+                </div>
+              </div>
+
+              <div>
                 <label className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
-                  Публичное имя
+                  Инструкции (System Prompt)
                 </label>
-                <input
-                  value={selectedAgent.name || ''}
+                <textarea
+                  value={selectedAgent.system_prompt || ''}
                   onChange={(e) =>
-                    setSelectedAgent({ ...selectedAgent, name: e.target.value })
+                    setSelectedAgent({
+                      ...selectedAgent,
+                      system_prompt: e.target.value,
+                    })
                   }
                   autoComplete="off"
                   autoCorrect="off"
                   autoCapitalize="off"
                   spellCheck="false"
-                  className="w-full bg-card border border-border rounded-md px-2 py-1.5 text-sm focus:border-blue-500/50 outline-none transition-all"
+                  rows={12}
+                  className="w-full bg-card border border-border rounded-md px-2 py-1.5 text-sm focus:border-blue-500/50 outline-none resize-none leading-relaxed font-mono"
+                  placeholder="Ты — эксперт в области..."
                 />
               </div>
-              <div>
-                <label className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
-                  Цвет
-                </label>
-                <input
-                  type="color"
-                  value={selectedAgent.color || '#3B82F6'}
-                  onChange={(e) =>
-                    setSelectedAgent({
-                      ...selectedAgent,
-                      color: e.target.value,
-                    })
-                  }
-                  className="w-full h-8.5 bg-transparent border-none cursor-pointer rounded-lg overflow-hidden"
-                />
-              </div>
-            </div>
 
-            <div>
-              <label className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
-                Инструкции (System Prompt)
-              </label>
-              <textarea
-                value={selectedAgent.system_prompt || ''}
-                onChange={(e) =>
-                  setSelectedAgent({
-                    ...selectedAgent,
-                    system_prompt: e.target.value,
-                  })
-                }
-                autoComplete="off"
-                autoCorrect="off"
-                autoCapitalize="off"
-                spellCheck="false"
-                rows={12}
-                className="w-full bg-card border border-border rounded-md px-2 py-1.5 text-sm focus:border-blue-500/50 outline-none resize-none leading-relaxed font-mono"
-                placeholder="Ты — эксперт в области..."
-              />
-            </div>
-
-            {/* Мозг */}
-            <div className="p-3 bg-card rounded-md border border-border">
-              <div className="flex items-center gap-2 mb-2">
-                <Cpu size={16} />
-                <span className="text-xs uppercase font-bold tracking-wider">
-                  Мозг Агента
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2 mt-3">
-                <div>
-                  <label className="text-xs uppercase mb-1 block font-bold">
-                    Провайдер
-                  </label>
-                  <select
-                    value={settings.provider}
-                    onChange={(e) => {
-                      const newProvider = e.target
-                        .value as keyof typeof MODELS_CONFIG
-                      // Обновляем всё одной командой, чтобы React не запутался
-                      setSelectedAgent({
-                        ...selectedAgent,
-                        model_settings: {
-                          ...settings,
-                          provider: newProvider,
-                          model: MODELS_CONFIG[newProvider][0].id,
-                        },
-                      })
-                    }}
-                    className="w-full bg-card border border-border rounded-sm p-1.5 text-sm outline-none focus:border-blue-500/50"
-                  >
-                    <option value="google">Google</option>
-                    <option value="groq">Groq</option>
-                    <option value="openrouter">OpenRouter</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs uppercase mb-1 block font-bold">
-                    Модель
-                  </label>
-                  <select
-                    value={settings.model}
-                    onChange={(e) => updateSetting('model', e.target.value)}
-                    className="w-full bg-card border border-border rounded-sm p-1.5 text-sm outline-none focus:border-blue-500/50"
-                  >
-                    {MODELS_CONFIG[
-                      settings.provider as keyof typeof MODELS_CONFIG
-                    ]?.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* СЕКЦИЯ ПАРАМЕТРОВ ИНТЕЛЛЕКТА */}
-            <div className="p-3 bg-muted/10 rounded-md border border-border space-y-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Zap size={16} className="text-primary" />
-                <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
-                  Параметры интеллекта
-                </span>
-              </div>
-
-              <div className="space-y-4">
-                {/* Рекурсивный цикл */}
-                <label className="flex items-start justify-between gap-4 cursor-pointer group">
-                  <div className="space-y-1">
-                    <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
-                      Рекурсивный цикл (Agentic Loop)
-                    </span>
-                    <p className="text-[10px] text-muted-foreground leading-relaxed">
-                      Позволяет агенту делать дозапросы данных (RAG, отчеты)
-                      перед финальным ответом. Повышает точность, но увеличивает
-                      время и стоимость.
-                    </p>
-                  </div>
-                  <div className="relative flex items-center pt-1">
-                    <input
-                      type="checkbox"
-                      checked={settings.enable_agentic_loop || false}
-                      onChange={(e) =>
-                        updateSetting('enable_agentic_loop', e.target.checked)
-                      }
-                      className="w-5 h-5 rounded border-border bg-card text-primary accent-primary cursor-pointer transition-all"
-                    />
-                  </div>
-                </label>
-
-                {/* Настройка итераций (появляется только если цикл включен) */}
-                {settings.enable_agentic_loop && (
-                  <div className="flex items-center justify-between pt-3 border-t border-border animate-in fade-in slide-in-from-top-1">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-muted-foreground">
-                        Глубина мышления
-                      </span>
-                      <span className="text-[9px] text-muted-foreground/60 italic">
-                        Максимальное кол-во кругов
-                      </span>
-                    </div>
-                    <select
-                      value={settings.max_iterations || 2}
-                      onChange={(e) =>
-                        updateSetting('max_iterations', Number(e.target.value))
-                      }
-                      className="bg-card text-foreground border border-border rounded-md px-2 py-1 text-xs font-mono outline-none focus:border-primary transition-all cursor-pointer"
-                    >
-                      <option value={2}>2 (Оптимально)</option>
-                      <option value={3}>3 (Глубоко)</option>
-                    </select>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="flex items-center gap-2 mb-1">
-                <ShieldCheck size={18} className="text-blue-400" />
-                <span className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
-                  Контекст и Доступ
-                </span>
-              </div>
-
-              <div className="grid grid-cols-1 gap-2">
-                <label className="flex items-center justify-between p-2 rounded-lg border border-border bg-muted/5 hover:bg-muted/10 cursor-pointer transition-colors">
-                  <div className="flex items-center gap-2">
-                    <Globe size={18} className="text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      Манифест пользователя
-                    </span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={permissions.user_manifesto}
-                    onChange={() => togglePermission('user_manifesto')}
-                    className="w-4 h-4 accent-blue-500"
-                  />
-                </label>
-
-                <label className="flex items-center justify-between p-2 rounded-lg border border-border bg-muted/5 hover:bg-muted/10 cursor-pointer transition-colors">
-                  <div className="flex items-center gap-2">
-                    <FolderKanban size={18} className="text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      Манифест Проекта
-                    </span>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={permissions.project_manifesto}
-                    onChange={() => togglePermission('project_manifesto')}
-                    className="w-4 h-4 accent-blue-500"
-                  />
-                </label>
-              </div>
-
-              {/* Выбор инструментов */}
-              <div className="mt-4">
-                <div className="flex items-center gap-2 mb-3">
-                  <Wrench size={18} className="text-muted-foreground" />
-                  <span className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
-                    Доступные инструменты
+              {/* Мозг */}
+              <div className="p-3 bg-card rounded-md border border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Cpu size={16} />
+                  <span className="text-xs uppercase font-bold tracking-wider">
+                    Мозг Агента
                   </span>
                 </div>
-                <div className="space-y-1.5">
-                  {AVAILABLE_TOOLS.map((tool) => (
-                    <label
-                      key={tool.id}
-                      className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/50 bg-muted/5 hover:border-border cursor-pointer transition-all"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={permissions.tools?.includes(tool.id)}
-                        onChange={() => toggleTool(tool.id)}
-                        className="w-3.5 h-3.5 accent-blue-500"
-                      />
-                      <div className="flex flex-col">
-                        <span className="text-xs font-semibold">
-                          {tool.name}
-                        </span>
-                        <span className="text-[9px] text-muted-foreground uppercase">
-                          {tool.category} • {tool.id.split(':')[1]}
-                        </span>
-                      </div>
+
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div>
+                    <label className="text-xs uppercase mb-1 block font-bold">
+                      Провайдер
                     </label>
-                  ))}
+                    <select
+                      value={settings.provider}
+                      onChange={(e) => {
+                        const newProvider = e.target
+                          .value as keyof typeof MODELS_CONFIG
+                        // Обновляем всё одной командой, чтобы React не запутался
+                        setSelectedAgent({
+                          ...selectedAgent,
+                          model_settings: {
+                            ...settings,
+                            provider: newProvider,
+                            model: MODELS_CONFIG[newProvider][0].id,
+                          },
+                        })
+                      }}
+                      className="w-full bg-card border border-border rounded-sm p-1.5 text-sm outline-none focus:border-blue-500/50"
+                    >
+                      <option value="google">Google</option>
+                      <option value="groq">Groq</option>
+                      <option value="openrouter">OpenRouter</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase mb-1 block font-bold">
+                      Модель
+                    </label>
+                    <select
+                      value={settings.model}
+                      onChange={(e) => updateSetting('model', e.target.value)}
+                      className="w-full bg-card border border-border rounded-sm p-1.5 text-sm outline-none focus:border-blue-500/50"
+                    >
+                      {MODELS_CONFIG[
+                        settings.provider as keyof typeof MODELS_CONFIG
+                      ]?.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              {/* СЕКЦИЯ ПАРАМЕТРОВ ИНТЕЛЛЕКТА */}
+              <div className="p-3 bg-muted/10 rounded-md border border-border space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap size={16} className="text-primary" />
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground">
+                    Параметры интеллекта
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Рекурсивный цикл */}
+                  <label className="flex items-start justify-between gap-4 cursor-pointer group">
+                    <div className="space-y-1">
+                      <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        Рекурсивный цикл (Agentic Loop)
+                      </span>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        Позволяет агенту делать дозапросы данных (RAG, отчеты)
+                        перед финальным ответом. Повышает точность, но
+                        увеличивает время и стоимость.
+                      </p>
+                    </div>
+                    <div className="relative flex items-center pt-1">
+                      <input
+                        type="checkbox"
+                        checked={settings.enable_agentic_loop || false}
+                        onChange={(e) =>
+                          updateSetting('enable_agentic_loop', e.target.checked)
+                        }
+                        className="w-5 h-5 rounded border-border bg-card text-primary accent-primary cursor-pointer transition-all"
+                      />
+                    </div>
+                  </label>
+
+                  {/* Настройка итераций (появляется только если цикл включен) */}
+                  {settings.enable_agentic_loop && (
+                    <div className="flex items-center justify-between pt-3 border-t border-border animate-in fade-in slide-in-from-top-1">
+                      <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                          Глубина мышления
+                        </span>
+                        <span className="text-[9px] text-muted-foreground/60 italic">
+                          Максимальное кол-во кругов
+                        </span>
+                      </div>
+                      <select
+                        value={settings.max_iterations || 2}
+                        onChange={(e) =>
+                          updateSetting(
+                            'max_iterations',
+                            Number(e.target.value)
+                          )
+                        }
+                        className="bg-card text-foreground border border-border rounded-md px-2 py-1 text-xs font-mono outline-none focus:border-primary transition-all cursor-pointer"
+                      >
+                        <option value={2}>2 (Оптимально)</option>
+                        <option value={3}>3 (Глубоко)</option>
+                      </select>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <ShieldCheck size={18} className="text-blue-400" />
+                  <span className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
+                    Контекст и Доступ
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2">
+                  <label className="flex items-center justify-between p-2 rounded-lg border border-border bg-muted/5 hover:bg-muted/10 cursor-pointer transition-colors">
+                    <div className="flex items-center gap-2">
+                      <Globe size={18} className="text-muted-foreground" />
+                      <span className="text-sm font-medium">
+                        Манифест пользователя
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={permissions.user_manifesto}
+                      onChange={() => togglePermission('user_manifesto')}
+                      className="w-4 h-4 accent-blue-500"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-2 rounded-lg border border-border bg-muted/5 hover:bg-muted/10 cursor-pointer transition-colors">
+                    <div className="flex items-center gap-2">
+                      <FolderKanban
+                        size={18}
+                        className="text-muted-foreground"
+                      />
+                      <span className="text-sm font-medium">
+                        Манифест Проекта
+                      </span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={permissions.project_manifesto}
+                      onChange={() => togglePermission('project_manifesto')}
+                      className="w-4 h-4 accent-blue-500"
+                    />
+                  </label>
+                </div>
+
+                {/* Выбор инструментов */}
+                <div className="mt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Wrench size={18} className="text-muted-foreground" />
+                    <span className="text-xs uppercase font-bold tracking-wide text-muted-foreground">
+                      Доступные инструменты
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    {AVAILABLE_TOOLS.map((tool) => (
+                      <label
+                        key={tool.id}
+                        className="flex items-center gap-2 px-3 py-2 rounded-md border border-border/50 bg-muted/5 hover:border-border cursor-pointer transition-all"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={permissions.tools?.includes(tool.id)}
+                          onChange={() => toggleTool(tool.id)}
+                          className="w-3.5 h-3.5 accent-blue-500"
+                        />
+                        <div className="flex flex-col">
+                          <span className="text-xs font-semibold">
+                            {tool.name}
+                          </span>
+                          <span className="text-[9px] text-muted-foreground uppercase">
+                            {tool.category} • {tool.id.split(':')[1]}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </fieldset>
 
             {/* Playground */}
             <div className="mt-6 space-y-4">
@@ -623,12 +674,33 @@ export function AgentLab() {
               )}
             </div>
 
-            <button
-              onClick={handleSave}
-              className="w-full mb-2 bg-blue-500/80 hover:bg-blue-500 text-white py-3 rounded-md font-bold flex items-center justify-center gap-2 transition-all mt-auto cursor-pointer"
-            >
-              <Save size={20} /> Сохранить
-            </button>
+            {/* КНОПКИ ДЕЙСТВИЙ */}
+            <div className="mt-auto pt-4">
+              {canEdit ? (
+                <button
+                  type="submit"
+                  className="w-full mb-3 bg-blue-500 hover:bg-blue-600 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20 active:scale-[0.98] cursor-pointer"
+                >
+                  <Save size={20} />{' '}
+                  {selectedAgent?.id ? 'Сохранить изменения' : 'Создать агента'}
+                </button>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-xs text-yellow-300">
+                    <Lock size={16} />
+                    <span>
+                      Это системный агент. Вы не можете менять его оригинал.
+                    </span>
+                  </div>
+                  <button
+                    type="submit" // Вызовет handleClone
+                    className="w-full mb-3 bg-purple-600 hover:bg-purple-700 text-white py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-500/20"
+                  >
+                    <Copy size={20} /> Клонировать и настроить
+                  </button>
+                </div>
+              )}
+            </div>
           </form>
         </div>
       )}

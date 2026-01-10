@@ -6,7 +6,7 @@ import { toast } from 'sonner'
 import { BrainResponse } from './BrainResponse'
 import { GEN_UI_REGISTRY, isGenUITool } from '@/features/gen-ui'
 import { cn } from '@/lib/utils'
-import { agentIds, useAgent } from '@/features/agents'
+import { agentIds, useAgent, useSystemAgent } from '@/features/agents'
 import { useScopeStore } from '@/features/scopes'
 
 const BRAIN_AGENT_ID = agentIds.orchestratorAgentId
@@ -34,17 +34,19 @@ export function OmniChat({
   const hasFetched = useRef(false)
 
   // Подключаем новый хук
+  const brainId = useSystemAgent('brain')
   const { runAgent, isLoading } = useAgent()
   const { activeScope } = useScopeStore()
 
   const performSearch = async (text: string) => {
+    if (!brainId) return toast.error('Агент Мозг не найден')
     // Сбрасываем старые данные
     setBrainData(null)
     setGenUIData(null)
 
     try {
       // 1. Вызов Адаптера
-      const result = await runAgent(BRAIN_AGENT_ID, {
+      const result = await runAgent(brainId, {
         query: text,
         scope: activeScope?.slug || 'general', // <-- ТЕПЕРЬ СЮДА ЛЕТИТ РЕАЛЬНЫЙ SLUG
         scopeId: activeScope?.id, // <-- И ID для точного контекста
