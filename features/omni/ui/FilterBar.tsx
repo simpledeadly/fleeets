@@ -82,8 +82,7 @@ const STATUS_FILTERS: StatusConfig[] = [
 
 export function FilterBar(props: FilterBarProps) {
   const [isTagsModalOpen, setIsTagsModalOpen] = useState(false)
-  const { activeTags, toggleTag, topTags } =
-    props
+  const { activeTags, toggleTag, topTags } = props
 
   const groupTags = topTags.filter((t) => t.startsWith('group:'))
   const regularTags = topTags.filter((t) => !t.startsWith('group:'))
@@ -190,6 +189,8 @@ export function FilterBar(props: FilterBarProps) {
               <SelectItem value="50">50</SelectItem>
               <SelectItem value="100">100</SelectItem>
               <SelectItem value="250">250</SelectItem>
+              <SelectItem value="500">500</SelectItem>
+              <SelectItem value="1000">1000</SelectItem>
             </SelectContent>
           </Select>
         </div>
