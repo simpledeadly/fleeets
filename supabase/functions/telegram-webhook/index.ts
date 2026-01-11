@@ -22,6 +22,8 @@ serve(async (req) => {
 
     const chatId = message.chat.id
     const telegramUserId = message.from.id
+    const firstName = message.from.first_name
+    const username = message.from.username
 
     // ==========================================
     // 1. ГАРАНТИРОВАННАЯ РЕГИСТРАЦИЯ / АВТОРИЗАЦИЯ
@@ -62,8 +64,8 @@ serve(async (req) => {
             email_confirm: true,
             user_metadata: {
               telegram_id: telegramUserId,
-              first_name: message.from.first_name,
-              username: message.from.username,
+              first_name: firstName,
+              username: username,
             },
           })
         if (createError) {
@@ -80,7 +82,7 @@ serve(async (req) => {
         // (на случай если триггер сработал, но поле пустое)
         await supabaseAdmin
           .from('profiles')
-          .update({ telegram_id: telegramUserId })
+          .update({ telegram_id: telegramUserId, username })
           .eq('id', userId)
       }
     }
@@ -186,6 +188,15 @@ serve(async (req) => {
     // ==========================================
     // 3. ОБРАБОТКА ГОЛОСОВЫХ (VOICE)
     // ==========================================
+    const { data: generalScope } = await supabaseAdmin
+      .from('scopes')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('slug', 'general') // Или сделай настройку "Default Scope for Telegram"
+      .single()
+
+    const targetScopeId = generalScope?.id
+
     if (message.voice) {
       await sendTypingAction(chatId)
       await sendMessage(chatId, '👂 Слушаю и обрабатываю...')
@@ -234,28 +245,32 @@ serve(async (req) => {
       }
 
       // 2. Сохраняем с вектором
-      await supabaseAdmin.from('items').insert({
-        user_id: userId,
-        content: transcribedText,
-        raw_content: transcribedText,
-        type: 'task',
-        status: 'inbox',
-        scope: 'fleeets',
-        metadata: { source: 'voice' },
-      })
+      await supabaseAdmin
+        .from('items')
+        .insert({
+          user_id: userId,
+          content: transcribedText,
+          raw_content: transcribedText,
+          type: 'task',
+          status: 'inbox',
+          scope_id: targetScopeId,
+          metadata: { source: 'voice' },
+        })
+        .select()
+        .single()
 
       await logActivity({
         userId: userId,
         source: 'telegram_bot',
         category: 'item.create',
         details: {
-          source: 'voice',
+          source: 'telegram_voice',
           duration: message.voice.duration,
           is_telegram: true,
         },
       })
 
-      await sendMessage(chatId, `✅ Задача:\n"${transcribedText}"`)
+      await sendMessage(chatId, `✅ Записано:\n"${transcribedText}"`)
       return new Response('OK')
     }
 
@@ -271,10 +286,11 @@ serve(async (req) => {
         raw_content: text,
         type: 'note',
         status: 'inbox',
-        scope: 'fleeets',
+        scope_id: targetScopeId,
         metadata: { source: 'telegram' },
       })
       .select()
+      .single()
 
     if (error) {
       console.error('DB Insert Error:', error)
@@ -295,7 +311,7 @@ serve(async (req) => {
         },
       })
 
-      await setReaction(chatId, message.message_id, '👍')
+      await setReaction(chatId, message.message_id, '👌')
       // await sendMessage(chatId, '✅ Записано (Debug)') // Раскомментируй, если реакцию не видно
     }
 
