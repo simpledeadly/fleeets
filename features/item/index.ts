@@ -1,5 +1,10 @@
 export * from './model/actions'
 export { ItemEditor } from './ui/ItemEditor'
 export { useItemActions } from './model/useItemActions'
-export { bulkAddTag, renameGroup, deleteGroup } from './model/actions'
+export {
+  bulkAddTag,
+  renameGroup,
+  deleteGroup,
+  moveItemsToScope,
+} from './model/actions'
 export { SelectionToolbar } from './ui/SelectionToolbar'

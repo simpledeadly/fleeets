@@ -17,7 +17,7 @@ import { bulkAddTag, bulkRemoveTag, softDeleteItem } from '../model/actions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { useAgent, useSystemAgent } from '@/features/agents'
-import { useScopeStore } from '@/features/scopes'
+import { useScopeStore, MoveToScopeButton } from '@/features/scopes'
 
 export function SelectionToolbar() {
   const {
@@ -177,7 +177,7 @@ export function SelectionToolbar() {
       animate={{ y: 0, opacity: 1, x: '-50%' }}
       exit={{ y: 50, opacity: 0, x: '-50%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-      className="absolute bottom-10 left-1/2 z-150 flex flex-col items-center gap-2"
+      className="absolute bottom-10 left-1/2 z-10 flex flex-col items-center gap-2"
     >
       {/* Список существующих групп для быстрого выбора */}
       {existingGroups.length > 0 && (
@@ -262,6 +262,10 @@ export function SelectionToolbar() {
               <MapPin className="size-4" />
             )}
           </Button>
+
+          <div className="h-6 w-px bg-border/40 mx-1" />
+
+          <MoveToScopeButton selectedIds={selectedIds} />
 
           <div className="h-6 w-px bg-border/40 mx-1" />
 
