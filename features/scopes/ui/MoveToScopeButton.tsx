@@ -13,6 +13,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useStore } from '@/lib/store'
 
 interface MoveToScopeButtonProps {
   selectedIds: string[]
@@ -23,7 +24,8 @@ export function MoveToScopeButton({
   selectedIds,
   onComplete,
 }: MoveToScopeButtonProps) {
-  const { scopes } = useScopeStore()
+  const { scopes, activeScope } = useScopeStore()
+  const { items, setItems } = useStore()
   const [isMoving, setIsMoving] = useState(false)
 
   if (selectedIds.length === 0) return null
@@ -36,6 +38,25 @@ export function MoveToScopeButton({
 
     try {
       await moveItemsToScope(selectedIds, scopeId)
+
+      const updatedItems = items.map((item) => {
+        if (selectedIds.includes(item.id)) {
+          return { ...item, scope_id: scopeId }
+        }
+        return item
+      })
+
+      const isGeneralScope = !activeScope || activeScope.slug === 'general'
+
+      if (isGeneralScope) {
+        setItems(updatedItems)
+      } else {
+        const remainingItems = items.filter(
+          (item) => !selectedIds.includes(item.id)
+        )
+        setItems(remainingItems)
+      }
+
       toast.success('Готово', { id: toastId })
       onComplete?.()
     } catch (e) {

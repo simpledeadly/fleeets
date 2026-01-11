@@ -45,6 +45,7 @@ interface AppState {
   clearSelection: () => void
   renameGroup: (oldTag: string, newTag: string) => void
   deleteGroup: (tag: string) => void
+  selectAll: (ids: string[]) => void
 }
 
 export const useStore = create<AppState>()(
@@ -166,6 +167,7 @@ export const useStore = create<AppState>()(
             }
           }),
         })),
+      selectAll: (ids) => set({ selectedIds: ids }),
     }),
     {
       name: 'app-storage',

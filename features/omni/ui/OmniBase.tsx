@@ -37,6 +37,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
     updateItem: updateStoreItem,
     removeItem: removeStoreItem,
     addItem: addStoreItem,
+    selectAll,
     selectedIds,
     setEditingItem,
     toggleSelection,
@@ -236,6 +237,29 @@ export function OmniBase({ mode }: OmniBaseProps) {
         (e) => {
           e.preventDefault() // Блокируем фокус на адресной строке
           triggerAction('openItemEditor')
+        },
+      ],
+      [
+        'mod+a',
+        (e) => {
+          // Если фокус в инпуте Capture Bar или Search — пусть выделяет текст
+          // Но если мы просто смотрим список — выделяем элементы
+          const activeTag = document.activeElement?.tagName.toLowerCase()
+          if (activeTag === 'textarea') return // Даем выделить текст в редакторе
+
+          // В инпуте поиска (input type="text") Mod+A тоже полезен для текста,
+          // но если инпут пуст или мы хотим приоритет списка...
+          // Для фасовки удобнее перехватывать всегда, если есть список.
+
+          e.preventDefault()
+
+          // Берем ID всех видимых (отфильтрованных) элементов
+          const allVisibleIds = filter.visibleItems.map((i) => i.id)
+
+          if (allVisibleIds.length > 0) {
+            selectAll(allVisibleIds)
+            toast.success(`Выделено: ${allVisibleIds.length}`)
+          }
         },
       ],
     ],
