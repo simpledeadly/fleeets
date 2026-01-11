@@ -625,15 +625,25 @@ export type Database = {
         }
         Returns: {
           ai_tags: string[]
+          completed_at: string
           content: string
+          created_at: string
+          created_by_agent_id: string
           description: string
+          execution_log: string
           id: string
+          in_roadmap: boolean
           is_quick: boolean
+          metadata: Json
+          planned_at: string
           priority: Database["public"]["Enums"]["priority_level"]
+          raw_content: string
           scope_id: string
           similarity: number
           status: Database["public"]["Enums"]["item_status"]
+          triaged_at: string
           type: Database["public"]["Enums"]["item_type"]
+          user_id: string
         }[]
       }
     }
