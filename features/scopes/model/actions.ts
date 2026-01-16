@@ -72,20 +72,26 @@ function generatePastelTheme() {
   return `#${toHex(f(0))}${toHex(f(8))}${toHex(f(4))}`
 }
 
-export async function createScope(name: string, viewType = 'roadmap') {
+export async function createScope(
+  name: string,
+  viewType = 'roadmap',
+  initialData: any = {}
+) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) throw new Error('Auth required')
 
-  // Генерируем slug
-  const slug = name
-    .toLowerCase()
-    .replace(/\s+/g, '-')
-    .replace(/[^a-z0-9-]/g, '')
+  // Генерируем slug если его нет
+  const slug =
+    initialData.slug ||
+    name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '')
 
-  const accentColor = generatePastelTheme()
+  const accentColor = initialData.theme_config?.accent || generatePastelTheme()
 
   const { data, error } = await supabase
     .from('scopes')
@@ -94,8 +100,14 @@ export async function createScope(name: string, viewType = 'roadmap') {
       name,
       slug,
       view_type: viewType,
-      manifesto: 'Цель проекта: ...', // Дефолтный манифест
-      theme_config: { accent: accentColor, mode: 'system' },
+      description: initialData.description || null,
+      manifesto: initialData.manifesto || 'Цель проекта: ...',
+      theme_config: {
+        accent: accentColor,
+        mode: 'system',
+        ...initialData.theme_config,
+      },
+      ...initialData,
     })
     .select()
     .single()

@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useScopeStore, Scope } from '@/features/scopes/model/store'
 import { switchScopeAction } from '@/features/scopes/model/actions'
-import { ScopeDialog } from '@/features/scopes/ui/ScopeDialog'
 import {
   Plus,
   Settings,
@@ -17,9 +16,13 @@ import {
 import { cn } from '@/lib/utils'
 
 export function ProjectHub() {
-  const { scopes, activeScope, setActiveScope } = useScopeStore()
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingScope, setEditingScope] = useState<Scope | null>(null)
+  const {
+    scopes,
+    activeScope,
+    setActiveScope,
+    setIsScopeDialogOpen,
+    setEditingScope,
+  } = useScopeStore()
 
   const handleSwitch = async (scope: Scope) => {
     setActiveScope(scope)
@@ -28,13 +31,13 @@ export function ProjectHub() {
 
   const openCreate = () => {
     setEditingScope(null)
-    setIsDialogOpen(true)
+    setIsScopeDialogOpen(true)
   }
 
   const openEdit = (e: React.MouseEvent, scope: Scope) => {
     e.stopPropagation()
     setEditingScope(scope)
-    setIsDialogOpen(true)
+    setIsScopeDialogOpen(true)
   }
 
   // Хелпер для иконки типа
@@ -163,12 +166,7 @@ export function ProjectHub() {
         </div>
       </div>
 
-      {/* Модалка */}
-      <ScopeDialog
-        isOpen={isDialogOpen}
-        onClose={() => setIsDialogOpen(false)}
-        scopeToEdit={editingScope}
-      />
+      {/* Модалка теперь глобальная в LayoutClient */}
     </div>
   )
 }

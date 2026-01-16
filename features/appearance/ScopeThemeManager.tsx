@@ -112,7 +112,7 @@ export function ScopeThemeManager() {
 
       const bgBase = isDark ? 'oklch(0.16 0.005 285.8)' : 'oklch(1 0 0)'
       const bgMix = isProject ? (isDark ? '6%' : '14%') : '14%'
-      const borderMix = isProject ? (isDark ? '15%' : '60%') : '60%'
+      const borderMix = isProject ? (isDark ? '20%' : '60%') : '60%'
 
       const bgVal = `color-mix(in srgb, ${accent} ${bgMix}, ${bgBase})`
       const borderVal = `color-mix(in srgb, ${accent} ${borderMix}, ${bgBase})`

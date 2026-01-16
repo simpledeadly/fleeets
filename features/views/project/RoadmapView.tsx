@@ -3,7 +3,15 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Item, useStore } from '@/lib/store'
 import { Scope } from '@/features/scopes/model/store'
-import { Plus, Loader2, Box, ArrowLeft, RotateCcw } from 'lucide-react'
+import {
+  Plus,
+  Loader2,
+  Box,
+  ArrowLeft,
+  RotateCcw,
+  Settings,
+} from 'lucide-react'
+import { useScopeStore } from '@/features/scopes'
 import { useAgent, useSystemAgent } from '@/features/agents' // Твой хук
 import { toast } from 'sonner'
 import { createClient } from '@/lib/supabase/client'
@@ -17,6 +25,7 @@ import {
 } from '@/features/blueprints'
 
 export function RoadmapView({ scope, items }: { scope: Scope; items: Item[] }) {
+  const { setEditingScope, setIsScopeDialogOpen } = useScopeStore()
   const [goal, setGoal] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [activeBlueprint, setActiveBlueprint] = useState<any>(null)
@@ -259,6 +268,17 @@ export function RoadmapView({ scope, items }: { scope: Scope; items: Item[] }) {
               activeBlueprintName={activeBlueprint?.name}
               onSelect={handleHistorySelect}
             />
+
+            <button
+              onClick={() => {
+                setEditingScope(scope)
+                setIsScopeDialogOpen(true)
+              }}
+              className="p-2 hover:bg-white/10 rounded-lg transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+              title="Настройки проекта"
+            >
+              <Settings size={20} />
+            </button>
           </div>
         </div>
       </div>

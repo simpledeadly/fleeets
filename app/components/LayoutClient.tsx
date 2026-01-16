@@ -16,10 +16,13 @@ import { getHotkeys } from '@/features/hotkeys'
 import { SnowLayer } from '@/features/appearance'
 import { QuickCaptureModal } from '@/features/capture'
 import { BottomNav } from '@/features/navigation'
+import { ScopeDialog, useScopeStore } from '@/features/scopes'
 
 export function LayoutClient({ children }: { children: React.ReactNode }) {
   const { isPaletteOpen } = useOmniStore()
   const { focusItem, setFocusItem, currentView, clearSelection } = useStore()
+  const { isScopeDialogOpen, setIsScopeDialogOpen, editingScope } =
+    useScopeStore()
 
   // 1. Очистка выделения при переключении страниц или ЗАКРЫТИИ палитры
   useEffect(() => {
@@ -46,6 +49,11 @@ export function LayoutClient({ children }: { children: React.ReactNode }) {
       <SnowLayer />
       <OmniModal />
       <QuickCaptureModal />
+      <ScopeDialog
+        isOpen={isScopeDialogOpen}
+        onClose={() => setIsScopeDialogOpen(false)}
+        scopeToEdit={editingScope}
+      />
 
       <FocusModal
         // key={focusItem?.id || 'modal-closed'}

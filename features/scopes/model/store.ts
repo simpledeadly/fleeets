@@ -6,7 +6,13 @@ export interface Scope {
   slug: string
   view_type: string
   manifesto: string
+  description?: string
   theme_config: any
+  view_config?: any
+  active_blueprint_id?: string | null
+  created_at?: string
+  updated_at?: string
+  user_id: string
 }
 
 interface ScopeState {
@@ -14,11 +20,15 @@ interface ScopeState {
   activeScope: Scope | null
   isLoading: boolean
   isSwitching: boolean
+  isScopeDialogOpen: boolean
+  editingScope: Scope | null
+  setIsScopeDialogOpen: (val: boolean) => void
+  setEditingScope: (scope: Scope | null) => void
   setIsSwitching: (val: boolean) => void
   setScopes: (scopes: Scope[]) => void
-  setActiveScope: (scope: Scope) => void
+  setActiveScope: (scope: Scope | null) => void
   setIsLoading: (loading: boolean) => void
-  addScope: (scopes: Scope) => void
+  addScope: (scope: Scope) => void
   updateScopeInStore: (id: string, updates: any) => void
   removeScopeFromStore: (id: string) => void
 }
@@ -28,6 +38,10 @@ export const useScopeStore = create<ScopeState>((set) => ({
   activeScope: null,
   isLoading: true,
   isSwitching: false,
+  isScopeDialogOpen: false,
+  editingScope: null,
+  setIsScopeDialogOpen: (val) => set({ isScopeDialogOpen: val }),
+  setEditingScope: (scope) => set({ editingScope: scope }),
   setIsSwitching: (val) => set({ isSwitching: val }),
   setScopes: (scopes) => set({ scopes }),
   setActiveScope: (scope) => set({ activeScope: scope }),
@@ -36,7 +50,6 @@ export const useScopeStore = create<ScopeState>((set) => ({
   updateScopeInStore: (id, updates) =>
     set((state) => ({
       scopes: state.scopes.map((s) => (s.id === id ? { ...s, ...updates } : s)),
-      // Если обновили активный - обновляем и его
       activeScope:
         state.activeScope?.id === id
           ? { ...state.activeScope, ...updates }

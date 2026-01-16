@@ -82,7 +82,7 @@ export function Sidebar() {
                 )}
 
                 {/* Project Indicators */}
-                <div className="flex flex-col gap-1.5 py-1">
+                <div className="flex flex-col gap-2 py-1">
                   {scopes.map((scope) => {
                     const isProjectActive = activeScope?.id === scope.id
                     return (
@@ -91,7 +91,7 @@ export function Sidebar() {
                         onClick={() => handleScopeSwitch(scope)}
                         title={scope.name}
                         className={cn(
-                          'w-2 h-2 rounded-sm cursor-pointer transition-all hover:scale-125',
+                          'w-2 h-2 rounded-full cursor-pointer transition-all hover:scale-125',
                           isProjectActive
                             ? 'opacity-100 scale-110 ring-1 ring-primary/40 ring-offset-1 ring-offset-card'
                             : 'opacity-40 hover:opacity-80'
