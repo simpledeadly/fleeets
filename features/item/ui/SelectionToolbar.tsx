@@ -16,8 +16,15 @@ import {
 import { bulkAddTag, bulkRemoveTag, softDeleteItem } from '../model/actions'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
-import { useAgent, useSystemAgent } from '@/features/agents'
+import {
+  useAgent,
+  useSystemAgent,
+  useAgentsStore,
+  AgentSelector,
+  ConfirmationDialog,
+} from '@/features/agents'
 import { useScopeStore, MoveToScopeButton } from '@/features/scopes'
+import { useEffect } from 'react'
 
 export function SelectionToolbar() {
   const {
@@ -30,9 +37,17 @@ export function SelectionToolbar() {
   } = useStore()
   const [groupName, setGroupName] = useState('')
 
+  const { selectedAgentId, setSelectedAgentId, setProposedChanges } =
+    useAgentsStore()
   const architectId = useSystemAgent('architect')
   const { runAgent, isLoading } = useAgent()
   const { activeScope } = useScopeStore()
+
+  useEffect(() => {
+    if (!selectedAgentId && architectId) {
+      setSelectedAgentId(architectId)
+    }
+  }, [selectedAgentId, architectId, setSelectedAgentId])
 
   // Получаем список всех уникальных существующих групп
   const existingGroups = Array.from(
@@ -152,18 +167,28 @@ export function SelectionToolbar() {
     if (e.key === 'Escape') clearSelection()
   }
 
-  const handleArchitect = async () => {
-    if (!architectId) return toast.error('Агент Архитектор не найден')
+  const handleAiAction = async () => {
+    if (!selectedAgentId) return toast.error('Агент не выбран')
 
     try {
-      const result = await runAgent(architectId, {
-        query: groupName, // Например: "Объедини эти задачи в одну"
+      const result = await runAgent(selectedAgentId, {
+        query: groupName,
         scope: activeScope?.slug || 'general',
         scopeId: activeScope?.id,
         itemIds: selectedIds,
       })
 
-      if (result.content) toast.success('Готово!')
+      const pendingTraces = result.execution_trace.filter(
+        (t: any) => t.status === 'pending'
+      )
+      if (pendingTraces.length > 0) {
+        setProposedChanges(pendingTraces)
+        toast('Обнаружены изменения, требующие подтверждения', {
+          description: 'Нажмите "Применить" в диалоговом окне',
+        })
+      } else if (result.content) {
+        toast.success('Готово!')
+      }
       console.log('📥 [VAULT_RESULT_PACKET]:', result)
     } catch (e: any) {
       console.error(e)
@@ -179,6 +204,7 @@ export function SelectionToolbar() {
       transition={{ type: 'spring', damping: 25, stiffness: 350 }}
       className="absolute bottom-10 left-1/2 z-10 flex flex-col items-center gap-2"
     >
+      <ConfirmationDialog />
       {/* Список существующих групп для быстрого выбора */}
       {existingGroups.length > 0 && (
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar max-w-screen md:max-w-xl lg:max-w-2xl xl:max-w-3xl p-1 bg-background border border-border rounded-full mb-1 pb-1">
@@ -251,10 +277,10 @@ export function SelectionToolbar() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleArchitect}
+            onClick={handleAiAction}
             disabled={isLoading}
             className="h-8 w-8 p-0 rounded-full hover:bg-violet-500/20 hover:text-violet-500 cursor-pointer transition-all"
-            title="Авто-группировка (AI)"
+            title="Запустить Агента (AI)"
           >
             {isLoading ? (
               <Loader2 className="size-4 animate-spin" />
@@ -262,6 +288,10 @@ export function SelectionToolbar() {
               <MapPin className="size-4" />
             )}
           </Button>
+
+          <div className="h-6 w-px bg-border/40 mx-1" />
+
+          <AgentSelector />
 
           <div className="h-6 w-px bg-border/40 mx-1" />
 

@@ -22,6 +22,8 @@ export async function POST(req: Request) {
         scopeId: body.scopeId,
         itemId: body.itemId,
         itemIds: body.itemIds,
+        forceExecute: body.forceExecute,
+        predefinedCommands: body.predefinedCommands,
         agentOverride: body.agentOverride,
       },
     })

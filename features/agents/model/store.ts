@@ -7,16 +7,22 @@ interface AgentsState {
   agents: Agent[]
   isLoading: boolean
   isInitialized: boolean
+  selectedAgentId: string | null
   setAgents: (agents: Agent[]) => void
   addAgent: (agent: Agent) => void
   updateAgent: (agent: Agent) => void
   removeAgent: (agentId: string) => void
+  setSelectedAgentId: (id: string | null) => void
+  proposedChanges: any[] | null
+  setProposedChanges: (changes: any[] | null) => void
 }
 
 export const useAgentsStore = create<AgentsState>((set) => ({
   agents: [],
   isLoading: true,
   isInitialized: false,
+  selectedAgentId: null,
+  proposedChanges: null,
   setAgents: (agents) => set({ agents, isLoading: false, isInitialized: true }),
   addAgent: (newAgent) =>
     set((state) => ({ agents: [newAgent, ...state.agents] })),
@@ -30,4 +36,6 @@ export const useAgentsStore = create<AgentsState>((set) => ({
     set((state) => ({
       agents: state.agents.filter((a) => a.id !== agentId),
     })),
+  setSelectedAgentId: (id) => set({ selectedAgentId: id }),
+  setProposedChanges: (changes) => set({ proposedChanges: changes }),
 }))

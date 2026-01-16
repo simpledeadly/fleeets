@@ -137,10 +137,6 @@ export default function StoreInitializer() {
         { event: 'INSERT', schema: 'public', table: 'items' },
         (payload) => {
           const realItem = payload.new as Item
-
-          // ФИЛЬТР REALTIME:
-          // 1. Если мы в General -> принимаем ВСЁ (так как это глобальный вид)
-          // 2. Если мы в Проекте -> принимаем только если совпадает ID
           const isGlobalView = activeScope.slug === 'general'
           const isBelongToScope = realItem.scope_id === activeScope.id
 
@@ -150,6 +146,14 @@ export default function StoreInitializer() {
               store.addItem(realItem)
             }
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'items' },
+        (payload) => {
+          const updatedItem = payload.new as Item
+          useStore.getState().updateItem(updatedItem)
         }
       )
       .subscribe()

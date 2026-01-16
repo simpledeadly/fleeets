@@ -14,6 +14,8 @@ import { executeCommands } from './executor'
 import { validateDailyBudget } from './guard'
 import { ADAPTER_POLICY } from './agentPolicy'
 import { gatherContext } from './contextGatherer'
+import { AGENT_TOOLS } from './registry'
+import { zodToJsonSchema } from 'zod-to-json-schema'
 
 export async function processAgentTask({
   agentId,
@@ -65,28 +67,40 @@ export async function processAgentTask({
   // Подготовка описания инструментов
   const uiCapabilities = ADAPTER_POLICY.get_ui_capabilities(perms.tools || [])
   const toolsParts = []
-  if (perms.tools.some((t: string) => t.startsWith('system:'))) {
-    toolsParts.push(
-      `SYSTEM TOOLS: ${perms.tools
-        .filter((t: string) => t.startsWith('system:'))
-        .join(', ')}`
-    )
+
+  // 1. DATABASE & SYSTEM TOOLS from unified registry
+  const toolDescriptions = perms.tools
+    .map((perm: string) => {
+      const toolName = perm.split(':')[1]?.toUpperCase()
+      const def = AGENT_TOOLS[toolName]
+      if (!def) return null
+
+      const schemaJson = zodToJsonSchema(def.schema as any)
+      return `- ID: ${def.id} (Domain: ${def.domain})\n  DESC: ${
+        def.description
+      }\n  CONFIRMATION REQUIRED: ${!!def.requiresConfirmation}\n  SCHEMA: ${JSON.stringify(
+        schemaJson
+      )}`
+    })
+    .filter(Boolean)
+
+  if (toolDescriptions.length > 0) {
+    toolsParts.push(`AVAILABLE ACTIONS:\n${toolDescriptions.join('\n\n')}`)
   }
+
+  // 2. UI COMPONENTS
   if (uiCapabilities.length > 0) {
     toolsParts.push(
-      `UI COMPONENTS:\n${uiCapabilities
+      `UI COMPONENTS (for rich responses):\n${uiCapabilities
         .map(
           (t) =>
-            `- ID: ${t.id.toUpperCase()}\n  DESC: ${t.description}\n  SCHEMA: ${
-              t.schema
-            }`
+            `- ID: ${t.id.toUpperCase()}\n  DESC: ${
+              t.description
+            }\n  SCHEMA: ${JSON.stringify(t.schema)}`
         )
         .join('\n')}`
     )
   }
-  const dbTools = perms.tools.filter((t: string) => t.startsWith('database:'))
-  if (dbTools.length > 0)
-    toolsParts.push(`DATABASE TOOLS: ${dbTools.join(', ')}`)
 
   const toolsStr = toolsParts.join('\n\n')
   const systemPrompt = ADAPTER_POLICY.prompts.system_template(
@@ -112,6 +126,32 @@ export async function processAgentTask({
   let accumulatedTrace: ExecutionTrace[] = []
   const totalTokens = { input: 0, output: 0 }
   let lastProviderRes: any = null
+
+  // --- SHORT-CIRCUIT: Direct execution of confirmed commands ---
+  if (context.forceExecute && context.predefinedCommands) {
+    const currentTrace = await executeCommands(
+      supabase,
+      userId,
+      context.predefinedCommands,
+      perms.tools || [],
+      isTest,
+      { ...context, agentId }
+    )
+
+    const usage = calculateUsage(agent.model_settings.model, {
+      input: 0,
+      output: 0,
+    })
+    return {
+      content: 'Изменения успешно применены.',
+      usage,
+      execution_trace: currentTrace,
+      finish_reason: 'stop',
+      debug: {
+        total_duration_ms: Date.now() - start,
+      },
+    } as any
+  }
 
   while (iterations < maxIterations) {
     iterations++
@@ -151,7 +191,10 @@ export async function processAgentTask({
     )
     accumulatedTrace = [...accumulatedTrace, ...currentTrace]
 
-    // ПРОВЕРКА: НУЖЕН ЛИ СЛЕДУЮЩИЙ ШАГ?
+    // ПРОВЕРКА: НУЖЕН ЛИ СЛЕДУЮЩИЙ ШАГ ИЛИ ОСТАНОВКА НА ПОДТВЕРЖДЕНИЕ?
+    const hasPending = currentTrace.some((t) => t.status === 'pending')
+    if (hasPending) break
+
     const systemData = currentTrace.filter(
       (t) => t.domain === 'system' && t.status === 'success'
     )
@@ -175,10 +218,18 @@ export async function processAgentTask({
 
   // --- СБОРКА ФИНАЛЬНОГО РЕЗУЛЬТАТА ---
   const usage = calculateUsage(agent.model_settings.model, totalTokens)
+  const hasPending = accumulatedTrace.some((t) => t.status === 'pending')
   const finalContent =
     lastProviderRes.output.content ||
     (accumulatedTrace.length > 0
-      ? `Действия выполнены: ${accumulatedTrace.map((t) => t.tool).join(', ')}`
+      ? hasPending
+        ? `Требуется подтверждение для действий: ${accumulatedTrace
+            .filter((t) => t.status === 'pending')
+            .map((t) => t.tool)
+            .join(', ')}`
+        : `Действия выполнены: ${accumulatedTrace
+            .map((t) => t.tool)
+            .join(', ')}`
       : '')
 
   const finalResult: AgentSessionResult = {

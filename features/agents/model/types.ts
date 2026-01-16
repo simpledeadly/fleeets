@@ -115,6 +115,8 @@ export interface AgentRunContext {
   itemId?: string
   itemIds?: string[]
   isTest?: boolean
+  forceExecute?: boolean
+  predefinedCommands?: any[]
   agentOverride?: AgentOverride
 }
 
