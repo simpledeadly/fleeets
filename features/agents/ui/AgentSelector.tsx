@@ -19,24 +19,8 @@ export function AgentSelector() {
       value={selectedAgentId || undefined}
       onValueChange={setSelectedAgentId}
     >
-      <SelectTrigger className="h-8 w-[140px] bg-transparent border-none focus:ring-0 text-xs font-medium px-2 gap-2 hover:bg-muted/50 transition-colors rounded-xl">
+      <SelectTrigger className="h-8 w-[140px] bg-transparent border-none focus:ring-0 text-xs font-medium px-2 gap-2 hover:bg-muted/50 transition-colors rounded-xl cursor-pointer">
         <div className="flex items-center gap-1.5 truncate">
-          <div className="shrink-0">
-            {selectedAgentId ? (
-              <div
-                className="size-4 rounded-full flex items-center justify-center"
-                style={{
-                  backgroundColor:
-                    agents.find((a) => a.id === selectedAgentId)?.color ||
-                    '#3B82F6',
-                }}
-              >
-                <User size={10} className="text-white" />
-              </div>
-            ) : (
-              <Sparkles size={14} className="text-muted-foreground" />
-            )}
-          </div>
           <SelectValue placeholder="Выбрать агента" />
         </div>
       </SelectTrigger>

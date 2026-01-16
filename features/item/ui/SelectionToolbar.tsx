@@ -12,6 +12,8 @@ import {
   Loader2,
   Trash2,
   MapPin,
+  Zap,
+  PackagePlus,
 } from 'lucide-react'
 import { bulkAddTag, bulkRemoveTag, softDeleteItem } from '../model/actions'
 import { toast } from 'sonner'
@@ -23,10 +25,20 @@ import {
   AgentSelector,
   ConfirmationDialog,
 } from '@/features/agents'
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useScopeStore, MoveToScopeButton } from '@/features/scopes'
 import { useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 export function SelectionToolbar() {
+  const supabase = createClient()
   const {
     selectedIds,
     clearSelection,
@@ -37,8 +49,14 @@ export function SelectionToolbar() {
   } = useStore()
   const [groupName, setGroupName] = useState('')
 
-  const { agents, selectedAgentId, setSelectedAgentId, setProposedChanges } =
-    useAgentsStore()
+  const {
+    agents,
+    selectedAgentId,
+    setSelectedAgentId,
+    setProposedChanges,
+    contextFields,
+    setContextFields,
+  } = useAgentsStore()
   const architectId = useSystemAgent('architect')
   const { runAgent, isLoading } = useAgent()
   const { activeScope } = useScopeStore()
@@ -131,34 +149,40 @@ export function SelectionToolbar() {
     }
   }
 
-  const handleDelete = async () => {
-    if (!confirm(`Удалить выбранные элементы (${selectedIds.length})?`)) return
+  const handleDelete = async (e: React.MouseEvent) => {
+    const isHard = e.shiftKey
+    if (
+      !confirm(
+        `${isHard ? 'Жёстко удалить' : 'В корзину'} ${
+          selectedIds.length
+        } элем.?`
+      )
+    )
+      return
 
-    // 1. Snapshot
-    const originalSelectedIds = [...selectedIds]
-    const originalItems = originalSelectedIds
-      .map((id) => items.find((i) => i.id === id))
-      .filter(Boolean) as any[]
-
-    // 2. Optimistic Update (Instant Removal)
-    originalSelectedIds.forEach((id) => removeItem(id))
-    clearSelection()
+    // Snapshot for rollback
+    const originalItems = items.filter((item) => selectedIds.includes(item.id))
 
     try {
-      // 3. Background call
-      const deletePromises = originalSelectedIds.map((id) => softDeleteItem(id))
-      const results = await Promise.all(deletePromises)
+      // Optimistic
+      selectedIds.forEach((id) => removeItem(id))
+      clearSelection()
 
-      const failed = results.some((r) => 'error' in r)
-      if (failed) {
-        // Rollback: Re-add items to store if some failed
-        originalItems.forEach((item) => addItem(item))
-        toast.error('Не удалось удалить некоторые элементы на сервере')
+      if (isHard) {
+        const { error } = await supabase
+          .from('items')
+          .delete()
+          .in('id', selectedIds)
+        if (error) throw error
       } else {
-        toast.success('Удалено')
+        const { error } = await supabase
+          .from('items')
+          .update({ status: 'deleted' })
+          .in('id', selectedIds)
+        if (error) throw error
       }
+      toast.success(isHard ? 'Удалено навсегда' : 'Перемещено в корзину')
     } catch (e) {
-      // Full Rollback
       originalItems.forEach((item) => addItem(item))
       toast.error(`Ошибка при удалении: ${e}`)
     }
@@ -198,6 +222,7 @@ export function SelectionToolbar() {
         scope: activeScope?.slug || 'general',
         scopeId: activeScope?.id,
         itemIds: selectedIds,
+        includeFields: contextFields, // Pass context fields
       })
 
       const pendingTraces = result.execution_trace.filter(
@@ -205,9 +230,9 @@ export function SelectionToolbar() {
       )
       if (pendingTraces.length > 0) {
         setProposedChanges(pendingTraces)
-        toast('Обнаружены изменения, требующие подтверждения', {
-          description: 'Нажмите "Применить" в диалоговом окне',
-        })
+        // toast('Обнаружены изменения, требующие подтверждения', {
+        //   description: 'Нажмите "Применить" в диалоговом окне',
+        // })
       } else {
         // --- REACTIVE SYNC FOR AUTO-ACTIONS ---
         applyTraceToStore(result.execution_trace)
@@ -220,63 +245,49 @@ export function SelectionToolbar() {
     }
   }
 
+  const toggleField = (field: string) => {
+    if (contextFields.includes(field)) {
+      setContextFields(contextFields.filter((f) => f !== field))
+    } else {
+      setContextFields([...contextFields, field])
+    }
+  }
+
   return (
     <motion.div
       initial={{ y: 50, opacity: 0, x: '-50%' }}
       animate={{ y: 0, opacity: 1, x: '-50%' }}
       exit={{ y: 50, opacity: 0, x: '-50%' }}
       transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-      className="absolute bottom-10 left-1/2 z-10 flex flex-col items-center gap-2"
+      className="fixed bottom-10 left-1/2 z-50 flex flex-col items-center gap-2"
     >
       <ConfirmationDialog />
-      {/* Список существующих групп для быстрого выбора */}
-      {existingGroups.length > 0 && (
-        <div className="flex gap-1.5 overflow-x-auto no-scrollbar max-w-screen md:max-w-xl lg:max-w-2xl xl:max-w-3xl p-1 bg-background border border-border rounded-full mb-1 pb-1">
-          {existingGroups.map((group) => (
-            <button
-              key={group}
-              onClick={() =>
-                setGroupName((prev) => (prev === group ? '' : group))
-              }
-              className={cn(
-                'px-2 py-0.5 rounded-full text-xs font-medium transition-all whitespace-nowrap cursor-pointer',
-                groupName === group
-                  ? 'bg-primary text-primary-foreground'
-                  : 'bg-muted/50 text-muted-foreground hover:bg-muted'
-              )}
-            >
-              {group}
-            </button>
-          ))}
-        </div>
-      )}
 
-      <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-2xl shadow-2xl">
-        {/* Счетчик */}
-        <div className="flex items-center gap-2 px-2.5 py-1 bg-primary/10 rounded-xl text-primary font-mono text-sm font-bold ml-0.5 tabular-nums">
+      <div className="flex items-center gap-1.5 p-1.5 bg-card border border-border rounded-xl shadow-xl min-w-[600px] w-[90vw] max-w-5xl">
+        {/* COUNTER */}
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg text-primary font-bold text-sm tabular-nums">
           <span>{selectedIds.length}</span>
         </div>
 
-        <div className="h-6 w-px bg-border/40 mx-1" />
+        <div className="h-4 w-px bg-border/40 mx-1" />
 
-        {/* Группировка */}
-        <div className="flex items-center gap-1 group/input">
+        {/* INPUT & GROUPING */}
+        <div className="flex-1 flex items-center gap-1 min-w-0">
           <Input
-            placeholder="Группа..."
+            placeholder="Что сделать с выделенным?"
             value={groupName}
             onChange={(e) => setGroupName(e.target.value)}
             onKeyDown={handleKeyDown}
-            autoFocus
-            className="h-8 w-32 bg-transparent border-none focus-visible:ring-0 placeholder:text-muted-foreground/40 text-sm transition-all group-focus-within/input:w-40"
+            className="h-9 w-full border-none focus-visible:ring-0 placeholder:text-muted-foreground text-sm"
           />
 
-          <div className="flex items-center gap-0.5 ml-1">
+          {/* <div className="flex items-center gap-0.5">
             <Button
               size="sm"
               variant="ghost"
               onClick={() => handleAction('add')}
               disabled={!groupName.trim() || isLoading}
-              className="h-8 w-8 p-0 rounded-full hover:bg-primary/20 hover:text-green-400 cursor-pointer"
+              className="h-8 w-8 p-0 hover:bg-green-500/10 hover:text-green-500"
               title="Добавить в группу (Enter)"
             >
               <FolderPlus className="size-4" />
@@ -286,50 +297,97 @@ export function SelectionToolbar() {
               variant="ghost"
               onClick={() => handleAction('remove')}
               disabled={!groupName.trim() || isLoading}
-              className="h-8 w-8 p-0 rounded-full hover:bg-destructive/10 hover:text-destructive cursor-pointer"
+              className="h-8 w-8 p-0 hover:bg-orange-500/10 hover:text-orange-500"
               title="Убрать из группы (Shift+Enter)"
             >
               <FolderMinus className="size-4" />
             </Button>
-          </div>
+          </div> */}
         </div>
 
-        <div className="h-6 w-px bg-border/40 mx-1" />
+        <div className="h-4 w-px bg-border/40 mx-1" />
 
-        {/* Быстрые действия */}
-        <div className="flex items-center gap-0.5 duration-150 text-muted-foreground">
+        {/* AI ACTIONS & SETTINGS */}
+        <div className="flex items-center gap-1">
+          <AgentSelector />
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className={cn(
+                  'h-8 w-8 rounded-lg cursor-pointer',
+                  contextFields.length < 4
+                    ? 'text-orange-400 bg-orange-400/5'
+                    : 'text-muted-foreground'
+                )}
+                title="Настройка контекста (Токены)"
+              >
+                <PackagePlus className="size-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              className="w-56 overflow-hidden z-110"
+              align="end"
+            >
+              <DropdownMenuLabel className="text-xs uppercase tracking-widest text-muted-foreground">
+                Поля для Агента
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              {[
+                { id: 'content', label: 'Заголовок' },
+                { id: 'description', label: 'Описание' },
+                { id: 'type', label: 'Тип' },
+                { id: 'status', label: 'Статус' },
+                { id: 'priority', label: 'Приоритет' },
+                { id: 'is_quick', label: 'Блиц', checked: false },
+              ].map((f) => (
+                <DropdownMenuCheckboxItem
+                  key={f.id}
+                  checked={contextFields.includes(f.id)}
+                  onCheckedChange={() => (f.checked ? null : toggleField(f.id))}
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  {f.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5 text-xs opacity-40 leading-tight">
+                Меньше полей = быстрее ответ и меньше расход токенов.
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Button
             variant="ghost"
             size="icon"
             onClick={handleAiAction}
             disabled={isLoading}
-            className="h-8 w-8 p-0 rounded-full hover:bg-violet-500/20 hover:text-violet-500 cursor-pointer transition-all"
-            title="Запустить Агента (AI)"
+            className="h-8 w-8 rounded-lg bg-violet-500/10 text-violet-500 hover:bg-violet-500 hover:text-white transition-all shadow-sm cursor-pointer"
+            title="Запустить Агента"
           >
             {isLoading ? (
               <Loader2 className="size-4 animate-spin" />
             ) : (
-              <MapPin className="size-4" />
+              <Zap className="size-4" />
             )}
           </Button>
+        </div>
 
-          <div className="h-6 w-px bg-border/40 mx-1" />
+        <div className="h-4 w-px bg-border/40 mx-1" />
 
-          <AgentSelector />
-
-          <div className="h-6 w-px bg-border/40 mx-1" />
-
+        {/* MANUAL TOOLS */}
+        <div className="flex items-center gap-1 text-muted-foreground">
           <MoveToScopeButton selectedIds={selectedIds} />
-
-          <div className="h-6 w-px bg-border/40 mx-1" />
 
           <Button
             variant="ghost"
             size="icon"
             onClick={handleDelete}
             disabled={isLoading}
-            className="h-8 w-8 p-0 rounded-full hover:bg-primary/20 hover:text-destructive cursor-pointer"
-            title="Удалить выбранное"
+            className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+            title="Клик: В корзину, Shift+Клик: Удалить навсегда"
           >
             <Trash2 className="size-4" />
           </Button>
@@ -338,8 +396,8 @@ export function SelectionToolbar() {
             variant="ghost"
             size="icon"
             onClick={clearSelection}
-            className="h-8 w-8 p-0 rounded-full hover:bg-primary/20 hover:text-primary cursor-pointer"
-            title="Отмена"
+            className="h-8 w-8 rounded-lg hover:bg-muted cursor-pointer"
+            title="Закрыть (Esc)"
           >
             <X className="size-4" />
           </Button>

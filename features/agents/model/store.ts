@@ -15,6 +15,8 @@ interface AgentsState {
   setSelectedAgentId: (id: string | null) => void
   proposedChanges: any[] | null
   setProposedChanges: (changes: any[] | null) => void
+  contextFields: string[]
+  setContextFields: (fields: string[]) => void
 }
 
 export const useAgentsStore = create<AgentsState>((set) => ({
@@ -23,6 +25,7 @@ export const useAgentsStore = create<AgentsState>((set) => ({
   isInitialized: false,
   selectedAgentId: null,
   proposedChanges: null,
+  contextFields: ['content', 'description', 'status', 'type'],
   setAgents: (agents) => set({ agents, isLoading: false, isInitialized: true }),
   addAgent: (newAgent) =>
     set((state) => ({ agents: [newAgent, ...state.agents] })),
@@ -40,4 +43,5 @@ export const useAgentsStore = create<AgentsState>((set) => ({
     })),
   setSelectedAgentId: (id) => set({ selectedAgentId: id }),
   setProposedChanges: (changes) => set({ proposedChanges: changes }),
+  setContextFields: (fields) => set({ contextFields: fields }),
 }))

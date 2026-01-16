@@ -49,6 +49,11 @@ const MODELS_CONFIG = {
 const AVAILABLE_TOOLS = [
   { id: 'database:CREATE_ITEMS', name: 'Создание элементов', category: 'DB' },
   { id: 'database:UPDATE_ITEM', name: 'Обновление элементов', category: 'DB' },
+  {
+    id: 'database:MOVE_ITEMS',
+    name: 'Перемещение элементов в другой проект (Scope)',
+    category: 'DB',
+  },
   { id: 'database:DELETE_ITEMS', name: 'Удаление (навсегда)', category: 'DB' },
   {
     id: 'database:TRASH_ITEMS',

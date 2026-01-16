@@ -14,12 +14,130 @@ import {
   ArrowRight,
   Loader2,
   Trash2,
+  Folders,
 } from 'lucide-react'
 import { useStore } from '@/lib/store'
 import { cn } from '@/lib/utils'
 import { useAgent, useAgentsStore } from '@/features/agents'
 import { toast } from 'sonner'
 import { useScopeStore } from '@/features/scopes'
+import {
+  FolderOutput,
+  StickyNote,
+  CheckCircle2,
+  Clock,
+  LayoutGrid,
+} from 'lucide-react'
+
+// --- HELPER COMPONENTS ---
+
+function Badge({
+  children,
+  className,
+}: {
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider',
+        className
+      )}
+    >
+      {children}
+    </div>
+  )
+}
+
+function ItemPreviewCard({
+  item,
+  title,
+  icon: Icon,
+  variant = 'default',
+  diffFields = [],
+}: {
+  item: any
+  title: string
+  icon: any
+  variant?: 'default' | 'success' | 'destructive' | 'warning'
+  diffFields?: string[]
+}) {
+  const { scopes } = useScopeStore()
+  const scopeName = scopes.find((s) => s.id === item.scope_id)?.name || 'Inbox'
+
+  const variants = {
+    default: 'border-border bg-muted/20',
+    success: 'border-green-500/20 bg-green-500/5',
+    destructive: 'border-destructive/20 bg-destructive/5',
+    warning: 'border-orange-500/20 bg-orange-500/5',
+  }
+
+  return (
+    <div className={cn('border rounded-xl overflow-hidden', variants[variant])}>
+      <div className="px-3 py-1.5 border-b border-inherit bg-inherit flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Icon size={16} className="opacity-70" />
+          <span className="text-xs font-bold uppercase tracking-widest opacity-70">
+            {title}
+          </span>
+        </div>
+        {item.type && (
+          <Badge className="bg-primary/10 text-primary">{item.type}</Badge>
+        )}
+      </div>
+      <div className="p-3 space-y-2">
+        <div
+          className={cn(
+            'text-sm font-semibold',
+            diffFields.includes('content') && 'text-green-500'
+          )}
+        >
+          {item.content || '(без заголовка)'}
+        </div>
+        {(item.description || diffFields.includes('description')) && (
+          <div
+            className={cn(
+              'text-xs text-muted-foreground line-clamp-2 italic',
+              diffFields.includes('description') && 'text-green-400'
+            )}
+          >
+            {item.description || '(нет описания)'}
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded border border-border/10">
+            <Folders size={16} /> {scopeName}
+          </div>
+          {item.status && (
+            <div
+              className={cn(
+                'flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border border-border/10',
+                item.status === 'done'
+                  ? 'text-green-400 bg-green-400/5'
+                  : 'text-blue-400 bg-blue-400/5'
+              )}
+            >
+              <CheckCircle2 size={16} /> {item.status}
+            </div>
+          )}
+          {item.priority && (
+            <div
+              className={cn(
+                'flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border border-border/10',
+                item.priority === 'high'
+                  ? 'text-orange-400 bg-orange-400/5'
+                  : 'text-muted-foreground bg-muted/30'
+              )}
+            >
+              <Clock size={16} /> {item.priority}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export function ConfirmationDialog() {
   const { proposedChanges, setProposedChanges, selectedAgentId } =
@@ -59,9 +177,10 @@ export function ConfirmationDialog() {
               id: item.id || crypto.randomUUID(),
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-              user_id: '',
+              user_id: '', // Supabase uses auth uid automatically on server, but store might want it
               status: item.status || 'inbox',
               priority: item.priority || 'medium',
+              scope_id: item.scope_id || activeScope?.id,
             } as any)
           })
         } else if (tool === 'UPDATE_ITEM') {
@@ -69,6 +188,15 @@ export function ConfirmationDialog() {
         } else if (tool === 'DELETE_ITEMS' || tool === 'TRASH_ITEMS') {
           const ids = change.input_payload.ids || []
           ids.forEach((id: string) => useStore.getState().removeItem(id))
+        } else if (tool === 'MOVE_ITEMS') {
+          const ids = change.input_payload.ids || []
+          const targetScopeId = change.input_payload.target_scope_id
+          ids.forEach((id: string) => {
+            const original = items.find((i) => i.id === id)
+            if (original) {
+              updateItem({ ...original, scope_id: targetScopeId })
+            }
+          })
         }
       })
 
@@ -100,128 +228,50 @@ export function ConfirmationDialog() {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="px-6 py-4 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
+        <div className="px-6 py-4 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar bg-muted/10">
           {proposedChanges.map((change: any, idx: number) => {
             const tool = change.tool.toUpperCase()
             const payload = change.input_payload
 
             if (tool === 'UPDATE_ITEM') {
               const original = items.find((i) => i.id === payload.id)
-              const hasDiff =
-                (payload.content && original?.content !== payload.content) ||
-                (payload.description !== undefined &&
-                  original?.description !== payload.description) ||
-                (payload.status && original?.status !== payload.status) ||
-                (payload.priority && original?.priority !== payload.priority)
+              const diffFields = []
+              if (payload.content && original?.content !== payload.content)
+                diffFields.push('content')
+              if (
+                payload.description !== undefined &&
+                original?.description !== payload.description
+              )
+                diffFields.push('description')
 
               return (
-                <div
-                  key={idx}
-                  className="border border-border rounded-xl overflow-hidden bg-muted/20"
-                >
-                  <div className="bg-muted px-4 py-2 border-b border-border flex items-center justify-between">
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                      <ArrowRight size={10} className="text-primary" />
-                      Обновление задачи
+                <div key={idx} className="space-y-2">
+                  <ItemPreviewCard
+                    item={{ ...original, ...payload }}
+                    title="Обновление задачи"
+                    icon={ArrowRight}
+                    variant="success"
+                    diffFields={diffFields}
+                  />
+                  {/* Small detail view for specific metadata changes if any */}
+                  {(payload.status && original?.status !== payload.status) ||
+                  (payload.priority &&
+                    original?.priority !== payload.priority) ? (
+                    <div className="flex gap-2 ml-4">
+                      {payload.status &&
+                        original?.status !== payload.status && (
+                          <div className="text-xs text-blue-400 bg-blue-400/5 px-2 py-0.5 rounded border border-blue-400/10">
+                            {original?.status || 'unset'} → {payload.status}
+                          </div>
+                        )}
+                      {payload.priority &&
+                        original?.priority !== payload.priority && (
+                          <div className="text-xs text-orange-400 bg-orange-400/5 px-2 py-0.5 rounded border border-orange-400/10">
+                            {original?.priority || 'unset'} → {payload.priority}
+                          </div>
+                        )}
                     </div>
-                    <div className="text-[10px] font-mono opacity-50 truncate max-w-[200px]">
-                      ID: {payload.id?.split('-')[0]}...
-                    </div>
-                  </div>
-
-                  <div className="p-4 space-y-4">
-                    {!hasDiff && !original && (
-                      <div className="text-xs text-muted-foreground italic p-2 bg-yellow-500/5 border border-yellow-500/10 rounded-lg">
-                        Внимание: Исходный элемент не найден в текущем списке.
-                      </div>
-                    )}
-
-                    {!hasDiff && original && (
-                      <div className="text-xs text-muted-foreground italic p-2">
-                        Изменений в основных полях не обнаружено (синхронизация
-                        метаданных).
-                      </div>
-                    )}
-
-                    {/* Текст задачи */}
-                    {payload.content &&
-                      original?.content !== payload.content && (
-                        <div className="grid grid-cols-2 gap-4 items-start">
-                          <div className="space-y-1">
-                            <div className="text-[9px] font-bold text-muted-foreground uppercase">
-                              БЫЛО
-                            </div>
-                            <div className="text-xs bg-destructive/10 text-destructive-foreground/70 p-2 rounded-lg border border-destructive/20 line-through">
-                              {original?.content || '(пусто)'}
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="text-[9px] font-bold text-green-500 uppercase flex items-center gap-1">
-                              СТАЛО
-                            </div>
-                            <div className="text-xs bg-green-500/10 text-green-500 p-2 rounded-lg border border-green-500/20 font-medium">
-                              {payload.content}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                    {/* Описание задачи */}
-                    {payload.description !== undefined &&
-                      original?.description !== payload.description && (
-                        <div className="grid grid-cols-2 gap-4 items-start border-t border-border/50 pt-4">
-                          <div className="space-y-1">
-                            <div className="text-[9px] font-bold text-muted-foreground uppercase">
-                              ОПИСАНИЕ (БЫЛО)
-                            </div>
-                            <div className="text-[11px] text-muted-foreground/60 p-2 rounded-lg bg-muted/30 italic">
-                              {original?.description || '(пусто)'}
-                            </div>
-                          </div>
-                          <div className="space-y-1">
-                            <div className="text-[9px] font-bold text-green-500 uppercase flex items-center gap-1">
-                              СТАЛО
-                            </div>
-                            <div className="text-[11px] text-green-400 p-2 rounded-lg bg-green-400/5 border border-green-400/10">
-                              {payload.description || '(удалено)'}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                    {/* Статус и Приоритет */}
-                    {(payload.status ||
-                      payload.priority ||
-                      original?.status ||
-                      original?.priority) && (
-                      <div className="flex flex-wrap gap-2 pt-2 border-t border-border/50">
-                        {payload.status &&
-                          original?.status !== payload.status && (
-                            <div className="flex items-center gap-1.5 text-[10px] bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full border border-blue-500/20">
-                              <span className="opacity-50">Статус:</span>
-                              <span className="font-bold underline decoration-blue-500/50">
-                                {payload.status}
-                              </span>
-                            </div>
-                          )}
-                        {payload.priority &&
-                          original?.priority !== payload.priority && (
-                            <div className="flex items-center gap-1.5 text-[10px] bg-orange-500/10 text-orange-400 px-2 py-1 rounded-full border border-orange-500/20">
-                              <span className="opacity-50">Приоритет:</span>
-                              <span className="font-bold underline decoration-orange-500/50">
-                                {payload.priority}
-                              </span>
-                            </div>
-                          )}
-                      </div>
-                    )}
-
-                    {!hasDiff && (
-                      <pre className="text-[9px] font-mono opacity-40 bg-black/10 p-2 rounded">
-                        {JSON.stringify(payload, null, 2)}
-                      </pre>
-                    )}
-                  </div>
+                  ) : null}
                 </div>
               )
             }
@@ -230,28 +280,17 @@ export function ConfirmationDialog() {
               const newItems = Array.isArray(payload)
                 ? payload
                 : payload.items || [payload]
-
               return (
-                <div
-                  key={idx}
-                  className="border border-border rounded-xl p-4 bg-muted/30"
-                >
-                  <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
-                    Создание задач ({newItems.length})
-                  </div>
-                  <div className="space-y-2">
-                    {newItems.map((item: any, i: number) => (
-                      <div
-                        key={i}
-                        className="flex items-center gap-2 text-sm bg-green-400/5 p-2 rounded-lg border border-green-400/10"
-                      >
-                        <div className="size-1.5 rounded-full bg-green-400" />
-                        <span className="font-medium">
-                          {item.content || item.title}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                <div key={idx} className="space-y-3">
+                  {newItems.map((item: any, i: number) => (
+                    <ItemPreviewCard
+                      key={i}
+                      item={item}
+                      title="Новая задача"
+                      icon={AlertCircle}
+                      variant="success"
+                    />
+                  ))}
                 </div>
               )
             }
@@ -260,43 +299,49 @@ export function ConfirmationDialog() {
               const ids = payload.ids || []
               const itemsToDelete = items.filter((i) => ids.includes(i.id))
               const isPermanent = tool === 'DELETE_ITEMS'
+              return (
+                <div key={idx} className="space-y-3">
+                  {itemsToDelete.map((item, i) => (
+                    <ItemPreviewCard
+                      key={i}
+                      item={item}
+                      title={isPermanent ? 'Постоянное удаление' : 'В корзину'}
+                      icon={Trash2}
+                      variant={isPermanent ? 'destructive' : 'warning'}
+                    />
+                  ))}
+                  {itemsToDelete.length === 0 && (
+                    <div className="p-4 border border-dashed rounded-xl text-center text-xs text-muted-foreground opacity-50">
+                      ID для удаления не найдены (возможно уже удалено)
+                    </div>
+                  )}
+                </div>
+              )
+            }
+
+            if (tool === 'MOVE_ITEMS') {
+              const ids = payload.ids || []
+              const targetScopeId = payload.target_scope_id
+              const itemsToMove = items.filter((i) => ids.includes(i.id))
+              const targetScopeName =
+                useScopeStore
+                  .getState()
+                  .scopes.find((s) => s.id === targetScopeId)?.name || 'Inbox'
 
               return (
-                <div
-                  key={idx}
-                  className={cn(
-                    'border rounded-xl p-4',
-                    isPermanent
-                      ? 'border-destructive/20 bg-destructive/10'
-                      : 'border-orange-500/20 bg-orange-500/5'
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'text-xs font-bold uppercase tracking-wider mb-2 flex items-center gap-2',
-                      isPermanent ? 'text-destructive' : 'text-orange-400'
-                    )}
-                  >
-                    <Trash2 size={14} />{' '}
-                    {isPermanent ? 'Удаление навсегда' : 'В корзину'} (
-                    {ids.length})
+                <div key={idx} className="space-y-3">
+                  <div className="text-xs font-bold text-primary flex items-center gap-2 px-2">
+                    <FolderOutput size={18} /> Перенос в: {targetScopeName}
                   </div>
-                  <div className="space-y-1.5">
-                    {itemsToDelete.length > 0 ? (
-                      itemsToDelete.map((item, i) => (
-                        <div
-                          key={i}
-                          className="text-xs text-muted-foreground line-through opacity-70"
-                        >
-                          • {item.content}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-[10px] opacity-40 italic">
-                        (Элементы уже удалены или не найдены)
-                      </div>
-                    )}
-                  </div>
+                  {itemsToMove.map((item, i) => (
+                    <ItemPreviewCard
+                      key={i}
+                      item={item}
+                      title="Перенос"
+                      icon={FolderOutput}
+                      variant="default"
+                    />
+                  ))}
                 </div>
               )
             }
@@ -309,7 +354,7 @@ export function ConfirmationDialog() {
                 <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
                   {tool}
                 </div>
-                <pre className="text-[10px] font-mono opacity-60 overflow-x-auto">
+                <pre className="text-xs font-mono opacity-60 overflow-x-auto">
                   {JSON.stringify(payload, null, 2)}
                 </pre>
               </div>
@@ -322,19 +367,19 @@ export function ConfirmationDialog() {
             variant="ghost"
             onClick={handleCancel}
             disabled={isLoading}
-            className="rounded-xl"
+            className="rounded-xl cursor-pointer mr-2"
           >
             Отклонить
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={isLoading}
-            className="rounded-xl px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20"
+            className="rounded-xl px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/20 cursor-pointer"
           >
             {isLoading ? (
-              <Loader2 className="size-4 animate-spin mr-2" />
+              <Loader2 className="size-4 animate-spin" />
             ) : (
-              <Check size={18} className="mr-2" />
+              <Check size={18} />
             )}
             Применить изменения
           </Button>

@@ -118,6 +118,7 @@ export interface AgentRunContext {
   forceExecute?: boolean
   predefinedCommands?: any[]
   agentOverride?: AgentOverride
+  includeFields?: string[]
 }
 
 export interface ProviderResult {

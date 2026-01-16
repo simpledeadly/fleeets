@@ -103,7 +103,7 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
         description: i.description || null,
         type: i.type || 'task',
         priority: i.priority || 'medium',
-        status: 'inbox',
+        status: i.status || 'inbox',
         scope_id: targetScopeId,
         created_by_agent_id: agentId,
         metadata: i.parent_context
@@ -266,6 +266,28 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       const { data, error } = await supabase
         .from('items')
         .update({ status: 'deleted' })
+        .in('id', ids)
+        .eq('user_id', userId)
+        .select()
+
+      if (error) throw error
+      return data
+    },
+  },
+  MOVE_ITEMS: {
+    id: 'MOVE_ITEMS',
+    domain: 'database',
+    description: 'Переместить задачи в другой Проект (Scope)',
+    requiresConfirmation: true,
+    schema: z.object({
+      ids: z.array(z.uuid()),
+      target_scope_id: z.uuid(),
+    }),
+    handler: async (supabase, userId, payload) => {
+      const { ids, target_scope_id } = payload
+      const { data, error } = await supabase
+        .from('items')
+        .update({ scope_id: target_scope_id })
         .in('id', ids)
         .eq('user_id', userId)
         .select()

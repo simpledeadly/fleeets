@@ -258,7 +258,7 @@ export function OmniBase({ mode }: OmniBaseProps) {
 
           if (allVisibleIds.length > 0) {
             selectAll(allVisibleIds)
-            toast.success(`Выделено: ${allVisibleIds.length}`)
+            // toast.success(`Выделено: ${allVisibleIds.length}`)
           }
         },
       ],

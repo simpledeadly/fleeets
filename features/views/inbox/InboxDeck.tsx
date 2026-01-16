@@ -64,10 +64,9 @@ export function InboxDeck() {
   const inboxTasks = useMemo(() => {
     const sorted = items
       .filter((item) => item.status === 'inbox')
-      // Старые сверху
       .sort(
         (a, b) =>
-          new Date(a.created_at!).getTime() - new Date(b.created_at!).getTime()
+          new Date(b.created_at!).getTime() - new Date(a.created_at!).getTime()
       )
 
     // Если мы выбрали карту в сетке, переносим ее в начало массива временно

@@ -37,40 +37,72 @@ export async function gatherContext(
     scopeId = data?.id
   }
 
-  const [profile, project] = await Promise.all([
+  const moveItemsAllowed = perms.tools?.some((p: string) =>
+    p.toUpperCase().includes('MOVE_ITEMS')
+  )
+
+  const [profile, project, { data: allScopes }] = await Promise.all([
     perms.user_manifesto
       ? supabase.from('profiles').select('manifesto').eq('id', userId).single()
       : { data: null },
     perms.project_manifesto
       ? fetchProjectContext(supabase, scopeId, context.itemId) // Передаем ID
       : Promise.resolve(''),
+    moveItemsAllowed
+      ? supabase
+          .from('scopes')
+          .select('id, name, slug')
+          .eq('user_id', userId)
+          .order('name')
+      : Promise.resolve({ data: [] }),
   ])
 
   let selectedItemsContext = ''
 
   if (context.itemIds && context.itemIds.length > 0) {
+    const fields = context.includeFields || [
+      'content',
+      'description',
+      'is_quick',
+      'priority',
+      'status',
+      'type',
+    ]
+    const selectQuery = ['id', ...fields].join(', ')
+
     const { data: items } = await supabase
       .from('items')
-      .select('id, content, description, status, type')
+      .select(selectQuery)
       .in('id', context.itemIds)
 
     if (items && items.length > 0) {
       selectedItemsContext = items
-        .map(
-          (i: any) =>
-            `[ITEM id=${i.id} type=${i.type} status=${i.status}]\nCONTENT: ${
-              i.content
-            }\nDESC: ${i.description || 'N/A'}`
-        )
+        .map((i: any) => {
+          let str = `[ITEM id=${i.id}${i.type ? ` type=${i.type}` : ''}${
+            i.status ? ` status=${i.status}` : ''
+          }${i.is_quick ? ` is_quick=${i.is_quick}` : ''}${
+            i.priority ? ` priority=${i.priority}` : ''
+          }]`
+          if (i.content) str += `\nCONTENT: ${i.content}`
+          if (i.description) str += `\nDESC: ${i.description}`
+          return str
+        })
         .join('\n---\n')
 
       selectedItemsContext = `\n\nUSER SELECTED THESE ITEMS:\n${selectedItemsContext}`
     }
   }
 
+  const availableProjectsContext =
+    moveItemsAllowed && allScopes && allScopes.length > 0
+      ? `\n\nAVAILABLE PROJECTS (SCOPES):\n${allScopes
+          .map((s) => `- ${s.name} (ID: ${s.id}, Slug: ${s.slug})`)
+          .join('\n')}`
+      : ''
+
   return {
     userPrefs: profile.data?.manifesto || '',
-    projectContext: project,
+    projectContext: project + availableProjectsContext,
     selectedItems: selectedItemsContext,
   }
 }
