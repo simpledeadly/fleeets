@@ -8,19 +8,44 @@ import { usePaywallStore } from '@/features/paywall'
 import { fetchAgents, useAgentsStore } from '@/features/agents'
 import { useScopeStore } from '@/features/scopes/model/store'
 
-export default function StoreInitializer() {
+interface StoreInitializerProps {
+  initialScopes?: any[]
+  initialActiveScopeId?: string | null
+}
+
+export default function StoreInitializer({
+  initialScopes,
+  initialActiveScopeId,
+}: StoreInitializerProps) {
   const supabase = useMemo(() => createClient(), [])
   const { setItems, addItem, setIsInitialized } = useStore()
-  const { setActiveScope, setScopes, activeScope } = useScopeStore()
+  const {
+    setActiveScope,
+    setScopes,
+    activeScope,
+    setIsLoading: setScopeLoading,
+  } = useScopeStore()
 
   // Флаги состояния для предотвращения двойных вызовов
   const isBootstrapped = useRef(false)
-  const lastFetchedScopeId = useRef<string | null>(null)
+  const lastFetchedScopeId = useRef<string | null>(initialActiveScopeId || null)
 
   // 1. ЕДИНАЯ "ХОЛОДНАЯ" ИНИЦИАЛИЗАЦИЯ (PARALLEL FETCH)
+  useMemo(() => {
+    // [ABSOLUTE FIX] Применяем данные с сервера МГНОВЕННО (синхронно до рендера),
+    // чтобы не было даже одного мига прыжка "General -> Project".
+    if (initialScopes && !isBootstrapped.current) {
+      useScopeStore.getState().setScopes(initialScopes)
+      const current = initialActiveScopeId
+        ? initialScopes.find((s) => s.id === initialActiveScopeId)
+        : null
+      if (current) useScopeStore.getState().setActiveScope(current)
+    }
+  }, [initialScopes, initialActiveScopeId])
+
   useEffect(() => {
     if (isBootstrapped.current) return
-    isBootstrapped.current = true // Блокируем повторный запуск в StrictMode
+    isBootstrapped.current = true
 
     const bootstrap = async () => {
       console.time('⚡️ App Bootstrap')
@@ -53,8 +78,9 @@ export default function StoreInitializer() {
         // В. Определяем активный скоуп СРАЗУ (без рендера)
         const scopeList = scopesRes.data || []
         const activeId = profileRes.data?.active_scope_id
-        const currentScope =
-          scopeList.find((s: any) => s.id === activeId) || scopeList[0]
+        const currentScope = activeId
+          ? scopeList.find((s: any) => s.id === activeId)
+          : null // If no active project, we are in General scope
 
         let targetId = null
 
@@ -84,6 +110,7 @@ export default function StoreInitializer() {
 
         setItems(items)
         setIsInitialized(true)
+        setScopeLoading(false)
 
         console.timeEnd('⚡️ App Bootstrap')
       } catch (e) {

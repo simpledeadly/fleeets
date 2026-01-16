@@ -104,6 +104,8 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
         type: i.type || 'task',
         priority: i.priority || 'medium',
         status: i.status || 'inbox',
+        triaged_at:
+          (i.status || 'inbox') !== 'inbox' ? new Date().toISOString() : null,
         scope_id: targetScopeId,
         created_by_agent_id: agentId,
         metadata: i.parent_context

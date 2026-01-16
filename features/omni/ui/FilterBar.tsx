@@ -422,11 +422,11 @@ function FilterChip({
       className={cn(
         'flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all duration-100 border shrink-0 cursor-pointer',
         active
-          ? 'bg-primary text-primary-foreground border-primary'
-          : 'bg-card/20 text-primary border-border hover:bg-muted'
+          ? 'bg-primary text-primary-foreground border-primary hover:bg-primary/90'
+          : 'bg-card/20 text-muted-foreground border-border hover:bg-muted hover:text-primary'
       )}
     >
-      {Icon && <Icon size={16} />}
+      {Icon && <Icon size={14} />}
       {label}
     </button>
   )
@@ -452,12 +452,12 @@ function FilterBadge({
         'cursor-pointer text-xs h-5 px-2 font-normal transition-all duration-100 hover:bg-primary/20 hover:text-primary gap-1',
         active
           ? 'hover:bg-primary hover:text-primary-foreground'
-          : 'bg-card/20 text-primary border-border hover:bg-muted',
+          : 'bg-card/20 text-muted-foreground border-border hover:bg-muted hover:text-primary',
         className
       )}
       onClick={onClick}
     >
-      {Icon && <Icon size={14} />}
+      {Icon && <Icon size={12} />}
       {children}
     </Badge>
   )

@@ -263,9 +263,17 @@ export function SelectionToolbar() {
     >
       <ConfirmationDialog />
 
-      <div className="flex items-center gap-1.5 p-1.5 bg-card border border-border rounded-xl shadow-xl min-w-[600px] w-[90vw] max-w-5xl">
+      <div className="flex items-center gap-1.5 p-1.5 bg-card border rounded-xl shadow-2xl min-w-[600px] w-[90vw] max-w-5xl transition-colors duration-200">
         {/* COUNTER */}
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-lg text-primary font-bold text-sm tabular-nums">
+        <div
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg font-bold text-sm tabular-nums transition-colors"
+          style={{
+            backgroundColor: activeScope?.theme_config?.accent
+              ? `${activeScope.theme_config.accent}20`
+              : 'var(--primary-foreground)',
+            color: activeScope?.theme_config?.accent || 'var(--primary)',
+          }}
+        >
           <span>{selectedIds.length}</span>
         </div>
 
@@ -364,7 +372,7 @@ export function SelectionToolbar() {
             size="icon"
             onClick={handleAiAction}
             disabled={isLoading}
-            className="h-8 w-8 rounded-lg bg-violet-500/10 text-violet-500 hover:bg-violet-500 hover:text-white transition-all shadow-sm cursor-pointer"
+            className="h-8 w-8 rounded-lg transition-all shadow-sm cursor-pointer border border-primary/20 bg-primary/10 text-primary hover:bg-primary hover:text-primary-foreground"
             title="Запустить Агента"
           >
             {isLoading ? (

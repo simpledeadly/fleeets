@@ -118,18 +118,15 @@
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    transition: background-color 0.2s ease, border-color 0.2s ease,
+      color 0.2s ease, box-shadow 0.2s ease;
   }
   :root {
     /* Вместо стандартных 16px (100%), ставим 18px или 20px */
     font-size: 125%; /* Это сделает базу 18px */
   }
-  /* @media (min-width: 1440px) {
-    :root {
-      font-size: 133%;
-    }
-  }*/
   body {
-    @apply bg-card text-foreground;
+    @apply bg-card text-foreground font-sans;
   }
 
   html,
@@ -146,8 +143,6 @@
     /* Делает скролл на айфоне плавным */
     -webkit-overflow-scrolling: touch;
   }
-
-  /* Разрешаем выделение только там, где нужно */
 
   /* ФИКС ХОВЕРОВ: Чтобы стили :hover не срабатывали от тапа на телефоне */
   @media (hover: hover) {

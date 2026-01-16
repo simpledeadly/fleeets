@@ -67,15 +67,15 @@ function ItemPreviewCard({
   const scopeName = scopes.find((s) => s.id === item.scope_id)?.name || 'Inbox'
 
   const variants = {
-    default: 'border-border bg-muted/20',
-    success: 'border-green-500/20 bg-green-500/5',
-    destructive: 'border-destructive/20 bg-destructive/5',
-    warning: 'border-orange-500/20 bg-orange-500/5',
+    default: 'border-border bg-muted',
+    success: 'border-green-500/20 bg-green-500/10',
+    destructive: 'border-destructive/20 bg-destructive/10',
+    warning: 'border-orange-500/20 bg-orange-500/10',
   }
 
   return (
     <div className={cn('border rounded-xl overflow-hidden', variants[variant])}>
-      <div className="px-3 py-1.5 border-b border-inherit bg-inherit flex items-center justify-between">
+      <div className="px-3 py-1.5 border-b border-inherit bg-inherit/50 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Icon size={16} className="opacity-70" />
           <span className="text-xs font-bold uppercase tracking-widest opacity-70">
@@ -106,7 +106,7 @@ function ItemPreviewCard({
           </div>
         )}
         <div className="flex flex-wrap gap-2 pt-1">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/30 px-1.5 py-0.5 rounded border border-border/10">
+          <div className="flex items-center gap-1 text-xs text-muted-foreground bg-card px-1.5 py-0.5 rounded border border-border/10">
             <Folders size={16} /> {scopeName}
           </div>
           {item.status && (
@@ -114,8 +114,8 @@ function ItemPreviewCard({
               className={cn(
                 'flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border border-border/10',
                 item.status === 'done'
-                  ? 'text-green-400 bg-green-400/5'
-                  : 'text-blue-400 bg-blue-400/5'
+                  ? 'text-green-400 bg-green-400/10'
+                  : 'text-blue-400 bg-blue-400/10'
               )}
             >
               <CheckCircle2 size={16} /> {item.status}
@@ -126,8 +126,8 @@ function ItemPreviewCard({
               className={cn(
                 'flex items-center gap-1 text-xs px-1.5 py-0.5 rounded border border-border/10',
                 item.priority === 'high'
-                  ? 'text-orange-400 bg-orange-400/5'
-                  : 'text-muted-foreground bg-muted/30'
+                  ? 'text-orange-400 bg-orange-400/10'
+                  : 'text-muted-foreground bg-card'
               )}
             >
               <Clock size={16} /> {item.priority}
@@ -179,6 +179,10 @@ export function ConfirmationDialog() {
               updated_at: new Date().toISOString(),
               user_id: '', // Supabase uses auth uid automatically on server, but store might want it
               status: item.status || 'inbox',
+              triaged_at:
+                (item.status || 'inbox') !== 'inbox'
+                  ? new Date().toISOString()
+                  : null,
               priority: item.priority || 'medium',
               scope_id: item.scope_id || activeScope?.id,
             } as any)
@@ -228,7 +232,7 @@ export function ConfirmationDialog() {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="px-6 py-4 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar bg-muted/10">
+        <div className="px-6 py-4 space-y-4 max-h-[75vh] overflow-y-auto custom-scrollbar">
           {proposedChanges.map((change: any, idx: number) => {
             const tool = change.tool.toUpperCase()
             const payload = change.input_payload

@@ -53,7 +53,7 @@ const OmniItemComponent = ({
           <div className="flex items-center gap-2 overflow-hidden">
             <span
               className={cn(
-                'truncate text-primary font-mono transition-all duration-150',
+                'truncate text-primary transition-all duration-150',
                 item.status === 'done' && 'line-through text-muted-foreground',
                 'group-aria-selected:text-foreground' // Подсветка при выборе
               )}
