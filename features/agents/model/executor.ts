@@ -18,7 +18,9 @@ export async function executeCommands(
 
   for (const cmd of commands) {
     const toolId = `${cmd.domain}:${cmd.tool}`.toUpperCase()
-    const baseToolName = cmd.tool.toUpperCase()
+    const baseToolName = cmd.tool.includes(':')
+      ? cmd.tool.split(':')[1].toUpperCase()
+      : cmd.tool.toUpperCase()
     const isAllowed = upPerms.includes(toolId)
 
     if (!isAllowed) {
@@ -33,7 +35,7 @@ export async function executeCommands(
     }
 
     const toolDef = AGENT_TOOLS[baseToolName]
-    if (!toolDef) {
+    if (!toolDef && cmd.domain !== 'ui') {
       trace.push({
         tool: cmd.tool,
         domain: cmd.domain,
@@ -46,15 +48,21 @@ export async function executeCommands(
 
     try {
       // Валидация схемы Zod перед запуском
-      if (toolDef.schema) toolDef.schema.parse(cmd.payload)
+      if (toolDef && toolDef.schema) toolDef.schema.parse(cmd.payload)
 
       let output_data: any = null
       let status: any = 'success'
 
       // Проверка на необходимость подтверждения
-      // Если мы в обычном режиме и инструмент требует подтверждения - ставим статус pending
-      // ВАЖНО: В режиме тестирования (isTest) мы всё равно можем захотеть увидеть результат или замокать его
-      if (toolDef.requiresConfirmation && !context?.forceExecute) {
+      // 1. Либо инструмент помечен как требующий подтверждения в реестре
+      // 2. Либо у агента в настройках включена принудительная проверка для всех действий
+      const needsConfirmation =
+        context?.requiresConfirmation === undefined ||
+        context?.requiresConfirmation === null
+          ? !!toolDef?.requiresConfirmation
+          : !!context?.requiresConfirmation
+
+      if (needsConfirmation && !context?.forceExecute) {
         status = 'pending'
         output_data = {
           message: 'Awaiting user confirmation',
@@ -89,7 +97,13 @@ export async function executeCommands(
         }
       }
 
-      trace.push({ ...cmd, status, input_payload: cmd.payload, output_data })
+      trace.push({
+        ...cmd,
+        tool: toolDef ? toolDef.id : cmd.tool,
+        status,
+        input_payload: cmd.payload,
+        output_data,
+      })
     } catch (e: any) {
       trace.push({
         ...cmd,

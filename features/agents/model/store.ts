@@ -35,6 +35,8 @@ export const useAgentsStore = create<AgentsState>((set) => ({
   removeAgent: (agentId) =>
     set((state) => ({
       agents: state.agents.filter((a) => a.id !== agentId),
+      selectedAgentId:
+        state.selectedAgentId === agentId ? null : state.selectedAgentId,
     })),
   setSelectedAgentId: (id) => set({ selectedAgentId: id }),
   setProposedChanges: (changes) => set({ proposedChanges: changes }),

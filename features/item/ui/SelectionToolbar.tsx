@@ -37,17 +37,39 @@ export function SelectionToolbar() {
   } = useStore()
   const [groupName, setGroupName] = useState('')
 
-  const { selectedAgentId, setSelectedAgentId, setProposedChanges } =
+  const { agents, selectedAgentId, setSelectedAgentId, setProposedChanges } =
     useAgentsStore()
   const architectId = useSystemAgent('architect')
   const { runAgent, isLoading } = useAgent()
   const { activeScope } = useScopeStore()
 
   useEffect(() => {
-    if (!selectedAgentId && architectId) {
+    // Если агент не выбран ИЛИ выбранного агента больше нет в списке (например, удален)
+    const currentAgentExists = agents.some((a) => a.id === selectedAgentId)
+    if ((!selectedAgentId || !currentAgentExists) && architectId) {
       setSelectedAgentId(architectId)
     }
-  }, [selectedAgentId, architectId, setSelectedAgentId])
+  }, [selectedAgentId, architectId, setSelectedAgentId, agents])
+
+  const applyTraceToStore = (trace: any[]) => {
+    trace.forEach((t) => {
+      if (t.status !== 'success' && t.status !== 'mocked') return
+      const tool = t.tool.toUpperCase()
+      const payload = t.input_payload
+
+      if (tool === 'CREATE_ITEMS') {
+        const created = Array.isArray(t.output_data)
+          ? t.output_data
+          : [t.output_data]
+        created.forEach((item: any) => addItem(item))
+      } else if (tool === 'UPDATE_ITEM') {
+        updateItem(payload)
+      } else if (tool === 'DELETE_ITEMS' || tool === 'TRASH_ITEMS') {
+        const ids = payload.ids || []
+        ids.forEach((id: string) => removeItem(id))
+      }
+    })
+  }
 
   // Получаем список всех уникальных существующих групп
   const existingGroups = Array.from(
@@ -186,8 +208,10 @@ export function SelectionToolbar() {
         toast('Обнаружены изменения, требующие подтверждения', {
           description: 'Нажмите "Применить" в диалоговом окне',
         })
-      } else if (result.content) {
-        toast.success('Готово!')
+      } else {
+        // --- REACTIVE SYNC FOR AUTO-ACTIONS ---
+        applyTraceToStore(result.execution_trace)
+        if (result.content) toast.success('Готово!')
       }
       console.log('📥 [VAULT_RESULT_PACKET]:', result)
     } catch (e: any) {

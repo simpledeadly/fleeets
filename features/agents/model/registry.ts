@@ -137,11 +137,19 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
       metadata: z.record(z.string(), z.any()).optional(),
     }),
     handler: async (supabase, userId, payload) => {
-      return await supabase
+      const { id, ...updates } = payload
+      const { data, error } = await supabase
         .from('items')
-        .update(payload)
-        .eq('id', payload.id)
+        .update(updates)
+        .eq('id', id)
         .eq('user_id', userId)
+        .select()
+
+      if (error) throw error
+      if (!data || data.length === 0) {
+        throw new Error(`Item ${id} not found or access denied`)
+      }
+      return data[0]
     },
   },
 
@@ -222,6 +230,48 @@ export const AGENT_TOOLS: Record<string, ToolDefinition> = {
         blueprint_id: data.id,
         stats: `${payload.new_items.length} items proposed`,
       }
+    },
+  },
+  DELETE_ITEMS: {
+    id: 'DELETE_ITEMS',
+    domain: 'database',
+    description: 'Удалить одну или несколько задач навсегда',
+    requiresConfirmation: true,
+    schema: z.object({
+      ids: z.array(z.uuid()),
+    }),
+    handler: async (supabase, userId, payload) => {
+      const { ids } = payload
+      const { data, error } = await supabase
+        .from('items')
+        .delete()
+        .in('id', ids)
+        .eq('user_id', userId)
+        .select()
+
+      if (error) throw error
+      return data
+    },
+  },
+  TRASH_ITEMS: {
+    id: 'TRASH_ITEMS',
+    domain: 'database',
+    description: 'Переместить задачи в корзину (статус deleted)',
+    requiresConfirmation: true,
+    schema: z.object({
+      ids: z.array(z.uuid()),
+    }),
+    handler: async (supabase, userId, payload) => {
+      const { ids } = payload
+      const { data, error } = await supabase
+        .from('items')
+        .update({ status: 'deleted' })
+        .in('id', ids)
+        .eq('user_id', userId)
+        .select()
+
+      if (error) throw error
+      return data
     },
   },
 }

@@ -49,6 +49,12 @@ const MODELS_CONFIG = {
 const AVAILABLE_TOOLS = [
   { id: 'database:CREATE_ITEMS', name: 'Создание элементов', category: 'DB' },
   { id: 'database:UPDATE_ITEM', name: 'Обновление элементов', category: 'DB' },
+  { id: 'database:DELETE_ITEMS', name: 'Удаление (навсегда)', category: 'DB' },
+  {
+    id: 'database:TRASH_ITEMS',
+    name: 'В корзину (soft-delete)',
+    category: 'DB',
+  },
   {
     id: 'database:UPDATE_SCOPE_VIEW',
     name: 'Обновление вида Скоупа',
@@ -450,6 +456,33 @@ export function AgentLab() {
                     </div>
                   </label>
 
+                  {/* Требовать подтверждение */}
+                  <label className="flex items-start justify-between gap-4 cursor-pointer group">
+                    <div className="space-y-1">
+                      <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+                        Требовать подтверждение (Confirmation)
+                      </span>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">
+                        Принудительно запрашивать одобрение пользователя для
+                        любых инструментов редактирования данных, даже если они
+                        не помечены как опасные в реестре.
+                      </p>
+                    </div>
+                    <div className="relative flex items-center pt-1">
+                      <input
+                        type="checkbox"
+                        checked={settings.requires_confirmation || false}
+                        onChange={(e) =>
+                          updateSetting(
+                            'requires_confirmation',
+                            e.target.checked
+                          )
+                        }
+                        className="w-5 h-5 rounded border-border bg-card text-primary accent-primary cursor-pointer transition-all"
+                      />
+                    </div>
+                  </label>
+
                   {/* Настройка итераций (появляется только если цикл включен) */}
                   {settings.enable_agentic_loop && (
                     <div className="flex items-center justify-between pt-3 border-t border-border animate-in fade-in slide-in-from-top-1">
@@ -497,7 +530,7 @@ export function AgentLab() {
                     </div>
                     <input
                       type="checkbox"
-                      checked={permissions.user_manifesto}
+                      checked={!!permissions.user_manifesto}
                       onChange={() => togglePermission('user_manifesto')}
                       className="w-4 h-4 accent-blue-500"
                     />
@@ -515,7 +548,7 @@ export function AgentLab() {
                     </div>
                     <input
                       type="checkbox"
-                      checked={permissions.project_manifesto}
+                      checked={!!permissions.project_manifesto}
                       onChange={() => togglePermission('project_manifesto')}
                       className="w-4 h-4 accent-blue-500"
                     />
@@ -538,7 +571,7 @@ export function AgentLab() {
                       >
                         <input
                           type="checkbox"
-                          checked={permissions.tools?.includes(tool.id)}
+                          checked={!!permissions.tools?.includes(tool.id)}
                           onChange={() => toggleTool(tool.id)}
                           className="w-3.5 h-3.5 accent-blue-500"
                         />

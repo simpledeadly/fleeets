@@ -121,47 +121,8 @@ export default function StoreInitializer() {
     switchScope()
   }, [activeScope, supabase, setItems])
 
-  // 3. REALTIME (Только для текущего скоупа)
-  useEffect(() => {
-    if (!activeScope) return
-
-    const channelName =
-      activeScope.slug === 'general'
-        ? `items_global_user`
-        : `items_realtime_${activeScope.id}`
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'items' },
-        (payload) => {
-          const realItem = payload.new as Item
-          const isGlobalView = activeScope.slug === 'general'
-          const isBelongToScope = realItem.scope_id === activeScope.id
-
-          if (isGlobalView || isBelongToScope) {
-            const store = useStore.getState()
-            if (!store.items.some((i) => i.id === realItem.id)) {
-              store.addItem(realItem)
-            }
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'items' },
-        (payload) => {
-          const updatedItem = payload.new as Item
-          useStore.getState().updateItem(updatedItem)
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [activeScope, supabase, addItem])
+  // 3. REALTIME (Removed in favor of Optimistic UI)
+  // Realtime listeners for items are removed for reliability and performance.
 
   return null
 }

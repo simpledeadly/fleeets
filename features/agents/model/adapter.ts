@@ -135,18 +135,40 @@ export async function processAgentTask({
       context.predefinedCommands,
       perms.tools || [],
       isTest,
-      { ...context, agentId }
+      {
+        ...context,
+        agentId,
+        requiresConfirmation: agent.model_settings?.requires_confirmation,
+      }
     )
+
+    const hasError = currentTrace.some((t) => t.status === 'error')
+    const firstError = currentTrace.find(
+      (t) => t.status === 'error'
+    )?.error_details
 
     const usage = calculateUsage(agent.model_settings.model, {
       input: 0,
       output: 0,
     })
+
     return {
-      content: 'Изменения успешно применены.',
+      content: hasError
+        ? `Ошибка при выполнении: ${firstError || 'Неизвестная ошибка'}`
+        : 'Изменения успешно применены.',
       usage,
       execution_trace: currentTrace,
-      finish_reason: 'stop',
+      finish_reason: hasError ? 'error' : 'stop',
+      error: hasError
+        ? {
+            code: 'DATABASE_FAIL',
+            message:
+              firstError || 'Одно или несколько действий не удалось выполнить',
+            technical: JSON.stringify(
+              currentTrace.filter((t) => t.status === 'error')
+            ),
+          }
+        : undefined,
       debug: {
         total_duration_ms: Date.now() - start,
       },
@@ -187,7 +209,11 @@ export async function processAgentTask({
       res.output.commands,
       perms.tools || [],
       isTest,
-      { ...context, agentId }
+      {
+        ...context,
+        agentId,
+        requiresConfirmation: agent.model_settings?.requires_confirmation,
+      }
     )
     accumulatedTrace = [...accumulatedTrace, ...currentTrace]
 
