@@ -216,7 +216,7 @@ export function FilterBar(props: FilterBarProps) {
             onClick={() => setIsTagsModalOpen(true)}
             className="hover:bg-muted p-1 rounded-full transition-colors duration-100 text-muted-foreground hover:text-primary shrink-0 cursor-pointer"
           >
-            <Folders size={14} className="shrink-0" />
+            <Folders size={16} className="shrink-0" />
           </button>
 
           {/* 2. СКРОЛЛИРУЕМЫЙ КОНТЕЙНЕР (только для тегов) */}
@@ -303,7 +303,7 @@ export function FilterBar(props: FilterBarProps) {
               groupedProjects.soloProjects.length > 0) && (
               <div className="space-y-4">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  <Folders size={14} /> Проекты
+                  <Folders size={16} /> Проекты
                 </div>
 
                 <div className="space-y-4">
@@ -330,7 +330,7 @@ export function FilterBar(props: FilterBarProps) {
                                   : 'bg-primary/7 dark:bg-primary/12 text-primary border border-primary/12 hover:bg-primary/10 dark:hover:bg-primary/15'
                               )}
                             >
-                              <Folders size={14} className="mr-1.5 shrink-0" />
+                              <Folders size={16} className="mr-1.5 shrink-0" />
                               {prefix}
                               <span className="ml-1.5 opacity-60 font-normal text-xs">
                                 {
@@ -380,7 +380,7 @@ export function FilterBar(props: FilterBarProps) {
             {regularTags.length > 0 && (
               <div className="space-y-3">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                  <TagIcon size={14} /> Метки
+                  <TagIcon size={16} /> Метки
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {regularTags.map((tag) => (
@@ -426,7 +426,7 @@ function FilterChip({
           : 'bg-card/20 text-muted-foreground border-border hover:bg-muted hover:text-primary'
       )}
     >
-      {Icon && <Icon size={14} />}
+      {Icon && <Icon size={16} />}
       {label}
     </button>
   )
