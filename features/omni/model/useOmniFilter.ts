@@ -28,9 +28,14 @@ export function useOmniFilter() {
 
   // Фильтрация
   const visibleItems = useMemo(() => {
-    // 1. Базовый фильтр (не во входящих и не удалено)
+    // Включаем inbox если есть активный поиск или выбраны теги
+    // (нужно для OpenClaw элементов с тегами jeeves:*)
+    const includeInbox = searchQuery.trim() !== '' || activeTags.length > 0
+
+    // 1. Базовый фильтр
     let result = items.filter(
-      (item) => item.status !== 'inbox' && item.status !== 'deleted'
+      (item) =>
+        item.status !== 'deleted' && (includeInbox || item.status !== 'inbox')
     )
 
     // 2. Статус (Фокус, План и т.д.) - это жесткое условие (AND)
