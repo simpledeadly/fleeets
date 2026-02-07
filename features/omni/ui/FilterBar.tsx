@@ -85,7 +85,10 @@ export function FilterBar(props: FilterBarProps) {
   const { activeTags, toggleTag, topTags } = props
 
   const groupTags = topTags.filter((t) => t.startsWith('group:'))
-  const regularTags = topTags.filter((t) => !t.startsWith('group:'))
+  const jeevesTags = topTags.filter((t) => t.startsWith('jeeves:'))
+  const regularTags = topTags.filter(
+    (t) => !t.startsWith('group:') && !t.startsWith('jeeves:')
+  )
 
   const groupedProjects = useMemo(() => {
     const groups: Record<string, string[]> = {}
@@ -178,7 +181,7 @@ export function FilterBar(props: FilterBarProps) {
         <div className="flex items-center gap-2 shrink-0">
           <Select
             value={String(props.visibleLimit)}
-            onValueChange={(val) => props.setVisibleLimit(Number(val))}
+            onValueChange={(val: any) => props.setVisibleLimit(Number(val))}
           >
             <SelectTrigger className="max-h-6.5 rounded-full text-xs font-semibold bg-card/20 text-primary border-border hover:bg-muted transition-all duration-100 shadow-none cursor-pointer">
               <SelectValue placeholder="50" />
@@ -372,6 +375,25 @@ export function FilterBar(props: FilterBarProps) {
                       ))}
                     </div>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* СЕКЦИЯ OPENCLAW */}
+            {jeevesTags.length > 0 && (
+              <div className="space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                  <Zap size={16} /> OpenClaw
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {jeevesTags.map((tag) => (
+                    <TagBadge
+                      key={tag}
+                      tag={tag}
+                      isActive={activeTags.includes(tag)}
+                      onToggle={toggleTag}
+                    />
+                  ))}
                 </div>
               </div>
             )}
