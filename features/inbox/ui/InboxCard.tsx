@@ -173,7 +173,6 @@ export function InboxCard({
               'py-1 px-2.5 rounded bg-muted grow cursor-pointer',
               item.type !== 'task' && 'text-muted-foreground/60'
             )}
-            disabled={item.type !== 'task'}
           >
             В фокус
           </button>
